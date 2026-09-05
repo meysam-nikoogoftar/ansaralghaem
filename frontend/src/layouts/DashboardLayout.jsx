@@ -45,7 +45,7 @@ function DashboardLayout() {
   }
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--ink)', display: 'flex', flexDirection: 'column' }}>
+    <div dir="rtl" className="dashboard-shell" style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--ink)', display: 'flex', flexDirection: 'column' }}>
 
       {/* Top Header */}
       <header style={{
@@ -210,6 +210,26 @@ function DashboardLayout() {
       </div>
 
       <style>{`
+        /* index.css sets body/a/button cursor to none globally for the
+           custom-cursor effect on the public site. The dashboard panel
+           doesn't render that custom cursor, so we restore the normal
+           system cursor everywhere inside it. */
+        .dashboard-shell, .dashboard-shell * {
+          cursor: auto !important;
+        }
+        .dashboard-shell a,
+        .dashboard-shell button,
+        .dashboard-shell [role="button"],
+        .dashboard-shell input,
+        .dashboard-shell select,
+        .dashboard-shell textarea {
+          cursor: pointer !important;
+        }
+        .dashboard-shell input,
+        .dashboard-shell textarea {
+          cursor: text !important;
+        }
+
         .dashboard-sidebar { transition: transform 0.3s ease; }
         @media (max-width: 900px) {
           .dashboard-sidebar {

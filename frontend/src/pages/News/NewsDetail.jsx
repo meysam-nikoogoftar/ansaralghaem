@@ -15,43 +15,74 @@ function NewsDetail() {
       .finally(() => setIsLoading(false))
   }, [id])
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="text-gray-500">در حال بارگذاری...</div>
-    </div>
-  )
+  if (isLoading) return <div className="nd-loading">در حال بارگذاری...</div>
 
   if (!news) return null
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-12" dir="rtl">
-      <button
-        onClick={() => navigate('/news')}
-        className="text-gray-600 hover:text-gray-800 mb-6 flex items-center gap-2"
-      >
-        ← برگشت به اخبار
-      </button>
+    <div className="nd-page" dir="rtl">
+      <div className="nd-container">
+        <button onClick={() => navigate('/news')} className="nd-back">← برگشت به اخبار</button>
 
-      {news.image && (
-        <img
-          src={news.image}
-          alt={news.title}
-          className="w-full h-64 object-cover rounded-2xl mb-6"
-        />
-      )}
+        {news.image && <img src={news.image} alt={news.title} className="nd-image" />}
 
-      <h1 className="text-3xl font-bold text-gray-800 mb-4">{news.title}</h1>
+        <h1 className="nd-title">{news.title}</h1>
 
-      <div className="flex items-center gap-4 text-sm text-gray-400 mb-8 pb-4 border-b">
-        <span>
-          {new Date(news.published_at || news.created_at).toLocaleDateString('fa-IR')}
-        </span>
-        <span>👁 {news.views_count} بازدید</span>
+        <div className="nd-meta">
+          <span>{new Date(news.published_at || news.created_at).toLocaleDateString('fa-IR')}</span>
+          <span>👁 {news.views_count} بازدید</span>
+        </div>
+
+        <div className="nd-content">{news.content}</div>
       </div>
 
-      <div className="prose prose-lg text-gray-700 leading-relaxed whitespace-pre-wrap">
-        {news.content}
-      </div>
+      <style>{`
+        .nd-loading {
+          min-height: 50vh;
+          display: flex; align-items: center; justify-content: center;
+          color: var(--ink-dim);
+        }
+        .nd-page { padding: 48px 0 80px; }
+        .nd-container { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+
+        .nd-back {
+          background: none; border: none; cursor: pointer;
+          color: var(--ink-dim); font-size: 13px;
+          display: flex; align-items: center; gap: 8px;
+          margin-bottom: 24px;
+        }
+        .nd-back:hover { color: var(--gold-light); }
+
+        .nd-image {
+          width: 100%; height: 320px; object-fit: cover;
+          border-radius: var(--radius-lg);
+          border: 1px solid var(--line);
+          margin-bottom: 24px;
+        }
+
+        .nd-title {
+          font-family: var(--font-display);
+          color: var(--gold-light);
+          font-size: 26px;
+          line-height: 1.5;
+          margin-bottom: 16px;
+        }
+
+        .nd-meta {
+          display: flex; align-items: center; gap: 18px;
+          color: var(--ink-faint); font-size: 12px;
+          padding-bottom: 20px;
+          margin-bottom: 24px;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .nd-content {
+          color: var(--ink-dim);
+          font-size: 15px;
+          line-height: 2.1;
+          white-space: pre-wrap;
+        }
+      `}</style>
     </div>
   )
 }

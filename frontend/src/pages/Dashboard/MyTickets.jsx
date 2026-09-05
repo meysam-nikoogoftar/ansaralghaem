@@ -46,169 +46,276 @@ function MyTickets() {
   }
 
   const statusConfig = {
-    pending: { label: 'در انتظار پاسخ', color: 'bg-amber-100 text-amber-700' },
-    answered: { label: 'پاسخ داده شده', color: 'bg-green-100 text-green-700' },
-    closed: { label: 'بسته شده', color: 'bg-gray-100 text-gray-700' },
+    pending: { label: 'در انتظار پاسخ', color: '#d8b568' },
+    answered: { label: 'پاسخ داده شده', color: '#4bd6ac' },
+    closed: { label: 'بسته شده', color: '#af9f88' },
   }
 
   const priorityConfig = {
-    low: { label: 'کم', color: 'text-gray-600' },
-    medium: { label: 'متوسط', color: 'text-amber-600' },
-    high: { label: 'زیاد', color: 'text-red-600' },
+    low: { label: 'کم', color: '#af9f88' },
+    medium: { label: 'متوسط', color: '#d8b568' },
+    high: { label: 'زیاد', color: '#ff6b7d' },
   }
 
   if (selectedTicket) {
     return (
-      <div className="space-y-6 max-w-2xl">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setSelectedTicket(null)}
-            className="text-gray-600 hover:text-gray-800"
-          >
-            ← برگشت
-          </button>
-          <h1 className="text-xl font-bold text-gray-800">{selectedTicket.title}</h1>
+      <div className="tk-page tk-thread">
+        <div className="tk-thread-head">
+          <button onClick={() => setSelectedTicket(null)} className="tk-back-btn">← برگشت</button>
+          <h1>{selectedTicket.title}</h1>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="tk-card tk-messages">
           {selectedTicket.messages?.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.sender === selectedTicket.user ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-xs rounded-2xl p-4 ${
-                msg.sender === selectedTicket.user
-                  ? 'bg-green-800 text-white'
-                  : 'bg-gray-100 text-gray-800'
-              }`}>
-                <p className="text-sm">{msg.text}</p>
-                <p className={`text-xs mt-2 ${msg.sender === selectedTicket.user ? 'text-green-200' : 'text-gray-400'}`}>
-                  {new Date(msg.created_at).toLocaleDateString('fa-IR')}
-                </p>
+            <div key={msg.id} className={`tk-msg-row ${msg.sender === selectedTicket.user ? 'mine' : ''}`}>
+              <div className="tk-msg-bubble">
+                <p>{msg.text}</p>
+                <span>{new Date(msg.created_at).toLocaleDateString('fa-IR')}</span>
               </div>
             </div>
           ))}
         </div>
 
         {selectedTicket.status !== 'closed' && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <div className="flex gap-3">
+          <div className="tk-card">
+            <div className="tk-reply-row">
               <input
                 type="text"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="پیام خود را بنویسید..."
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="tk-input"
               />
-              <button
-                onClick={() => handleReply(selectedTicket.id)}
-                className="bg-green-800 text-white px-6 py-3 rounded-lg text-sm hover:bg-green-700 transition-colors"
-              >
-                ارسال
-              </button>
+              <button onClick={() => handleReply(selectedTicket.id)} className="tk-send-btn">ارسال</button>
             </div>
           </div>
         )}
+
+        <style>{ticketStyles}</style>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">تیکت‌ها</h1>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="bg-green-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors"
-        >
-          تیکت جدید
-        </button>
+    <div className="tk-page">
+      <div className="tk-head">
+        <h1>تیکت‌ها</h1>
+        <button onClick={() => setIsCreating(true)} className="tk-new-btn">تیکت جدید</button>
       </div>
 
       {isCreating && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">ثبت تیکت جدید</h2>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">عنوان</label>
+        <div className="tk-card">
+          <h2>ثبت تیکت جدید</h2>
+          <form onSubmit={handleCreate} className="tk-form">
+            <div className="tk-field">
+              <label>عنوان</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="tk-input"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">اولویت</label>
+            <div className="tk-field">
+              <label>اولویت</label>
               <select
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="tk-input"
               >
                 <option value="low">کم</option>
                 <option value="medium">متوسط</option>
                 <option value="high">زیاد</option>
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">پیام</label>
+            <div className="tk-field">
+              <label>پیام</label>
               <textarea
                 value={formData.first_message}
                 onChange={(e) => setFormData({ ...formData, first_message: e.target.value })}
                 rows={4}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="tk-input"
                 required
               />
             </div>
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="bg-green-800 text-white px-6 py-3 rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
-              >
+            <div className="tk-form-actions">
+              <button type="submit" disabled={isLoading} className="tk-submit-btn">
                 {isLoading ? 'در حال ثبت...' : 'ثبت تیکت'}
               </button>
-              <button
-                type="button"
-                onClick={() => setIsCreating(false)}
-                className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-              >
-                انصراف
-              </button>
+              <button type="button" onClick={() => setIsCreating(false)} className="tk-cancel-btn">انصراف</button>
             </div>
           </form>
         </div>
       )}
 
       {tickets.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
-          <div className="text-4xl mb-4">🎫</div>
-          <h3 className="text-lg font-medium text-gray-700 mb-2">تیکتی وجود ندارد</h3>
-          <p className="text-gray-500 text-sm">برای ارتباط با پشتیبانی تیکت ثبت کنید</p>
+        <div className="tk-empty">
+          <div className="tk-empty-icon">🎫</div>
+          <h3>تیکتی وجود ندارد</h3>
+          <p>برای ارتباط با پشتیبانی تیکت ثبت کنید</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="tk-list">
           {tickets.map((ticket) => (
-            <div
-              key={ticket.id}
-              onClick={() => setSelectedTicket(ticket)}
-              className="bg-white rounded-xl p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-gray-800">{ticket.title}</h3>
-                  <p className={`text-xs mt-1 ${priorityConfig[ticket.priority]?.color}`}>
-                    اولویت: {priorityConfig[ticket.priority]?.label}
-                  </p>
-                </div>
-                <span className={`text-xs px-3 py-1 rounded-full ${statusConfig[ticket.status]?.color}`}>
-                  {statusConfig[ticket.status]?.label}
-                </span>
+            <div key={ticket.id} onClick={() => setSelectedTicket(ticket)} className="tk-row">
+              <div>
+                <h3>{ticket.title}</h3>
+                <p style={{ color: priorityConfig[ticket.priority]?.color }}>
+                  اولویت: {priorityConfig[ticket.priority]?.label}
+                </p>
               </div>
+              <span
+                className="tk-badge"
+                style={{
+                  color: statusConfig[ticket.status]?.color,
+                  borderColor: statusConfig[ticket.status]?.color,
+                  background: `${statusConfig[ticket.status]?.color}1a`,
+                }}
+              >
+                {statusConfig[ticket.status]?.label}
+              </span>
             </div>
           ))}
         </div>
       )}
+
+      <style>{ticketStyles}</style>
     </div>
   )
 }
+
+const ticketStyles = `
+  .tk-page { display: flex; flex-direction: column; gap: 20px; max-width: 680px; }
+  .tk-head { display: flex; align-items: center; justify-content: space-between; }
+  .tk-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 22px; }
+
+  .tk-new-btn {
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px; font-weight: 700;
+    color: #1a1206;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+    box-shadow: 0 6px 18px -6px rgba(216,181,104,0.45);
+  }
+
+  .tk-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+  }
+  .tk-card h2 {
+    font-family: var(--font-display);
+    color: var(--gold-light);
+    font-size: 15px;
+    margin-bottom: 14px;
+  }
+
+  .tk-form { display: flex; flex-direction: column; gap: 14px; }
+  .tk-field label { display: block; color: var(--ink-dim); font-size: 13px; margin-bottom: 6px; }
+  .tk-input {
+    width: 100%;
+    padding: 11px 14px;
+    background: rgba(10,21,18,0.6);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 13px;
+    outline: none;
+  }
+  .tk-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.12); }
+  select.tk-input option { background: var(--surface-2); color: var(--ink); }
+
+  .tk-form-actions { display: flex; gap: 10px; }
+  .tk-submit-btn {
+    padding: 11px 22px;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    font-size: 13px; font-weight: 700;
+    color: #1a1206;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+  }
+  .tk-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .tk-cancel-btn {
+    padding: 11px 22px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-dim);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .tk-cancel-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+
+  .tk-empty {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 48px 24px;
+    text-align: center;
+  }
+  .tk-empty-icon { font-size: 40px; margin-bottom: 14px; }
+  .tk-empty h3 { color: var(--ink); font-size: 16px; margin-bottom: 8px; }
+  .tk-empty p { color: var(--ink-dim); font-size: 13px; }
+
+  .tk-list { display: flex; flex-direction: column; gap: 12px; }
+  .tk-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all .25s ease;
+  }
+  .tk-row:hover { border-color: var(--gold); }
+  .tk-row h3 { color: var(--ink); font-size: 14px; font-weight: 600; }
+  .tk-row p { font-size: 12px; margin-top: 4px; }
+  .tk-badge {
+    font-size: 12px; padding: 5px 12px; border-radius: 999px;
+    border: 1px solid; white-space: nowrap;
+  }
+
+  .tk-thread-head { display: flex; align-items: center; gap: 16px; }
+  .tk-back-btn { background: none; border: none; color: var(--ink-dim); font-size: 13px; cursor: pointer; }
+  .tk-back-btn:hover { color: var(--gold-light); }
+  .tk-thread-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 19px; }
+
+  .tk-messages { display: flex; flex-direction: column; gap: 12px; }
+  .tk-msg-row { display: flex; justify-content: flex-start; }
+  .tk-msg-row.mine { justify-content: flex-end; }
+  .tk-msg-bubble {
+    max-width: 75%;
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    background: rgba(10,21,18,0.6);
+    border: 1px solid var(--line);
+  }
+  .tk-msg-row.mine .tk-msg-bubble {
+    background: linear-gradient(135deg, var(--teal), var(--teal-light));
+    border-color: transparent;
+  }
+  .tk-msg-bubble p { color: var(--ink); font-size: 13px; line-height: 1.7; }
+  .tk-msg-row.mine .tk-msg-bubble p { color: #eefaf5; }
+  .tk-msg-bubble span { display: block; color: var(--ink-faint); font-size: 10px; margin-top: 6px; }
+  .tk-msg-row.mine .tk-msg-bubble span { color: rgba(238,250,245,0.65); }
+
+  .tk-reply-row { display: flex; gap: 10px; }
+  .tk-send-btn {
+    padding: 0 22px;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    font-size: 13px; font-weight: 700;
+    color: #1a1206;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+    white-space: nowrap;
+  }
+`
 
 export default MyTickets

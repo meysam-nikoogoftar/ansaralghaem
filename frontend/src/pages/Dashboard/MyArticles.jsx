@@ -31,9 +31,9 @@ function MyArticles() {
   }
 
   const statusConfig = {
-    pending: { label: 'در انتظار بررسی', color: 'bg-amber-100 text-amber-700' },
-    approved: { label: 'تایید شده', color: 'bg-green-100 text-green-700' },
-    rejected: { label: 'رد شده', color: 'bg-red-100 text-red-700' },
+    pending: { label: 'در انتظار بررسی', color: '#d8b568' },
+    approved: { label: 'تایید شده', color: '#4bd6ac' },
+    rejected: { label: 'رد شده', color: '#ff6b7d' },
   }
 
   const categoryOptions = [
@@ -45,106 +45,188 @@ function MyArticles() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">دلنوشته‌های من</h1>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="bg-green-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors"
-        >
-          دلنوشته جدید
-        </button>
+    <div className="ma-page">
+      <div className="ma-head">
+        <h1>دلنوشته‌های من</h1>
+        <button onClick={() => setIsCreating(true)} className="ma-new-btn">دلنوشته جدید</button>
       </div>
 
       {isCreating && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">ثبت دلنوشته جدید</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">عنوان</label>
+        <div className="ma-card">
+          <h2>ثبت دلنوشته جدید</h2>
+          <form onSubmit={handleSubmit} className="ma-form">
+            <div className="ma-field">
+              <label>عنوان</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="ma-input"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">دسته‌بندی</label>
+            <div className="ma-field">
+              <label>دسته‌بندی</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="ma-input"
               >
                 {categoryOptions.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">متن</label>
+            <div className="ma-field">
+              <label>متن</label>
               <textarea
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 rows={6}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="ma-input"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">لینک آپارات (اختیاری)</label>
+            <div className="ma-field">
+              <label>لینک آپارات (اختیاری)</label>
               <input
                 type="text"
                 value={formData.aparat_link}
                 onChange={(e) => setFormData({ ...formData, aparat_link: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="ma-input"
               />
             </div>
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="bg-green-800 text-white px-6 py-3 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
-              >
+            <div className="ma-form-actions">
+              <button type="submit" disabled={isLoading} className="ma-submit-btn">
                 {isLoading ? 'در حال ثبت...' : 'ثبت دلنوشته'}
               </button>
-              <button
-                type="button"
-                onClick={() => setIsCreating(false)}
-                className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg text-sm hover:bg-gray-50"
-              >
-                انصراف
-              </button>
+              <button type="button" onClick={() => setIsCreating(false)} className="ma-cancel-btn">انصراف</button>
             </div>
           </form>
         </div>
       )}
 
       {articles.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
-          <div className="text-4xl mb-4">📖</div>
-          <h3 className="text-lg font-medium text-gray-700">دلنوشته‌ای وجود ندارد</h3>
+        <div className="ma-empty">
+          <div className="ma-empty-icon">📖</div>
+          <h3>دلنوشته‌ای وجود ندارد</h3>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="ma-list">
           {articles.map((article) => (
-            <div key={article.id} className="bg-white rounded-xl p-5 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-bold text-gray-800">{article.title}</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {article.content.substring(0, 100)}...
-                  </p>
-                </div>
-                <span className={`text-xs px-3 py-1 rounded-full ${statusConfig[article.status]?.color}`}>
-                  {statusConfig[article.status]?.label}
-                </span>
+            <div key={article.id} className="ma-row">
+              <div>
+                <h3>{article.title}</h3>
+                <p>{article.content.substring(0, 100)}...</p>
               </div>
+              <span
+                className="ma-badge"
+                style={{
+                  color: statusConfig[article.status]?.color,
+                  borderColor: statusConfig[article.status]?.color,
+                  background: `${statusConfig[article.status]?.color}1a`,
+                }}
+              >
+                {statusConfig[article.status]?.label}
+              </span>
             </div>
           ))}
         </div>
       )}
+
+      <style>{`
+        .ma-page { display: flex; flex-direction: column; gap: 20px; }
+        .ma-head { display: flex; align-items: center; justify-content: space-between; }
+        .ma-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 22px; }
+
+        .ma-new-btn {
+          padding: 10px 20px;
+          border-radius: 999px;
+          border: none;
+          cursor: pointer;
+          font-size: 13px; font-weight: 700;
+          color: #1a1206;
+          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          box-shadow: 0 6px 18px -6px rgba(216,181,104,0.45);
+        }
+
+        .ma-card {
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-lg);
+          padding: 20px 22px;
+          max-width: 620px;
+        }
+        .ma-card h2 {
+          font-family: var(--font-display);
+          color: var(--gold-light);
+          font-size: 15px;
+          margin-bottom: 14px;
+        }
+
+        .ma-form { display: flex; flex-direction: column; gap: 14px; }
+        .ma-field label { display: block; color: var(--ink-dim); font-size: 13px; margin-bottom: 6px; }
+        .ma-input {
+          width: 100%;
+          padding: 11px 14px;
+          background: rgba(10,21,18,0.6);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-sm);
+          color: var(--ink);
+          font-family: var(--font-body);
+          font-size: 13px;
+          outline: none;
+        }
+        .ma-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.12); }
+        select.ma-input option { background: var(--surface-2); color: var(--ink); }
+
+        .ma-form-actions { display: flex; gap: 10px; }
+        .ma-submit-btn {
+          padding: 11px 22px;
+          border-radius: var(--radius-sm);
+          border: none;
+          cursor: pointer;
+          font-size: 13px; font-weight: 700;
+          color: #1a1206;
+          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+        }
+        .ma-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .ma-cancel-btn {
+          padding: 11px 22px;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--line);
+          background: transparent;
+          color: var(--ink-dim);
+          font-size: 13px;
+          cursor: pointer;
+        }
+        .ma-cancel-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+
+        .ma-empty {
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-lg);
+          padding: 48px 24px;
+          text-align: center;
+        }
+        .ma-empty-icon { font-size: 40px; margin-bottom: 14px; }
+        .ma-empty h3 { color: var(--ink); font-size: 16px; }
+
+        .ma-list { display: flex; flex-direction: column; gap: 14px; }
+        .ma-row {
+          display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-md);
+          padding: 16px 18px;
+        }
+        .ma-row h3 { color: var(--ink); font-size: 14px; font-weight: 700; }
+        .ma-row p { color: var(--ink-faint); font-size: 12px; margin-top: 6px; line-height: 1.7; }
+        .ma-badge {
+          font-size: 12px; padding: 5px 12px; border-radius: 999px;
+          border: 1px solid; white-space: nowrap; flex-shrink: 0;
+        }
+      `}</style>
     </div>
   )
 }

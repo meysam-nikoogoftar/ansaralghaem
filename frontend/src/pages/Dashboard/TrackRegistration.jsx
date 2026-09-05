@@ -23,90 +23,161 @@ function TrackRegistration() {
   }
 
   const statusConfig = {
-    pending: { label: 'در انتظار بررسی', color: 'text-amber-600' },
-    approved: { label: 'تایید شده', color: 'text-green-600' },
-    rejected: { label: 'رد شده', color: 'text-red-600' },
-    cancelled: { label: 'انصراف داده', color: 'text-gray-600' },
-    attended: { label: 'شرکت کرد', color: 'text-blue-600' },
-    absent: { label: 'شرکت نکرد', color: 'text-red-600' },
+    pending: { label: 'در انتظار بررسی', color: '#d8b568' },
+    approved: { label: 'تایید شده', color: '#4bd6ac' },
+    rejected: { label: 'رد شده', color: '#ff6b7d' },
+    cancelled: { label: 'انصراف داده', color: '#af9f88' },
+    attended: { label: 'شرکت کرد', color: '#7fb7ff' },
+    absent: { label: 'شرکت نکرد', color: '#ff6b7d' },
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12" dir="rtl">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">پیگیری ثبت‌نام</h1>
+    <div className="tg-page" dir="rtl">
+      <div className="tg-container">
+        <div className="tg-head">
+          <div className="section-kicker">✦ پیگیری ✦</div>
+          <h1 className="section-title">پیگیری ثبت‌نام</h1>
+        </div>
 
-      <div className="bg-white rounded-2xl p-8 shadow-sm">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">کد پیگیری</label>
-            <input
-              type="text"
-              value={trackingCode}
-              onChange={(e) => setTrackingCode(e.target.value)}
-              placeholder="کد پیگیری ثبت‌نام"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">کد ملی</label>
-            <input
-              type="text"
-              value={nationalCode}
-              onChange={(e) => setNationalCode(e.target.value)}
-              placeholder="کد ملی"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-green-800 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
-          >
-            {isLoading ? 'در حال جستجو...' : 'پیگیری'}
-          </button>
-        </form>
+        <div className="tg-card">
+          <form onSubmit={handleSubmit} className="tg-form">
+            <div className="tg-field">
+              <label>کد پیگیری</label>
+              <input
+                type="text"
+                value={trackingCode}
+                onChange={(e) => setTrackingCode(e.target.value)}
+                placeholder="کد پیگیری ثبت‌نام"
+                className="tg-input"
+                required
+              />
+            </div>
+            <div className="tg-field">
+              <label>کد ملی</label>
+              <input
+                type="text"
+                value={nationalCode}
+                onChange={(e) => setNationalCode(e.target.value)}
+                placeholder="کد ملی"
+                className="tg-input"
+                required
+              />
+            </div>
+            <button type="submit" disabled={isLoading} className="tg-submit">
+              {isLoading ? 'در حال جستجو...' : 'پیگیری'}
+            </button>
+          </form>
 
-        {error && (
-          <div className="mt-6 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm">
-            {error}
-          </div>
-        )}
+          {error && <div className="tg-error">{error}</div>}
 
-        {result && (
-          <div className="mt-6 bg-green-50 border border-green-200 rounded-xl p-6">
-            <h2 className="font-bold text-gray-800 text-lg mb-4">نتیجه پیگیری</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600 text-sm">نام:</span>
-                <span className="font-medium text-gray-800">{result.user_name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 text-sm">سفر:</span>
-                <span className="font-medium text-gray-800">{result.trip_detail?.title}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 text-sm">کد پیگیری:</span>
-                <span className="font-mono font-medium text-gray-800">{result.tracking_code}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 text-sm">وضعیت:</span>
-                <span className={`font-bold ${statusConfig[result.status]?.color}`}>
-                  {statusConfig[result.status]?.label}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 text-sm">وضعیت پرداخت:</span>
-                <span className="font-medium text-gray-800">
-                  {result.payment_status === 'paid' ? 'کامل' :
-                   result.payment_status === 'partial' ? 'نیمه‌کامل' : 'پرداخت نشده'}
-                </span>
+          {result && (
+            <div className="tg-result">
+              <h2>نتیجه پیگیری</h2>
+              <div className="tg-result-rows">
+                <div className="tg-result-row">
+                  <span>نام:</span>
+                  <strong>{result.user_name}</strong>
+                </div>
+                <div className="tg-result-row">
+                  <span>سفر:</span>
+                  <strong>{result.trip_detail?.title}</strong>
+                </div>
+                <div className="tg-result-row">
+                  <span>کد پیگیری:</span>
+                  <strong className="tg-mono">{result.tracking_code}</strong>
+                </div>
+                <div className="tg-result-row">
+                  <span>وضعیت:</span>
+                  <strong style={{ color: statusConfig[result.status]?.color }}>
+                    {statusConfig[result.status]?.label}
+                  </strong>
+                </div>
+                <div className="tg-result-row">
+                  <span>وضعیت پرداخت:</span>
+                  <strong>
+                    {result.payment_status === 'paid' ? 'کامل' :
+                     result.payment_status === 'partial' ? 'نیمه‌کامل' : 'پرداخت نشده'}
+                  </strong>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      <style>{`
+        .tg-page { padding: 56px 0 80px; }
+        .tg-container { max-width: 560px; margin: 0 auto; padding: 0 24px; }
+        .tg-head { text-align: center; margin-bottom: 32px; }
+        .tg-head .section-title { margin-top: 4px; }
+
+        .tg-card {
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-lg);
+          padding: 28px;
+        }
+
+        .tg-form { display: flex; flex-direction: column; gap: 16px; }
+        .tg-field label { display: block; color: var(--ink-dim); font-size: 13px; margin-bottom: 6px; }
+        .tg-input {
+          width: 100%;
+          padding: 12px 16px;
+          background: rgba(10,21,18,0.6);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-sm);
+          color: var(--ink);
+          font-family: var(--font-body);
+          font-size: 13px;
+          outline: none;
+        }
+        .tg-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.12); }
+
+        .tg-submit {
+          width: 100%;
+          padding: 13px;
+          border-radius: 999px;
+          border: none;
+          cursor: pointer;
+          font-family: var(--font-body);
+          font-size: 14px; font-weight: 700;
+          color: #1a1206;
+          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          box-shadow: 0 6px 20px -6px rgba(216,181,104,0.45);
+          transition: transform .25s ease;
+        }
+        .tg-submit:hover:not(:disabled) { transform: translateY(-2px); }
+        .tg-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .tg-error {
+          margin-top: 20px;
+          padding: 14px;
+          border-radius: var(--radius-sm);
+          background: rgba(122,35,48,0.2);
+          border: 1px solid rgba(122,35,48,0.4);
+          color: #ff9aa8;
+          font-size: 13px;
+        }
+
+        .tg-result {
+          margin-top: 24px;
+          padding: 20px;
+          border-radius: var(--radius-md);
+          background: rgba(31,163,130,0.08);
+          border: 1px solid rgba(31,163,130,0.25);
+        }
+        .tg-result h2 {
+          font-family: var(--font-display);
+          color: var(--gold-light);
+          font-size: 16px;
+          margin-bottom: 14px;
+        }
+        .tg-result-rows { display: flex; flex-direction: column; gap: 10px; }
+        .tg-result-row { display: flex; justify-content: space-between; }
+        .tg-result-row span { color: var(--ink-faint); font-size: 13px; }
+        .tg-result-row strong { color: var(--ink); font-size: 13px; }
+        .tg-mono { font-family: monospace; }
+      `}</style>
     </div>
   )
 }

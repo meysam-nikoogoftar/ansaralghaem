@@ -41,95 +41,81 @@ function MyGallery() {
   }
 
   const statusConfig = {
-    pending: { label: 'در انتظار بررسی', color: 'bg-amber-100 text-amber-700' },
-    approved: { label: 'تایید شده', color: 'bg-green-100 text-green-700' },
-    rejected: { label: 'رد شده', color: 'bg-red-100 text-red-700' },
+    pending: { label: 'در انتظار بررسی', color: '#d8b568' },
+    approved: { label: 'تایید شده', color: '#4bd6ac' },
+    rejected: { label: 'رد شده', color: '#ff6b7d' },
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">گالری من</h1>
-        <button
-          onClick={() => setIsUploading(true)}
-          className="bg-green-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors"
-        >
-          آپلود تصویر
-        </button>
+    <div className="mg-page">
+      <div className="mg-head">
+        <h1>گالری من</h1>
+        <button onClick={() => setIsUploading(true)} className="mg-new-btn">آپلود تصویر</button>
       </div>
 
       {isUploading && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">آپلود تصویر جدید</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">تصویر</label>
+        <div className="mg-card">
+          <h2>آپلود تصویر جدید</h2>
+          <form onSubmit={handleSubmit} className="mg-form">
+            <div className="mg-field">
+              <label>تصویر</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => setSelectedFile(e.target.files[0])}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm"
+                className="mg-file-input"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">عنوان (اختیاری)</label>
+            <div className="mg-field">
+              <label>عنوان (اختیاری)</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="mg-input"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">دسته‌بندی</label>
+            <div className="mg-field">
+              <label>دسته‌بندی</label>
               <input
                 type="text"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 placeholder="مثلاً: اربعین ۱۴۰۴"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="mg-input"
               />
             </div>
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="bg-green-800 text-white px-6 py-3 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
-              >
+            <div className="mg-form-actions">
+              <button type="submit" disabled={isLoading} className="mg-submit-btn">
                 {isLoading ? 'در حال آپلود...' : 'آپلود'}
               </button>
-              <button
-                type="button"
-                onClick={() => setIsUploading(false)}
-                className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg text-sm hover:bg-gray-50"
-              >
-                انصراف
-              </button>
+              <button type="button" onClick={() => setIsUploading(false)} className="mg-cancel-btn">انصراف</button>
             </div>
           </form>
         </div>
       )}
 
       {images.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
-          <div className="text-4xl mb-4">🖼️</div>
-          <h3 className="text-lg font-medium text-gray-700">تصویری آپلود نشده</h3>
+        <div className="mg-empty">
+          <div className="mg-empty-icon">🖼️</div>
+          <h3>تصویری آپلود نشده</h3>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="mg-grid">
           {images.map((img) => (
-            <div key={img.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
-              <img
-                src={img.image}
-                alt={img.title}
-                className="w-full h-40 object-cover"
-              />
-              <div className="p-3">
-                {img.title && (
-                  <p className="text-sm font-medium text-gray-800 mb-1">{img.title}</p>
-                )}
-                <span className={`text-xs px-2 py-1 rounded-full ${statusConfig[img.status]?.color}`}>
+            <div key={img.id} className="mg-item">
+              <img src={img.image} alt={img.title} />
+              <div className="mg-item-body">
+                {img.title && <p>{img.title}</p>}
+                <span
+                  className="mg-badge"
+                  style={{
+                    color: statusConfig[img.status]?.color,
+                    borderColor: statusConfig[img.status]?.color,
+                    background: `${statusConfig[img.status]?.color}1a`,
+                  }}
+                >
                   {statusConfig[img.status]?.label}
                 </span>
               </div>
@@ -137,6 +123,115 @@ function MyGallery() {
           ))}
         </div>
       )}
+
+      <style>{`
+        .mg-page { display: flex; flex-direction: column; gap: 20px; }
+        .mg-head { display: flex; align-items: center; justify-content: space-between; }
+        .mg-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 22px; }
+
+        .mg-new-btn {
+          padding: 10px 20px;
+          border-radius: 999px;
+          border: none;
+          cursor: pointer;
+          font-size: 13px; font-weight: 700;
+          color: #1a1206;
+          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          box-shadow: 0 6px 18px -6px rgba(216,181,104,0.45);
+        }
+
+        .mg-card {
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-lg);
+          padding: 20px 22px;
+          max-width: 520px;
+        }
+        .mg-card h2 {
+          font-family: var(--font-display);
+          color: var(--gold-light);
+          font-size: 15px;
+          margin-bottom: 14px;
+        }
+
+        .mg-form { display: flex; flex-direction: column; gap: 14px; }
+        .mg-field label { display: block; color: var(--ink-dim); font-size: 13px; margin-bottom: 6px; }
+        .mg-input, .mg-file-input {
+          width: 100%;
+          padding: 11px 14px;
+          background: rgba(10,21,18,0.6);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-sm);
+          color: var(--ink);
+          font-family: var(--font-body);
+          font-size: 13px;
+          outline: none;
+        }
+        .mg-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.12); }
+        .mg-file-input::file-selector-button {
+          background: var(--teal);
+          color: var(--gold-light);
+          border: none;
+          border-radius: 8px;
+          padding: 6px 12px;
+          margin-left: 10px;
+          cursor: pointer;
+          font-family: var(--font-body);
+        }
+
+        .mg-form-actions { display: flex; gap: 10px; }
+        .mg-submit-btn {
+          padding: 11px 22px;
+          border-radius: var(--radius-sm);
+          border: none;
+          cursor: pointer;
+          font-size: 13px; font-weight: 700;
+          color: #1a1206;
+          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+        }
+        .mg-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .mg-cancel-btn {
+          padding: 11px 22px;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--line);
+          background: transparent;
+          color: var(--ink-dim);
+          font-size: 13px;
+          cursor: pointer;
+        }
+        .mg-cancel-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+
+        .mg-empty {
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-lg);
+          padding: 48px 24px;
+          text-align: center;
+        }
+        .mg-empty-icon { font-size: 40px; margin-bottom: 14px; }
+        .mg-empty h3 { color: var(--ink); font-size: 16px; }
+
+        .mg-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 16px;
+        }
+        .mg-item {
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          transition: all .3s ease;
+        }
+        .mg-item:hover { border-color: var(--gold); transform: translateY(-3px); }
+        .mg-item img { width: 100%; height: 150px; object-fit: cover; display: block; }
+        .mg-item-body { padding: 12px; }
+        .mg-item-body p { color: var(--ink); font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+        .mg-badge {
+          font-size: 11px; padding: 4px 10px; border-radius: 999px;
+          border: 1px solid; display: inline-block;
+        }
+      `}</style>
     </div>
   )
 }

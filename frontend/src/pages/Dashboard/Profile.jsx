@@ -44,62 +44,45 @@ function Profile() {
   }
 
   const Section = ({ title, children }) => (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
-      <h2 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">{title}</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>
+    <div className="pf-card">
+      <h2 className="pf-card-title">{title}</h2>
+      <div className="pf-grid">{children}</div>
     </div>
   )
 
   const Field = ({ label, name, type = 'text', options }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <div className={type === 'checkbox' ? 'pf-field pf-field-checkbox' : 'pf-field'}>
+      {type !== 'checkbox' && <label>{label}</label>}
       {options ? (
-        <select
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
+        <select name={name} value={formData[name]} onChange={handleChange} className="pf-input">
           <option value="">انتخاب کنید</option>
           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       ) : type === 'checkbox' ? (
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label className="pf-checkbox-label">
           <input
             type="checkbox"
             name={name}
             checked={formData[name]}
             onChange={handleChange}
-            className="w-4 h-4 accent-green-700"
+            className="pf-checkbox"
           />
-          <span className="text-sm text-gray-600">{label}</span>
+          <span>{label}</span>
         </label>
       ) : type === 'textarea' ? (
-        <textarea
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          rows={3}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
+        <textarea name={name} value={formData[name]} onChange={handleChange} rows={3} className="pf-input" />
       ) : (
-        <input
-          type={type}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
+        <input type={type} name={name} value={formData[name]} onChange={handleChange} className="pf-input" />
       )}
     </div>
   )
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-bold text-gray-800">ویرایش پروفایل</h1>
+    <form onSubmit={handleSubmit} className="pf-page">
+      <h1 className="pf-heading">ویرایش پروفایل</h1>
 
       {message && (
-        <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 text-sm">
+        <div className={`pf-message ${message.includes('موفقیت') ? 'success' : 'error'}`}>
           {message}
         </div>
       )}
@@ -125,7 +108,7 @@ function Profile() {
         <Field label="نام نزدیکان" name="emergency_name" />
         <Field label="شماره نزدیکان" name="emergency_phone" />
         <Field label="نسبت" name="emergency_relation" />
-        <div className="md:col-span-2">
+        <div className="pf-field pf-span-2">
           <Field label="آدرس" name="address" type="textarea" />
         </div>
       </Section>
@@ -152,7 +135,7 @@ function Profile() {
       </Section>
 
       <Section title="اطلاعات بهداشتی">
-        <div className="md:col-span-2 space-y-3">
+        <div className="pf-field pf-span-2 pf-health-block">
           <Field label="سابقه بیماری زمینه‌ای" name="has_disease" type="checkbox" />
           {formData.has_disease && <Field label="توضیح بیماری" name="disease_description" type="textarea" />}
           <Field label="سابقه بیماری آسم یا ریوی" name="has_asthma" type="checkbox" />
@@ -172,13 +155,118 @@ function Profile() {
         </Section>
       )}
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full bg-green-800 text-white py-4 rounded-xl font-bold text-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-      >
+      <button type="submit" disabled={isLoading} className="pf-submit">
         {isLoading ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
       </button>
+
+      <style>{`
+        .pf-page {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          max-width: 900px;
+        }
+        .pf-heading {
+          font-family: var(--font-display);
+          color: var(--gold-light);
+          font-size: 22px;
+        }
+        .pf-message {
+          padding: 12px 16px;
+          border-radius: var(--radius-sm);
+          font-size: 13px;
+        }
+        .pf-message.success {
+          background: rgba(31,163,130,0.15);
+          border: 1px solid rgba(31,163,130,0.3);
+          color: var(--teal-glow);
+        }
+        .pf-message.error {
+          background: rgba(122,35,48,0.2);
+          border: 1px solid rgba(122,35,48,0.4);
+          color: #ff9aa8;
+        }
+
+        .pf-card {
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-lg);
+          padding: 22px 24px;
+        }
+        .pf-card-title {
+          font-family: var(--font-display);
+          color: var(--gold-light);
+          font-size: 16px;
+          padding-bottom: 12px;
+          margin-bottom: 16px;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .pf-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+        }
+        .pf-span-2 { grid-column: span 2; }
+
+        .pf-field label {
+          display: block;
+          color: var(--ink-dim);
+          font-size: 13px;
+          margin-bottom: 6px;
+        }
+        .pf-input {
+          width: 100%;
+          padding: 11px 14px;
+          background: rgba(10,21,18,0.6);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-sm);
+          color: var(--ink);
+          font-family: var(--font-body);
+          font-size: 13px;
+          outline: none;
+          transition: all .25s ease;
+        }
+        .pf-input:focus {
+          border-color: var(--gold);
+          box-shadow: 0 0 0 3px rgba(216,181,104,0.12);
+        }
+        select.pf-input option { background: var(--surface-2); color: var(--ink); }
+
+        .pf-health-block { display: flex; flex-direction: column; gap: 12px; }
+        .pf-checkbox-label {
+          display: flex; align-items: center; gap: 10px;
+          cursor: pointer;
+          color: var(--ink-dim);
+          font-size: 13px;
+        }
+        .pf-checkbox {
+          width: 17px; height: 17px;
+          accent-color: var(--gold);
+        }
+
+        .pf-submit {
+          width: 100%;
+          padding: 15px;
+          border-radius: 999px;
+          border: none;
+          cursor: pointer;
+          font-family: var(--font-body);
+          font-size: 15px;
+          font-weight: 700;
+          color: #1a1206;
+          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          box-shadow: 0 6px 20px -6px rgba(216,181,104,0.45);
+          transition: transform .25s ease, opacity .25s ease;
+        }
+        .pf-submit:hover:not(:disabled) { transform: translateY(-2px); }
+        .pf-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        @media (max-width: 700px) {
+          .pf-grid { grid-template-columns: 1fr; }
+          .pf-span-2 { grid-column: span 1; }
+        }
+      `}</style>
     </form>
   )
 }

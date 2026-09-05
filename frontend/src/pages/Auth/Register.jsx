@@ -11,6 +11,7 @@ function Register() {
     first_name: '',
     last_name: '',
   })
+  const [localError, setLocalError] = useState('')
   const { register, isLoading, error } = useAuthStore()
   const navigate = useNavigate()
 
@@ -20,8 +21,9 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setLocalError('')
     if (formData.password !== formData.password2) {
-      alert('رمز عبور و تکرار آن یکسان نیستند')
+      setLocalError('رمز عبور و تکرار آن یکسان نیستند')
       return
     }
     const { password2, ...data } = formData
@@ -29,111 +31,276 @@ function Register() {
     if (success) navigate('/dashboard')
   }
 
-  return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: 'linear-gradient(135deg, #134F4E 0%, #1B6B6A 50%, #2D8B8A 100%)' }}
-      dir="rtl"
-    >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <img src={logo} alt="logo" className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-4 border-[#C9A84C]" />
-          <h1 className="text-2xl font-bold text-[#1B6B6A]">ثبت‌نام</h1>
-          <p className="text-gray-500 text-sm mt-2">هیئت انصار القائم (عج)</p>
-        </div>
+  // authStore.register can set `error` as a string or as the backend's
+  // field-error object (e.g. { mobile: ['...'] }); normalize to one message.
+  const serverErrorMessage = (() => {
+    if (!error) return ''
+    if (typeof error === 'string') return error
+    const firstKey = Object.keys(error)[0]
+    const firstVal = error[firstKey]
+    return Array.isArray(firstVal) ? firstVal[0] : String(firstVal)
+  })()
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm">
-            {typeof error === 'string' ? error : 'خطا در ثبت‌نام'}
+  const displayError = localError || serverErrorMessage
+
+  return (
+    <div className="auth-page" dir="rtl">
+      <div className="auth-orb auth-orb-1" />
+      <div className="auth-orb auth-orb-2" />
+
+      <div className="auth-card">
+        <Link to="/" className="auth-brand">
+          <div className="auth-logo">
+            <img src={logo} alt="هیئت انصار القائم" />
           </div>
+          <h1>هیئت انصار القائم (عج)</h1>
+          <span>ایجاد حساب کاربری زائرین</span>
+        </Link>
+
+        {displayError && (
+          <div className="auth-message error">{displayError}</div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">نام</label>
+        <form onSubmit={handleSubmit} className="auth-form-block">
+          <div className="auth-field-row">
+            <div className="auth-field">
+              <label>نام</label>
               <input
                 type="text"
                 name="first_name"
                 value={formData.first_name}
                 onChange={handleChange}
                 placeholder="نام"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B6B6A]"
+                className="auth-input"
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی</label>
+            <div className="auth-field">
+              <label>نام خانوادگی</label>
               <input
                 type="text"
                 name="last_name"
                 value={formData.last_name}
                 onChange={handleChange}
                 placeholder="نام خانوادگی"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B6B6A]"
+                className="auth-input"
                 required
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">شماره موبایل</label>
+          <div className="auth-field">
+            <label>شماره موبایل</label>
             <input
               type="tel"
+              inputMode="numeric"
               name="mobile"
               value={formData.mobile}
               onChange={handleChange}
               placeholder="09120000000"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B6B6A]"
+              className="auth-input"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">رمز عبور</label>
+          <div className="auth-field">
+            <label>رمز عبور</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
               placeholder="حداقل ۶ کاراکتر"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B6B6A]"
+              className="auth-input"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">تکرار رمز عبور</label>
+          <div className="auth-field">
+            <label>تکرار رمز عبور</label>
             <input
               type="password"
               name="password2"
               value={formData.password2}
               onChange={handleChange}
               placeholder="تکرار رمز عبور"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B6B6A]"
+              className="auth-input"
               required
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
-            style={{ background: '#1B6B6A' }}
-            onMouseEnter={e => e.target.style.background = '#134F4E'}
-            onMouseLeave={e => e.target.style.background = '#1B6B6A'}
-          >
+          <button type="submit" disabled={isLoading} className="auth-submit">
             {isLoading ? 'در حال ثبت‌نام...' : 'ثبت‌نام'}
           </button>
         </form>
 
-        <div className="text-center mt-6 text-sm text-gray-600">
-          حساب کاربری دارید؟{' '}
-          <Link to="/login" className="font-medium hover:underline" style={{ color: '#1B6B6A' }}>
-            وارد شوید
-          </Link>
+        <div className="auth-footer-link">
+          حساب کاربری دارید؟ <Link to="/login">وارد شوید</Link>
+        </div>
+
+        <div className="auth-quote">
+          فَإِنِّی لَا أَرَى الْمَوْتَ إِلَّا الشَّهَادَةَ
         </div>
       </div>
+
+      <style>{`
+        .auth-page {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          position: relative;
+          overflow: hidden;
+          background: var(--bg);
+        }
+        .auth-orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(90px);
+          pointer-events: none;
+        }
+        .auth-orb-1 {
+          width: 420px; height: 420px;
+          background: radial-gradient(circle, var(--teal-glow), transparent 70%);
+          top: -80px; right: -100px; opacity: 0.25;
+        }
+        .auth-orb-2 {
+          width: 380px; height: 380px;
+          background: radial-gradient(circle, var(--gold), transparent 70%);
+          bottom: -100px; left: -100px; opacity: 0.18;
+        }
+
+        .auth-card {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          max-width: 460px;
+          background: linear-gradient(160deg, var(--surface-2), var(--surface));
+          border: 1px solid var(--line);
+          border-radius: var(--radius-lg);
+          padding: 36px 32px 28px;
+          box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+        }
+
+        .auth-brand {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 6px;
+          margin-bottom: 28px;
+        }
+        .auth-logo {
+          width: 72px; height: 72px;
+          border-radius: 50%;
+          border: 2px solid var(--gold);
+          overflow: hidden;
+          box-shadow: 0 0 24px rgba(216,181,104,0.25);
+          margin-bottom: 10px;
+        }
+        .auth-logo img { width: 100%; height: 100%; object-fit: cover; }
+        .auth-brand h1 {
+          font-family: var(--font-display);
+          color: var(--gold-light);
+          font-size: 19px;
+        }
+        .auth-brand span {
+          color: var(--ink-dim);
+          font-size: 12px;
+        }
+
+        .auth-message {
+          padding: 12px 14px;
+          border-radius: var(--radius-sm);
+          font-size: 13px;
+          margin-bottom: 18px;
+        }
+        .auth-message.error {
+          background: rgba(122,35,48,0.2);
+          border: 1px solid rgba(122,35,48,0.4);
+          color: #ff9aa8;
+        }
+
+        .auth-form-block { display: flex; flex-direction: column; gap: 16px; }
+        .auth-field-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        .auth-field label {
+          display: block;
+          color: var(--ink-dim);
+          font-size: 13px;
+          margin-bottom: 6px;
+        }
+        .auth-input {
+          width: 100%;
+          padding: 12px 16px;
+          background: rgba(10,21,18,0.6);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-md);
+          color: var(--ink);
+          font-family: var(--font-body);
+          font-size: 14px;
+          outline: none;
+          transition: all .25s ease;
+        }
+        .auth-input::placeholder { color: var(--ink-faint); }
+        .auth-input:focus {
+          border-color: var(--gold);
+          box-shadow: 0 0 0 3px rgba(216,181,104,0.12);
+          background: rgba(10,21,18,0.85);
+        }
+
+        .auth-submit {
+          margin-top: 4px;
+          width: 100%;
+          padding: 13px;
+          border-radius: 999px;
+          border: none;
+          cursor: pointer;
+          font-family: var(--font-body);
+          font-size: 15px;
+          font-weight: 700;
+          color: #1a1206;
+          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          box-shadow: 0 6px 20px -6px rgba(216,181,104,0.45);
+          transition: transform .25s ease, box-shadow .25s ease, opacity .25s ease;
+        }
+        .auth-submit:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 28px -8px rgba(216,181,104,0.6);
+        }
+        .auth-submit:disabled { opacity: 0.65; cursor: not-allowed; }
+
+        .auth-footer-link {
+          text-align: center;
+          margin-top: 20px;
+          font-size: 13px;
+          color: var(--ink-dim);
+        }
+        .auth-footer-link a {
+          color: var(--gold);
+          font-weight: 600;
+        }
+        .auth-footer-link a:hover { color: var(--gold-light); }
+
+        .auth-quote {
+          margin-top: 22px;
+          padding-top: 18px;
+          border-top: 1px solid var(--line);
+          text-align: center;
+          font-family: var(--font-display);
+          color: var(--ink-faint);
+          font-size: 13px;
+          line-height: 2;
+        }
+
+        @media (max-width: 460px) {
+          .auth-field-row { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </div>
   )
 }
