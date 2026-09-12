@@ -12,4 +12,10 @@ urlpatterns = [
     path('registration/<int:pk>/add-companion/', views.AddCompanionView.as_view(), name='add_companion'),
     path('attendance/periods/', views.AttendancePeriodListView.as_view(), name='attendance_periods'),
     path('attendance/record/', views.RecordAttendanceView.as_view(), name='record_attendance'),
+
+    # پنل ادمین
+    path('admin/trips/', views.AdminTripListView.as_view(), name='admin_trip_list'),
+    path('admin/trips/<int:pk>/', views.AdminTripDetailView.as_view(), name='admin_trip_detail'),
+    path('admin/registrations/', views.AdminRegistrationListView.as_view(), name='admin_registration_list'),
+    path('admin/registrations/<int:pk>/action/', views.AdminRegistrationActionView.as_view(), name='admin_registration_action'),
 ]

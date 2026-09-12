@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import useAuthStore from '../store/authStore'
 import logo from '../assets/logo.png'
+import ThemeToggle from './ThemeToggle'
 
 function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore()
@@ -57,6 +58,7 @@ function Navbar() {
 
         {/* CTA */}
         <div className="nav-cta">
+          <ThemeToggle />
           {isAuthenticated ? (
             <>
               <Link to="/dashboard" className="btn btn-gold btn-sm">
@@ -123,6 +125,9 @@ function Navbar() {
               {item.label}
             </Link>
           ))}
+          <div style={{ marginTop: 8 }}>
+            <ThemeToggle />
+          </div>
           <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {isAuthenticated ? (
               <>

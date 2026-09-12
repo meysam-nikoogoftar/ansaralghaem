@@ -6,6 +6,7 @@ const useAuthStore = create((set, get) => ({
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  authChecked: false, // true وقتی مشخص شد کاربر لاگین هست یا نه (جلوگیری از ریدایرکت زودهنگام)
 
   login: async (mobile, password) => {
     set({ isLoading: true, error: null })
@@ -65,7 +66,9 @@ const useAuthStore = create((set, get) => ({
   initAuth: () => {
     const token = localStorage.getItem('access_token')
     if (token) {
-      get().getProfile()
+      get().getProfile().finally(() => set({ authChecked: true }))
+    } else {
+      set({ authChecked: true })
     }
   },
 }))

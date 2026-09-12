@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
 import logo from '../../assets/logo.png'
+import CustomCursor from '../../components/CustomCursor'
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -45,6 +46,7 @@ function Register() {
 
   return (
     <div className="auth-page" dir="rtl">
+      <CustomCursor />
       <div className="auth-orb auth-orb-1" />
       <div className="auth-orb auth-orb-2" />
 

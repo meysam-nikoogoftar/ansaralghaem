@@ -1,6 +1,8 @@
 from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.db.models import Q
+from accounts.permissions import IsAdminOrSuperAdmin
 from .models import Trip, Registration, TravelCompanion, AttendancePeriod, AttendanceRecord
 from .serializers import (
     TripSerializer, RegistrationSerializer, CreateRegistrationSerializer,
@@ -162,3 +164,71 @@ class RecordAttendanceView(APIView):
             return Response({'error': 'دوره یافت نشد یا بسته شده'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ============ پنل ادمین ============
+
+class AdminTripListView(generics.ListCreateAPIView):
+    """لیست همه‌ی سفرها (فعال و غیرفعال) + ایجاد سفر جدید."""
+    permission_classes = [IsAdminOrSuperAdmin]
+    serializer_class = TripSerializer
+    queryset = Trip.objects.all()
+
+
+class AdminTripDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """ویرایش/حذف یک سفر."""
+    permission_classes = [IsAdminOrSuperAdmin]
+    serializer_class = TripSerializer
+    queryset = Trip.objects.all()
+
+
+class AdminRegistrationListView(generics.ListAPIView):
+    """لیست همه‌ی ثبت‌نام‌ها (همه‌ی کاربران) با فیلتر و جستجو."""
+    permission_classes = [IsAdminOrSuperAdmin]
+    serializer_class = RegistrationSerializer
+
+    def get_queryset(self):
+        queryset = Registration.objects.select_related('user', 'trip').order_by('-registered_at')
+        status_param = self.request.query_params.get('status', '')
+        trip_id = self.request.query_params.get('trip_id', '')
+        search = self.request.query_params.get('search', '')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        if trip_id:
+            queryset = queryset.filter(trip_id=trip_id)
+        if search:
+            queryset = queryset.filter(
+                Q(user__first_name__icontains=search) |
+                Q(user__last_name__icontains=search) |
+                Q(user__mobile__icontains=search) |
+                Q(tracking_code__icontains=search)
+            )
+        return queryset
+
+
+class AdminRegistrationActionView(APIView):
+    """تایید یا رد یک ثبت‌نام توسط ادمین. body: {action: 'approve'|'reject', rejection_reason?, admin_note?}"""
+    permission_classes = [IsAdminOrSuperAdmin]
+
+    def post(self, request, pk):
+        try:
+            registration = Registration.objects.get(pk=pk)
+        except Registration.DoesNotExist:
+            return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get('action')
+        if action == 'approve':
+            registration.status = 'approved'
+            registration.rejection_reason = ''
+        elif action == 'reject':
+            registration.status = 'rejected'
+            registration.rejection_reason = request.data.get('rejection_reason', '')
+        else:
+            return Response({'error': 'عملیات نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        admin_note = request.data.get('admin_note')
+        if admin_note is not None:
+            registration.admin_note = admin_note
+
+        registration.save()
+        return Response(RegistrationSerializer(registration).data)

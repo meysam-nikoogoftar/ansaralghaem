@@ -3,12 +3,23 @@ import { Link } from 'react-router-dom'
 import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
 
+// تصاویر محلی سایت
+import heroDomeSunset from '../../assets/hero/hero-1-dome-sunset.jpg'
+import heroAerialNight from '../../assets/hero/hero-2-aerial-night.jpg'
+import heroSilhouette from '../../assets/hero/hero-3-silhouette-prayer.jpg'
+import galleryPoster from '../../assets/gallery/gallery-1-poster.jpg'
+import galleryDomeCloseup from '../../assets/gallery/gallery-2-dome-closeup.jpg'
+import galleryTwinMinarets from '../../assets/gallery/gallery-3-twin-minarets.jpg'
+import galleryRedInterior from '../../assets/gallery/gallery-4-red-interior.jpg'
+import galleryMoonDome from '../../assets/gallery/gallery-5-moon-dome.jpg'
+import aboutBookImage from '../../assets/about-book.jpg'
+
 const toFa = (n) => String(n).padStart(2, '0').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d])
 
 const DEFAULT_SLIDES = [
   {
     id: 1,
-    image: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1400&q=80',
+    image: heroDomeSunset,
     title: 'هفتمین کاروان پیاده‌روی اربعین حسینی',
     summary: 'از تهران تا کربلای معلی؛ همراه کاروان دانشجویی انصار القائم در مسیر عشق.',
     badge: 'ثبت‌نام آغاز شد · ظرفیت محدود',
@@ -17,16 +28,16 @@ const DEFAULT_SLIDES = [
   },
   {
     id: 2,
-    image: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=1400&q=80',
-    title: 'سهمی در کوچ عاشقان داشته باش',
-    summary: 'با مشارکت در قلک اربعین، هزینه سفر زائرین کم‌بضاعت را تأمین کن.',
-    badge: 'پویش مردمی · مغناطیس حسینی',
-    btnLabel: 'مشارکت در قلک',
-    link: '/dashboard/wallet',
+    image: heroAerialNight,
+    title: 'شب‌های حرم، همراه با میلیون‌ها عاشق',
+    summary: 'کاروان با نظارت خادمین هیئت، در کنار جمعیت عظیم زائرین اربعین حسینی.',
+    badge: 'پیاده‌روی اربعین · نجف تا کربلا',
+    btnLabel: 'مشاهده جزئیات کاروان',
+    link: '/dashboard/trips/register',
   },
   {
     id: 3,
-    image: 'https://images.unsplash.com/photo-1519817914152-22d216bb9170?w=1400&q=80',
+    image: heroSilhouette,
     title: 'خادمانی کوچک، برای آقایی بزرگ',
     summary: 'هیئت انصار القائم با جمعی از دانشجویان دلباخته اباعبدالله، از سال ۱۳۹۷.',
     badge: 'هیئت دانشجویی · از سال ۱۳۹۷',
@@ -45,21 +56,21 @@ const GALLERY_TABS = [
 ]
 
 const STATIC_GALLERY = [
-  { id: 1, image: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&q=80', title: 'شب‌های مسیر نجف - کربلا', category: 'night', featured: true },
-  { id: 2, image: 'https://images.unsplash.com/photo-1564769625905520329-2e29472b1f24?w=800&q=80', title: 'گنبد و بارگاه', category: 'dome' },
-  { id: 3, image: 'https://images.unsplash.com/photo-1519817914152-22d216bb9170?w=800&q=80', title: 'خادمین کاروان', category: 'servants' },
-  { id: 4, image: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&q=80', title: 'موکب اربعین', category: 'mokeb' },
-  { id: 5, image: 'https://images.unsplash.com/photo-1519817914152-22d216bb9170?w=800&q=80', title: 'مسیر پیاده‌روی', category: 'path' },
-  { id: 6, image: 'https://images.unsplash.com/photo-1564769625905520329-2e29472b1f24?w=800&q=80', title: 'همراهان قدیمی', category: 'dome' },
-  { id: 7, image: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&q=80', title: 'شب‌های حسینی', category: 'night' },
-  { id: 8, image: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&q=80', title: 'حرم حضرت حسین', category: 'dome' },
+  { id: 1, image: galleryPoster, title: 'پوستر هفتمین کاروان اربعین', category: 'mokeb', featured: true },
+  { id: 2, image: galleryDomeCloseup, title: 'گنبدهای طلایی حرم', category: 'dome' },
+  { id: 3, image: galleryTwinMinarets, title: 'مناره‌های حرم در غروب', category: 'dome' },
+  { id: 4, image: galleryRedInterior, title: 'رواق حرم مطهر', category: 'night' },
+  { id: 5, image: galleryMoonDome, title: 'گنبد طلایی زیر ماه', category: 'night' },
+  { id: 6, image: heroDomeSunset, title: 'غروب بر فراز حرم', category: 'dome' },
+  { id: 7, image: heroAerialNight, title: 'ازدحام زائرین در شب اربعین', category: 'path' },
+  { id: 8, image: heroSilhouette, title: 'دعا در صحن حرم', category: 'servants' },
 ]
 
 const STATIC_NEWS = [
   {
     id: 1,
     title: 'آغاز ثبت‌نام هفتمین دوره کاروان پیاده اربعین انصار القائم',
-    image: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&q=80',
+    image: galleryPoster,
     excerpt: 'ثبت‌نام کاروان با اولویت دانشجویان و اساتید از امروز آغاز شد. ظرفیت محدود است.',
     date: '۱۴۰۵/۰۲/۱۲',
     category: 'ثبت‌نام کاروان',
@@ -68,7 +79,7 @@ const STATIC_NEWS = [
   {
     id: 2,
     title: 'جلسه توجیهی کاروانیان، ۲۹ تیرماه برگزار می‌شود',
-    image: 'https://images.unsplash.com/photo-1519817914152-22d216bb9170?w=800&q=80',
+    image: galleryTwinMinarets,
     excerpt: 'حضور در جلسه توجیهی الزامی بوده و عدم حضور به منزله انصراف تلقی می‌گردد.',
     date: '۱۴۰۵/۰۱/۲۸',
     category: 'اطلاعیه',
@@ -77,7 +88,7 @@ const STATIC_NEWS = [
   {
     id: 3,
     title: 'شروع پویش مغناطیس حسینی در آستانه اربعین',
-    image: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&q=80',
+    image: galleryRedInterior,
     excerpt: 'پویشی مردمی برای جذب کمک‌های خیرین جهت پوشش هزینه زائرین کم‌بضاعت.',
     date: '۱۴۰۴/۱۲/۰۵',
     category: 'پویش مردمی',
@@ -306,7 +317,7 @@ function Home() {
             </div>
 
             <div className="about-visual fade-in-right">
-              <img src="https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&q=80" alt="هیئت انصار القائم" />
+              <img src={aboutBookImage} alt="هیئت انصار القائم" />
               <div className="about-badge">
                 <strong>+۷ سال</strong>
                 <span>خدمت به زائرین حسینی</span>
@@ -500,7 +511,7 @@ function Home() {
                     {item.date || (item.published_at && new Date(item.published_at).toLocaleDateString('fa-IR')) || ''}
                   </span>
                   <img
-                    src={item.image || 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&q=80'}
+                    src={item.image || galleryPoster}
                     alt={item.title}
                     loading="lazy"
                   />
