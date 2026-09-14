@@ -18,4 +18,8 @@ urlpatterns = [
     path('admin/trips/<int:pk>/', views.AdminTripDetailView.as_view(), name='admin_trip_detail'),
     path('admin/registrations/', views.AdminRegistrationListView.as_view(), name='admin_registration_list'),
     path('admin/registrations/<int:pk>/action/', views.AdminRegistrationActionView.as_view(), name='admin_registration_action'),
+    # این خط‌ها رو به urlpatterns تو backend/trips/urls.py اضافه کن (کنار بقیه‌ی روت‌های admin/):
+
+    path('admin/refunds/', views.AdminRefundListView.as_view(), name='admin_refund_list'),
+    path('admin/refunds/<int:pk>/action/', views.AdminRefundActionView.as_view(), name='admin_refund_action'),
 ]

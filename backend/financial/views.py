@@ -190,3 +190,75 @@ class ExpenseCreateView(APIView):
             serializer.save(recorder=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# ========================================================================
+# این بلاک‌ها رو به انتهای فایل backend/financial/views.py اضافه کن
+# (اگه views.py از قبل import هایی مثل rest_framework دار، تکرارشون نکن)
+# ========================================================================
+
+from rest_framework import generics
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, serializers as drf_serializers
+from accounts.permissions import IsAdminOrSuperAdmin
+from .models import Expense, FinancialContribution, ContributionPayment, Wallet, WalletTransaction
+
+
+class ExpenseSerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = Expense
+        fields = '__all__'
+
+
+class FinancialContributionSerializer(drf_serializers.ModelSerializer):
+    class Meta:
+        model = FinancialContribution
+        fields = '__all__'
+
+
+class AdminExpenseListView(generics.ListCreateAPIView):
+    """لیست/ایجاد ریزهزینه‌ها (فقط ادمین/سوپرادمین)."""
+    permission_classes = [IsAdminOrSuperAdmin]
+    serializer_class = ExpenseSerializer
+    queryset = Expense.objects.all().order_by('-id')
+
+
+class AdminExpenseDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """ویرایش/حذف یک ریزهزینه."""
+    permission_classes = [IsAdminOrSuperAdmin]
+    serializer_class = ExpenseSerializer
+    queryset = Expense.objects.all()
+
+
+class AdminContributionListView(generics.ListCreateAPIView):
+    """لیست/ایجاد کمپین‌های مشارکت مالی."""
+    permission_classes = [IsAdminOrSuperAdmin]
+    serializer_class = FinancialContributionSerializer
+    queryset = FinancialContribution.objects.all().order_by('-id')
+
+
+class AdminContributionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """ویرایش/حذف یک کمپین مشارکت مالی."""
+    permission_classes = [IsAdminOrSuperAdmin]
+    serializer_class = FinancialContributionSerializer
+    queryset = FinancialContribution.objects.all()
+
+
+class AdminWalletOverviewView(APIView):
+    """
+    لیست کیف‌پول‌های کاربران به همراه موجودی، برای دید کلی مالی ادمین.
+    """
+    permission_classes = [IsAdminOrSuperAdmin]
+
+    def get(self, request):
+        wallets = Wallet.objects.select_related('user').order_by('-balance')
+        data = [
+            {
+                'user_id': w.user_id,
+                'user_name': f"{w.user.first_name} {w.user.last_name}".strip() or w.user.mobile,
+                'mobile': w.user.mobile,
+                'balance': w.balance,
+            }
+            for w in wallets
+        ]
+        return Response(data)

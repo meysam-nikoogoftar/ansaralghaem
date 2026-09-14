@@ -14,4 +14,11 @@ urlpatterns = [
     path('contributions/pay/', views.ContributionPaymentView.as_view(), name='contribution_pay'),
     path('expenses/', views.ExpenseListView.as_view(), name='expense_list'),
     path('expenses/create/', views.ExpenseCreateView.as_view(), name='expense_create'),
+    # این خط‌ها رو به لیست urlpatterns تو backend/financial/urls.py اضافه کن:
+
+    path('admin/expenses/', views.AdminExpenseListView.as_view(), name='admin_expense_list'),
+    path('admin/expenses/<int:pk>/', views.AdminExpenseDetailView.as_view(), name='admin_expense_detail'),
+    path('admin/contributions/', views.AdminContributionListView.as_view(), name='admin_contribution_list'),
+    path('admin/contributions/<int:pk>/', views.AdminContributionDetailView.as_view(), name='admin_contribution_detail'),
+    path('admin/wallets/', views.AdminWalletOverviewView.as_view(), name='admin_wallet_overview'),
 ]

@@ -10,7 +10,10 @@ const menuItems = [
   { path: '/admin/users', label: 'کاربران', icon: 'users' },
   { path: '/admin/trips', label: 'سفرها', icon: 'plane' },
   { path: '/admin/registrations', label: 'ثبت‌نام‌ها', icon: 'clipboard' },
-  // بخش‌های بعدی (محصولات، محتوا، مالی) در فازهای بعد اضافه می‌شوند
+  { path: '/admin/expenses', label: 'ریزهزینه‌ها', icon: 'wallet' },
+  { path: '/admin/contributions', label: 'مشارکت مالی', icon: 'heart' },
+  { path: '/admin/refunds', label: 'عودت وجه', icon: 'refresh' },
+  // بخش‌های بعدی (محصولات، محتوا) در فازهای بعد اضافه می‌شوند
 ]
 
 const icons = {
@@ -18,6 +21,9 @@ const icons = {
   users: <><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></>,
   plane: <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" />,
   clipboard: <><rect x="9" y="2" width="6" height="4" rx="1" /><path d="M9 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2h-4" /><path d="M9 12l2 2 4-4" /></>,
+  wallet: <><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z" /><circle cx="16" cy="14" r="1" fill="currentColor" stroke="none" /></>,
+  heart: <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.6l-1-1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z" />,
+  refresh: <><path d="M23 4v6h-6" /><path d="M1 20v-6h6" /><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" /></>,
 }
 
 function SvgIcon({ name }) {

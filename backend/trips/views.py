@@ -232,3 +232,63 @@ class AdminRegistrationActionView(APIView):
 
         registration.save()
         return Response(RegistrationSerializer(registration).data)
+
+# این کلاس‌ها رو به انتهای backend/trips/views.py اضافه کن
+# (چون فیلدهای refund_requested/refund_status روی مدل Registration
+# تو اپ trips هستن، نه financial)
+
+class AdminRefundListView(generics.ListAPIView):
+    """لیست درخواست‌های عودت وجه در انتظار بررسی (از انصراف سفر)."""
+    permission_classes = [IsAdminOrSuperAdmin]
+    serializer_class = RegistrationSerializer
+
+    def get_queryset(self):
+        return Registration.objects.filter(
+            refund_requested=True
+        ).select_related('user', 'trip').order_by('-registered_at')
+
+
+class AdminRefundActionView(APIView):
+    """
+    تایید یا رد یک درخواست عودت وجه.
+    body: { "action": "approve" | "reject", "amount"?: عدد اختیاری برای override مبلغ }
+    در حالت تایید، مبلغ به کیف‌پول کاربر اضافه می‌شود و یک تراکنش ثبت می‌شود.
+    """
+    permission_classes = [IsAdminOrSuperAdmin]
+
+    def post(self, request, pk):
+        from financial.models import Wallet, WalletTransaction
+        try:
+            registration = Registration.objects.get(pk=pk, refund_requested=True)
+        except Registration.DoesNotExist:
+            return Response({'error': 'درخواست عودتی با این مشخصات یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get('action')
+        if action == 'approve':
+            amount = request.data.get('amount')
+            try:
+                amount = int(amount) if amount not in (None, '') else int(registration.trip.refund_amount or 0)
+            except (TypeError, ValueError):
+                amount = 0
+
+            wallet, _ = Wallet.objects.get_or_create(user=registration.user)
+            wallet.balance = wallet.balance + amount
+            wallet.save()
+
+            WalletTransaction.objects.create(
+                wallet=wallet,
+                transaction_type='refund',
+                amount=amount,
+                description=f'عودت وجه سفر «{registration.trip.title}» (کد پیگیری {registration.tracking_code})'
+            )
+
+            registration.refund_status = 'approved'
+            registration.save()
+            return Response(RegistrationSerializer(registration).data)
+
+        elif action == 'reject':
+            registration.refund_status = 'rejected'
+            registration.save()
+            return Response(RegistrationSerializer(registration).data)
+
+        return Response({'error': 'عملیات نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)

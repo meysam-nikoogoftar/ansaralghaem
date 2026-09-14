@@ -30,6 +30,9 @@ import AdminDashboard from './pages/Admin/AdminDashboard'
 import AdminUsers from './pages/Admin/AdminUsers'
 import AdminTrips from './pages/Admin/AdminTrips'
 import AdminRegistrations from './pages/Admin/AdminRegistrations'
+import AdminExpenses from './pages/Admin/AdminExpenses'
+import AdminContributions from './pages/Admin/AdminContributions'
+import AdminRefunds from './pages/Admin/AdminRefunds'
 
 // Protected Route (کاربر عادی لاگین‌کرده)
 const ProtectedRoute = ({ children }) => {
@@ -120,6 +123,9 @@ function App() {
             <Route path="users" element={<AdminUsers />} />
             <Route path="trips" element={<AdminTrips />} />
             <Route path="registrations" element={<AdminRegistrations />} />
+            <Route path="expenses" element={<AdminExpenses />} />
+            <Route path="contributions" element={<AdminContributions />} />
+            <Route path="refunds" element={<AdminRefunds />} />
           </Route>
         </Routes>
       </BrowserRouter>

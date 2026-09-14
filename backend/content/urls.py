@@ -14,4 +14,12 @@ urlpatterns = [
     path('downloads/', views.DownloadListView.as_view(), name='download_list'),
     path('sliders/', views.SliderListView.as_view(), name='slider_list'),
     path('announcements/', views.ActiveAnnouncementView.as_view(), name='announcements'),
+    # این خط‌ها رو به urlpatterns تو backend/content/urls.py اضافه کن:
+
+    path('admin/articles/', views.AdminArticleListView.as_view(), name='admin_article_list'),
+    path('admin/articles/<int:pk>/action/', views.AdminArticleActionView.as_view(), name='admin_article_action'),
+    path('admin/gallery/', views.AdminGalleryListView.as_view(), name='admin_gallery_list'),
+    path('admin/gallery/<int:pk>/action/', views.AdminGalleryActionView.as_view(), name='admin_gallery_action'),
+    path('admin/news/', views.AdminNewsListView.as_view(), name='admin_news_list'),
+    path('admin/news/<int:pk>/', views.AdminNewsDetailView.as_view(), name='admin_news_detail'),
 ]

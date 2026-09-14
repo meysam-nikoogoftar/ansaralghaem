@@ -1086,546 +1086,698 @@ footer::before { content: ""; position: absolute; top: 0; left: 0; right: 0; hei
 }
 
 /* ============================================================
-   ============  تم روز (LIGHT MODE) — طراحی مستقل  ============
-   هویت بصری: سبز تیره + Teal + خاکستری-سبز؛ طلایی فقط جزئیات خیلی کوچیک.
-   Dark Mode بالای همین فایل دست‌نخورده مونده.
+   ============  تم روز ۲.۱ — Light, Layered & Editorial  ============
    ============================================================ */
 
 :root[data-theme="light"] {
-  /* --- پس‌زمینه‌ها و سطوح --- */
-  --bg: #F3F6F5;
-  --bg-deep: #EDF3F1;
-  --surface: #FFFFFF;
-  --surface-2: #F8FAF9;
+  --bg: #EEF3F1;
+  --bg-deep: #E5EEEA;
+  --surface: #FBFCFA;
+  --surface-2: #F5F8F6;
 
-  /* --- خانواده‌ی سبز/تیل (برند اصلی) --- */
+  --sect-warm: #F8F7F2;
+  --sect-off: #F0F4F2;
+  --sect-green: #E7F0EC;
+  --sect-teal: #E5F0EE;
+  --sect-gray: #EDF2F0;
+  --sect-cream: #F8F2E7;
+
   --teal: #0F514B;
   --teal-light: #17665E;
   --teal-glow: #158F80;
+  --teal-soft: #287D72;
+  --teal-soft-light: #43A393;
 
-  /* این سه متغیر تو کل پروژه برای دکمه‌های اصلی، تیترها، بوردرها و
-     آیکون‌های برجسته استفاده می‌شن؛ برای تم روز عمداً به‌جای طلایی،
-     از طیف سبز/تیل تیره استفاده می‌کنیم تا هویت بصری «سبز و تیل»
-     حفظ بشه، نه «طلایی/زرد». */
-  --gold: #0F514B;
-  --gold-light: #17665E;
-  --gold-dark: #0B3E39;
-
+  --gold: #9B8050;
+  --gold-light: #B49662;
+  --gold-dark: #745D37;
   --crimson: #B23A50;
 
-  /* --- متن --- */
-  --ink: #173531;
-  --ink-dim: #55635F;
-  --ink-faint: #7B8986;
+  --ink: #18342F;
+  --ink-dim: #5B6C66;
+  --ink-faint: #899892;
 
-  --line: #DCE7E4;
+  --line: #D7E3DE;
+  --line-soft: rgba(15,81,75,0.075);
 
-  /* --- Accent طلایی/برنزی، فقط برای جزئیات خیلی محدود --- */
+  --shadow-xs: 0 2px 7px rgba(24,52,47,0.035);
+  --shadow-sm: 0 5px 16px rgba(24,52,47,0.055), 0 1px 3px rgba(24,52,47,0.035);
+  --shadow-md: 0 12px 34px rgba(24,52,47,0.075), 0 2px 8px rgba(24,52,47,0.035);
+  --shadow-lg: 0 22px 55px -18px rgba(24,52,47,0.18), 0 5px 14px rgba(24,52,47,0.045);
+
   --accent-soft: #A99465;
-  --accent-soft-strong: #C1AC7A;
+  --accent-soft-strong: #C0A975;
 
-  /* تُن سبز روشن‌تر، مخصوص سطح‌های بزرگ (بنرها/کارت‌های پرشده) تا از
-     همون سبز پررنگ اصلی (دکمه‌ها/تیترها) سبک‌تر و آروم‌تر باشه */
-  --teal-soft: #1C7A6E;
-  --teal-soft-light: #2E9684;
-
-  /* --- توکن‌های کمکی فرم/پنل --- */
-  --input-bg: #FFFFFF;
+  --input-bg: #F9FBFA;
   --input-bg-focus: #FFFFFF;
-  --panel-inset-bg: #F3F6F5;
+  --panel-inset-bg: #EAF1EE;
+
+  --pat-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke='%230F514B' stroke-width='0.8'%3E%3Crect x='26' y='26' width='32' height='32'/%3E%3Crect x='26' y='26' width='32' height='32' transform='rotate(45 42 42)'/%3E%3Ccircle cx='42' cy='42' r='2.2'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-girih: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cg fill='none' stroke='%230F514B' stroke-width='0.7'%3E%3Cpath d='M38 7l8 23 23 8-23 8-8 23-8-23-23-8 23-8z'/%3E%3Ccircle cx='38' cy='38' r='7.5'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-lattice: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%230F514B' stroke-width='0.6'%3E%3Cpath d='M28 0L56 28 28 56 0 28z'/%3E%3Cpath d='M28 13l15 15-15 15-15-15z'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-arabesque: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%230F514B' stroke-width='0.7'%3E%3Cpath d='M60 0c0 33 27 60 60 60-33 0-60 27-60 60 0-33-27-60-60-60 33 0 60-27 60-60z'/%3E%3Ccircle cx='60' cy='60' r='3.5'/%3E%3C/g%3E%3C/svg%3E");
+  --orn-divider: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='14' viewBox='0 0 240 14'%3E%3Cg fill='none' stroke='%230F514B' stroke-width='1'%3E%3Cpath d='M0 7h96M144 7h240'/%3E%3Cpath d='M120 2l5 5-5 5-5-5z'/%3E%3C/g%3E%3Cg fill='%230F514B'%3E%3Ccircle cx='106' cy='7' r='1.5'/%3E%3Ccircle cx='134' cy='7' r='1.5'/%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* ------------------------------------------------------------
-   پس‌زمینه‌ی سراسری صفحه: نرم‌تر، بدون گرادیان‌های زرد سنگین
-   ------------------------------------------------------------ */
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(900px 520px at 8% 9%, rgba(21,143,128,0.055), transparent 68%),
+    radial-gradient(850px 520px at 92% 38%, rgba(169,148,101,0.035), transparent 66%),
+    linear-gradient(180deg, #F2F5F3 0%, #EDF3F0 48%, #E9F0ED 100%);
+  color: var(--ink);
+}
+
 :root[data-theme="light"] body::before {
   background:
-    radial-gradient(1000px 600px at 15% 10%, rgba(15,81,75,0.055), transparent 60%),
-    radial-gradient(900px 500px at 85% 80%, rgba(21,143,128,0.05), transparent 60%);
+    radial-gradient(700px 420px at 18% 14%, rgba(21,143,128,0.045), transparent 68%),
+    radial-gradient(650px 420px at 84% 74%, rgba(169,148,101,0.035), transparent 68%);
+  opacity: 1;
+  animation: none;
 }
-:root[data-theme="light"] body::after { opacity: 0.25; }
-:root[data-theme="light"] .orb { opacity: 0.10; }
+
+:root[data-theme="light"] body::after {
+  background-image:
+    var(--pat-lattice),
+    repeating-linear-gradient(45deg, rgba(15,81,75,0.018) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(-45deg, rgba(169,148,101,0.012) 0 1px, transparent 1px 44px);
+  background-size: 112px 112px, auto, auto;
+  opacity: 0.19;
+}
+
+:root[data-theme="light"] .orb { opacity: 0.055; filter: blur(100px); }
 :root[data-theme="light"] .orb-1,
 :root[data-theme="light"] .orb-3 { background: radial-gradient(circle, var(--teal-glow), transparent 70%); }
-:root[data-theme="light"] .orb-2 { background: radial-gradient(circle, var(--accent-soft-strong), transparent 70%); opacity: 0.08; }
+:root[data-theme="light"] .orb-2 { background: radial-gradient(circle, var(--accent-soft-strong), transparent 70%); opacity: 0.035; }
+:root[data-theme="light"] .particle { display: none; }
+
+:root[data-theme="light"] ::selection { background: rgba(21,143,128,0.16); color: var(--ink); }
+:root[data-theme="light"] ::-webkit-scrollbar { width: 10px; }
+:root[data-theme="light"] ::-webkit-scrollbar-track { background: #E8EFEC; }
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #BFCFC9;
+  border-radius: 8px;
+  border: 2px solid #E8EFEC;
+}
 
 :root[data-theme="light"] .scroll-progress-bar {
-  background: linear-gradient(90deg, var(--teal-glow), var(--teal), var(--teal-light));
-  box-shadow: 0 0 10px rgba(15,81,75,0.35);
+  background: linear-gradient(90deg, #0F514B, #158F80, #9B8050);
+  box-shadow: 0 0 9px rgba(21,143,128,0.28);
 }
 
-/* ------------------------------------------------------------
-   نشانگر سفارشی موس — سبز/تیل پررنگ‌تر + هاله‌ی سفید دور نقطه تا
-   رو پس‌زمینه‌ی روشن هم واضح دیده بشه (Glow رنگی رو سفید اصلاً
-   دیده نمی‌شه، پس به‌جاش از یه بوردر/سایه‌ی واقعی استفاده شده)
-   ------------------------------------------------------------ */
 :root[data-theme="light"] .cursor-dot {
-  width: 8px; height: 8px;
+  width: 8px;
+  height: 8px;
   background: #0E6B5F;
-  box-shadow: 0 0 0 2px #ffffff, 0 2px 6px rgba(15,81,75,0.45);
+  box-shadow: 0 0 0 2px #F7FAF8, 0 2px 7px rgba(15,81,75,0.42);
 }
+
 :root[data-theme="light"] .cursor-ring {
   border-width: 2px;
   border-color: #0E6B5F;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.9), 0 2px 8px rgba(15,81,75,0.2);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.8), 0 2px 8px rgba(15,81,75,0.18);
 }
+
 :root[data-theme="light"] .cursor-ring.hover {
   border-color: var(--teal-glow);
-  background: rgba(21,143,128,0.1);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.9), 0 4px 14px rgba(15,81,75,0.28);
+  background: rgba(21,143,128,0.08);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.85), 0 5px 16px rgba(15,81,75,0.22);
 }
 
-/* ------------------------------------------------------------
-   ناوبار — روشن، مینیمال، تمیز
-   ------------------------------------------------------------ */
 :root[data-theme="light"] .navbar {
-  background: rgba(255,255,255,0.86);
-  border-bottom: 1px solid var(--line);
-  box-shadow: 0 1px 0 rgba(15,81,75,0.03);
-}
-:root[data-theme="light"] .brand-logo {
-  box-shadow: 0 4px 16px rgba(15,81,75,0.18);
-}
-:root[data-theme="light"] .nav-links a:hover {
-  background: rgba(15,81,75,0.06);
-}
-:root[data-theme="light"] .nav-links a.active {
-  background: rgba(15,81,75,0.08);
+  background: rgba(250,252,250,0.88);
+  backdrop-filter: blur(18px) saturate(1.25);
+  border-bottom: 1px solid rgba(15,81,75,0.08);
+  box-shadow: 0 5px 24px rgba(24,52,47,0.065);
 }
 
-/* ------------------------------------------------------------
-   دکمه‌ها
-   ------------------------------------------------------------ */
+:root[data-theme="light"] .brand-text h1 { color: var(--teal); }
+:root[data-theme="light"] .brand-text span { color: var(--ink-dim); }
+:root[data-theme="light"] .brand-logo {
+  border-color: var(--teal);
+  box-shadow: 0 5px 16px rgba(15,81,75,0.16);
+}
+:root[data-theme="light"] .nav-links a { color: var(--ink-dim); }
+:root[data-theme="light"] .nav-links a:hover,
+:root[data-theme="light"] .nav-links a.active {
+  color: var(--teal);
+  background: rgba(15,81,75,0.065);
+}
+:root[data-theme="light"] .nav-links a::after { background: var(--teal); }
+
 :root[data-theme="light"] .btn-gold {
-  color: #FFFFFF;
-  box-shadow: 0 8px 20px -6px rgba(15,81,75,0.4);
+  color: #fff;
+  background: linear-gradient(135deg, #176B60, #0F514B 58%, #0B423C);
+  box-shadow: 0 8px 20px -7px rgba(15,81,75,0.42);
 }
 :root[data-theme="light"] .btn-gold:hover {
-  box-shadow: 0 12px 26px -6px rgba(15,81,75,0.5);
+  box-shadow: 0 13px 28px -8px rgba(15,81,75,0.5);
 }
 :root[data-theme="light"] .btn-ghost {
-  background: #FFFFFF;
-  color: var(--ink);
-  border-color: var(--line);
+  background: rgba(250,252,250,0.82);
+  color: var(--teal);
+  border-color: rgba(15,81,75,0.18);
 }
 :root[data-theme="light"] .btn-ghost:hover {
   border-color: var(--teal);
-  color: var(--teal);
-  background: rgba(15,81,75,0.05);
-  box-shadow: 0 4px 14px -4px rgba(15,81,75,0.2);
+  background: #FBFCFA;
+  box-shadow: 0 7px 18px -8px rgba(15,81,75,0.28);
+}
+:root[data-theme="light"] .ripple { background: rgba(255,255,255,0.45); }
+
+:root[data-theme="light"] .hero-slider {
+  border-bottom: none;
+  box-shadow: 0 16px 38px -28px rgba(10,35,30,0.35);
 }
 
-/* ------------------------------------------------------------
-   اسکرول‌ریوال، سکشن‌ها — جداسازی خیلی ظریف بین بخش‌ها
-   ------------------------------------------------------------ */
+:root[data-theme="light"] .hero-slider::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  left: 0;
+  bottom: -1px;
+  height: 58px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 58' preserveAspectRatio='none'%3E%3Cpath fill='%23F8F7F2' d='M0,58 L0,34 C210,5 470,44 710,37 C970,29 1200,4 1440,23 L1440,58 Z'/%3E%3C/svg%3E") bottom center / 100% 100% no-repeat;
+  z-index: 4;
+  pointer-events: none;
+}
+
+:root[data-theme="light"] .slide-overlay {
+  background: linear-gradient(115deg, rgba(6,13,11,0.66) 0%, rgba(10,21,18,0.22) 48%, rgba(10,21,18,0.5) 100%);
+}
+:root[data-theme="light"] .slide-title {
+  background: linear-gradient(135deg, #E2F0EC 0%, #A8D9CE 55%, #E2F0EC 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+:root[data-theme="light"] .slide-desc { color: #F0F3EE; }
+:root[data-theme="light"] .slide-badge {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.24);
+  color: #EDF6F2;
+}
+:root[data-theme="light"] .slider-arrow {
+  color: #E9F2EE;
+  border-color: rgba(255,255,255,0.28);
+  background: rgba(8,35,30,0.55);
+}
+:root[data-theme="light"] .slider-arrow:hover { border-color: rgba(255,255,255,0.55); }
+:root[data-theme="light"] .dot.active { background: #67C8B4; box-shadow: 0 0 9px rgba(103,200,180,0.62); }
+
+:root[data-theme="light"] section {
+  padding: 84px 0;
+  position: relative;
+  overflow: hidden;
+}
+:root[data-theme="light"] .section-head { margin-bottom: 46px; }
+:root[data-theme="light"] section .container { position: relative; z-index: 1; }
+:root[data-theme="light"] .section-title {
+  background: linear-gradient(135deg, #123F39, #177268);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+:root[data-theme="light"] .section-kicker { color: var(--teal-glow); }
 :root[data-theme="light"] .section-desc { color: var(--ink-dim); }
 
-/* --- کارت‌های ویژگی (About) --- */
+:root[data-theme="light"] section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: var(--sect-pattern, none);
+  background-size: 112px 112px;
+  opacity: var(--sect-pattern-opacity, 0);
+}
+
+:root[data-theme="light"] section:has(.about-grid),
+:root[data-theme="light"] .sect-about {
+  background:
+    radial-gradient(680px 360px at 85% 5%, rgba(21,143,128,0.065), transparent 68%),
+    linear-gradient(180deg, #F8F7F2 0%, #F5F6F2 100%);
+  --sect-pattern: var(--pat-arabesque);
+  --sect-pattern-opacity: 0.026;
+}
+
+:root[data-theme="light"] section:has(.stats-section),
+:root[data-theme="light"] .sect-stats {
+  background: linear-gradient(180deg, #F1F4F2 0%, #EDF2F0 100%);
+  border-top: 1px solid rgba(15,81,75,0.055);
+  border-bottom: 1px solid rgba(15,81,75,0.04);
+}
+
+:root[data-theme="light"] section:has(.countdown-section),
+:root[data-theme="light"] section:has(.caravan-card),
+:root[data-theme="light"] .sect-event {
+  background:
+    radial-gradient(700px 360px at 12% 18%, rgba(21,143,128,0.055), transparent 68%),
+    linear-gradient(180deg, #E8F0EC 0%, #EDF5F1 100%);
+  --sect-pattern: var(--pat-star);
+  --sect-pattern-opacity: 0.035;
+  border-top: 1px solid rgba(15,81,75,0.06);
+}
+
+:root[data-theme="light"] section:has(.promo-grid),
+:root[data-theme="light"] .sect-promo {
+  background: linear-gradient(180deg, #F1F4F2 0%, #EDF1EF 100%);
+  --sect-pattern: var(--pat-lattice);
+  --sect-pattern-opacity: 0.018;
+}
+
+:root[data-theme="light"] section:has(.news-grid),
+:root[data-theme="light"] .sect-news {
+  background:
+    radial-gradient(760px 380px at 88% 12%, rgba(169,148,101,0.032), transparent 68%),
+    #EDF2F0;
+  border-top: 1px solid rgba(15,81,75,0.055);
+}
+
+:root[data-theme="light"] section:has(.gallery-grid),
+:root[data-theme="light"] .sect-gallery {
+  background:
+    radial-gradient(700px 360px at 50% 0%, rgba(21,143,128,0.06), transparent 70%),
+    linear-gradient(180deg, #E5F0EE 0%, #ECF4F1 58%, #F0F5F3 100%);
+  --sect-pattern: var(--pat-girih);
+  --sect-pattern-opacity: 0.04;
+}
+
+:root[data-theme="light"] section:has(.donate-card),
+:root[data-theme="light"] .sect-donate {
+  background:
+    radial-gradient(600px 340px at 50% 20%, rgba(178,58,80,0.035), transparent 70%),
+    linear-gradient(180deg, #F8F2E7 0%, #F7F3EA 100%);
+  --sect-pattern: var(--pat-arabesque);
+  --sect-pattern-opacity: 0.028;
+}
+
+:root[data-theme="light"] .quote-section {
+  background:
+    radial-gradient(600px 300px at 50% 10%, rgba(21,143,128,0.045), transparent 70%),
+    #EFF3F1;
+  padding: 74px 0;
+  --sect-pattern: var(--pat-arabesque);
+  --sect-pattern-opacity: 0.026;
+  border-top: 1px solid rgba(15,81,75,0.04);
+}
+
+:root[data-theme="light"] .quote-text {
+  background: linear-gradient(135deg, #123F39, #158F80);
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-size: 24px;
+}
+:root[data-theme="light"] .quote-author { color: var(--teal-light); }
+
+:root[data-theme="light"] section:has(.panel-cta),
+:root[data-theme="light"] .sect-cta {
+  background:
+    radial-gradient(700px 340px at 18% 50%, rgba(21,143,128,0.07), transparent 70%),
+    linear-gradient(180deg, #E7F0EC 0%, #E2ECE8 100%);
+  --sect-pattern: var(--pat-lattice);
+  --sect-pattern-opacity: 0.035;
+}
+
+:root[data-theme="light"] section:has(.about-grid)::after,
+:root[data-theme="light"] section:has(.countdown-section)::after,
+:root[data-theme="light"] section:has(.gallery-grid)::after,
+:root[data-theme="light"] .quote-section::after {
+  content: "";
+  position: absolute;
+  bottom: 20px;
+  right: 50%;
+  transform: translateX(50%);
+  width: 240px;
+  height: 14px;
+  background: var(--orn-divider) center / contain no-repeat;
+  opacity: 0.23;
+  pointer-events: none;
+}
+
+:root[data-theme="light"] .about-text p { color: var(--ink-dim); }
 :root[data-theme="light"] .feature {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: 0 1px 3px rgba(15,81,75,0.04);
+  background: rgba(252,253,251,0.86);
+  border: 1px solid rgba(15,81,75,0.095);
+  box-shadow: var(--shadow-sm);
 }
 :root[data-theme="light"] .feature::before {
-  background: linear-gradient(90deg, transparent, rgba(15,81,75,0.05), transparent);
+  background: linear-gradient(90deg, transparent, rgba(21,143,128,0.055), transparent);
 }
 :root[data-theme="light"] .feature:hover {
-  border-color: var(--teal-light);
-  box-shadow: -6px 6px 24px -10px rgba(15,81,75,0.18);
+  border-color: rgba(21,143,128,0.3);
+  box-shadow: var(--shadow-md);
 }
 :root[data-theme="light"] .feature h4 { color: var(--teal); }
-
-/* --- بخش‌هایی که واقعاً یک عکس زیرشونه (about-visual و gallery-item
-   خودشون <img> واقعی دارن) — باید هویت گرم/تیره‌ی خودشون رو حفظ کنن
-   وگرنه متن روشون رو عکس تیره ناخوانا می‌شه --- */
-:root[data-theme="light"] .about-visual,
-:root[data-theme="light"] .gallery-item {
-  --gold: #d8b568;
-  --gold-light: #f2dea3;
-  --gold-dark: #a9843f;
-  --teal-glow: #4bd6ac;
-  --ink: #eee6d6;
-  --ink-dim: #af9f88;
-  --ink-faint: #7b7267;
-  --line: rgba(216,181,104,0.16);
+:root[data-theme="light"] .feature p { color: var(--ink-dim); }
+:root[data-theme="light"] .feature-icon {
+  background: linear-gradient(135deg, var(--teal), var(--teal-glow));
+  color: #ECF8F4;
+  box-shadow: 0 7px 18px -7px rgba(15,81,75,0.42);
 }
-:root[data-theme="light"] .news-img {
-  --gold-light: #f2dea3;
-  --line: rgba(216,181,104,0.16);
+:root[data-theme="light"] .about-visual {
+  border: 1px solid rgba(15,81,75,0.1);
+  box-shadow: var(--shadow-lg);
 }
-
-/* --- اسلایدر Hero: فقط متن/بج/فلش‌هایی که مستقیم روی عکس نشستن گرم
-   می‌مونن؛ دکمه‌ها (btn-gold/btn-ghost) چون خودشون پس‌زمینه‌ی توپُر دارن
-   و روی عکس ناخوانا نمی‌شن، سبز می‌مونن و طلایی/زرد نمی‌شن */
-:root[data-theme="light"] .hero-slider .slide-title,
-:root[data-theme="light"] .hero-slider .slide-desc,
-:root[data-theme="light"] .hero-slider .slide-badge,
-:root[data-theme="light"] .hero-slider .slider-arrow,
-:root[data-theme="light"] .hero-slider .slider-dots,
-:root[data-theme="light"] .hero-slider .dot {
-  --gold: #d8b568;
-  --gold-light: #f2dea3;
-  --gold-dark: #a9843f;
-  --teal-glow: #4bd6ac;
-  --ink: #eee6d6;
-  --ink-dim: #af9f88;
-  --line: rgba(216,181,104,0.16);
+:root[data-theme="light"] .about-visual::after {
+  background: linear-gradient(180deg, transparent 55%, rgba(23,42,38,0.56));
 }
+:root[data-theme="light"] .about-badge {
+  background: rgba(249,251,249,0.9);
+  border: 1px solid rgba(15,81,75,0.1);
+  box-shadow: var(--shadow-sm);
+}
+:root[data-theme="light"] .about-badge strong { color: var(--teal); }
+:root[data-theme="light"] .about-badge span { color: var(--ink-dim); }
 
-/* --- آمار (Stats) --- */
 :root[data-theme="light"] .stats-section {
-  background: linear-gradient(135deg, #FFFFFF, var(--surface-2));
-  border: 1px solid var(--line);
-  box-shadow: 0 2px 10px rgba(15,81,75,0.04);
+  padding: 40px 28px;
+  background:
+    radial-gradient(420px 180px at 12% 15%, rgba(21,143,128,0.055), transparent 70%),
+    linear-gradient(160deg, #FBFCFA 0%, #F0F5F2 100%);
+  border: 1px solid rgba(15,81,75,0.09);
+  box-shadow: var(--shadow-md);
+}
+:root[data-theme="light"] .stats-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--pat-star);
+  background-size: 92px 92px;
+  opacity: 0.022;
+  pointer-events: none;
 }
 :root[data-theme="light"] .stats-section::after {
-  background: linear-gradient(90deg, transparent, var(--teal-glow), transparent);
+  background: linear-gradient(90deg, transparent, rgba(21,143,128,0.45), transparent);
 }
+:root[data-theme="light"] .stat-num {
+  font-size: 44px;
+  background: linear-gradient(135deg, #123F39, #158F80);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+:root[data-theme="light"] .stat-label { color: var(--ink-dim); }
 :root[data-theme="light"] .stat-icon {
-  background: rgba(15,81,75,0.07);
-  border: 1px solid var(--line);
+  background: rgba(21,143,128,0.075);
+  border: 1px solid rgba(21,143,128,0.17);
   color: var(--teal);
 }
 :root[data-theme="light"] .stat-card:hover .stat-icon {
-  background: rgba(15,81,75,0.13);
-  border-color: var(--teal);
-  box-shadow: 0 6px 16px -6px rgba(15,81,75,0.3);
+  background: rgba(21,143,128,0.13);
+  border-color: var(--teal-glow);
+  box-shadow: 0 7px 18px -7px rgba(21,143,128,0.35);
 }
-:root[data-theme="light"] .stat-label { color: var(--ink-dim); }
 
-/* --- شمارش معکوس --- */
 :root[data-theme="light"] .count-box {
-  background: linear-gradient(180deg, #FFFFFF, var(--surface-2));
-  border: 1px solid var(--line);
-  box-shadow: 0 1px 4px rgba(15,81,75,0.05);
+  background: linear-gradient(180deg, #FCFDFC, #F4F8F6);
+  border: 1px solid rgba(15,81,75,0.09);
+  box-shadow: var(--shadow-sm);
 }
 :root[data-theme="light"] .count-box:hover {
-  border-color: var(--teal);
-  box-shadow: 0 12px 24px -10px rgba(15,81,75,0.22);
+  border-color: rgba(21,143,128,0.32);
+  box-shadow: var(--shadow-md);
 }
-:root[data-theme="light"] .count-sep { color: var(--teal); }
+:root[data-theme="light"] .count-label { color: var(--ink-dim); }
 
-/* --- کاروان --- */
 :root[data-theme="light"] .caravan-card {
-  background: linear-gradient(180deg, #FFFFFF, var(--surface-2));
-  border: 1px solid var(--line);
-  box-shadow: 0 2px 12px rgba(15,81,75,0.05);
+  background:
+    radial-gradient(480px 220px at 10% 0%, rgba(21,143,128,0.045), transparent 70%),
+    linear-gradient(145deg, #FBFCFA 0%, #F0F5F2 100%);
+  border: 1px solid rgba(15,81,75,0.095);
+  box-shadow: var(--shadow-lg);
 }
 :root[data-theme="light"] .caravan-tag {
-  background: rgba(178,58,80,0.08);
-  border-color: rgba(178,58,80,0.25);
-  color: #A02C42;
+  background: rgba(178,58,80,0.065);
+  border: 1px solid rgba(178,58,80,0.19);
+  color: #A23348;
 }
+:root[data-theme="light"] .caravan-tag::before { background: #B23A50; }
 :root[data-theme="light"] .caravan-route { color: var(--ink-dim); }
-:root[data-theme="light"] .detail-item,
-:root[data-theme="light"] .donate-stat {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+:root[data-theme="light"] .detail-item {
+  background: rgba(238,246,242,0.82);
+  border: 1px solid rgba(15,81,75,0.085);
+  box-shadow: 0 3px 12px rgba(24,52,47,0.035);
+}
+:root[data-theme="light"] .detail-item:hover {
+  border-color: rgba(21,143,128,0.34);
+  box-shadow: var(--shadow-sm);
 }
 :root[data-theme="light"] .detail-item .label { color: var(--ink-dim); }
 :root[data-theme="light"] .detail-item .value { color: var(--teal); }
 
-/* --- گالری تب‌ها --- */
-:root[data-theme="light"] .gallery-tabs .gallery-tab {
-  border-color: var(--line);
-  color: var(--ink-dim);
-  background: #FFFFFF;
-}
-:root[data-theme="light"] .gallery-tab:hover { color: var(--teal); border-color: var(--teal); }
-:root[data-theme="light"] .gallery-tab.active { color: #FFFFFF; box-shadow: 0 4px 14px -4px rgba(15,81,75,0.4); }
-
-/* --- کارت‌های پرومو (فروشگاه صنایع‌دستی / اطلاعیه کاروانیان) ---
-   این کارت‌ها عکس واقعی زیرشون ندارن (پس‌زمینه‌ی تیره‌شون فقط یه گرادیان
-   دکوراتیوه، نه Overlay روی عکس)، پس باید کامل با تم روز هماهنگ بشن */
-:root[data-theme="light"] .promo-card::before { opacity: 0.05; }
-:root[data-theme="light"] .promo-card::after {
-  background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(248,250,249,0.92));
-}
 :root[data-theme="light"] .promo-card {
-  border: 1px solid var(--line);
-  box-shadow: 0 2px 10px rgba(15,81,75,0.05);
+  border: 1px solid rgba(15,81,75,0.085);
+  box-shadow: var(--shadow-md);
 }
-:root[data-theme="light"] .promo-card.gold-theme,
-:root[data-theme="light"] .promo-card.teal-theme {
-  background: linear-gradient(135deg, #FFFFFF, var(--surface-2));
+:root[data-theme="light"] .promo-card::after {
+  background: linear-gradient(135deg, rgba(252,253,251,0.94), rgba(235,243,239,0.9));
 }
-:root[data-theme="light"] .promo-card:hover.gold-theme,
-:root[data-theme="light"] .promo-card:hover.teal-theme {
-  border-color: var(--teal);
-  box-shadow: 0 18px 34px -18px rgba(15,81,75,0.28);
-}
-:root[data-theme="light"] .gold-theme .promo-icon,
-:root[data-theme="light"] .teal-theme .promo-icon {
-  background: rgba(15,81,75,0.1);
-  color: var(--teal);
-  border: 1px solid rgba(15,81,75,0.25);
-}
+:root[data-theme="light"] .promo-card::before { opacity: 0.1; }
+:root[data-theme="light"] .promo-card:hover::before { opacity: 0.18; }
 :root[data-theme="light"] .promo-card h3 { color: var(--teal); }
 :root[data-theme="light"] .promo-card p { color: var(--ink-dim); }
 :root[data-theme="light"] .promo-link { color: var(--teal); }
 :root[data-theme="light"] .promo-card:hover .promo-link { color: var(--teal-light); }
+:root[data-theme="light"] .gold-theme .promo-icon {
+  background: rgba(169,148,101,0.12);
+  color: #826D43;
+  border: 1px solid rgba(169,148,101,0.26);
+}
+:root[data-theme="light"] .teal-theme .promo-icon {
+  background: rgba(21,143,128,0.085);
+  color: var(--teal);
+  border: 1px solid rgba(21,143,128,0.22);
+}
+:root[data-theme="light"] .promo-card:hover { box-shadow: var(--shadow-lg); }
+:root[data-theme="light"] .promo-card:hover.teal-theme { border-color: rgba(21,143,128,0.35); }
+:root[data-theme="light"] .promo-card:hover.gold-theme { border-color: rgba(169,148,101,0.42); }
 
-/* --- اخبار --- */
+:root[data-theme="light"] .gallery-tab {
+  background: rgba(250,252,250,0.82);
+  border-color: rgba(15,81,75,0.09);
+  color: var(--ink-dim);
+  box-shadow: var(--shadow-xs);
+}
+:root[data-theme="light"] .gallery-tab:hover { color: var(--teal); border-color: rgba(15,81,75,0.28); }
+:root[data-theme="light"] .gallery-tab.active {
+  color: #fff;
+  box-shadow: 0 7px 18px -7px rgba(15,81,75,0.42);
+}
+:root[data-theme="light"] .gallery-tab.active::before {
+  background: linear-gradient(135deg, #176B60, #0F514B);
+}
+:root[data-theme="light"] .gallery-item {
+  background: #F9FBFA;
+  border: 1px solid rgba(255,255,255,0.72);
+  box-shadow: var(--shadow-md);
+}
+:root[data-theme="light"] .gallery-item:hover {
+  border-color: rgba(255,255,255,0.95);
+  box-shadow: var(--shadow-lg);
+}
+:root[data-theme="light"] .gallery-item::after {
+  background: linear-gradient(180deg, transparent 45%, rgba(23,42,38,0.62));
+}
+:root[data-theme="light"] .gallery-caption {
+  color: #F2EFE6;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.35);
+}
+:root[data-theme="light"] .gallery-caption::before { color: #8FD0C2; }
+
 :root[data-theme="light"] .news-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: 0 1px 4px rgba(15,81,75,0.04);
+  background: rgba(251,252,250,0.94);
+  border: 1px solid rgba(15,81,75,0.085);
+  box-shadow: var(--shadow-sm);
 }
 :root[data-theme="light"] .news-card::before {
-  background: linear-gradient(90deg, var(--teal-glow), var(--teal), var(--teal-glow));
+  background: linear-gradient(90deg, var(--teal-glow), var(--gold), var(--teal-glow));
 }
 :root[data-theme="light"] .news-card:hover {
-  border-color: var(--teal);
-  box-shadow: 0 16px 32px -18px rgba(15,81,75,0.3);
+  border-color: rgba(15,81,75,0.22);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-8px);
+}
+:root[data-theme="light"] .news-img::after {
+  background: linear-gradient(180deg, transparent 55%, rgba(23,42,38,0.4));
+}
+:root[data-theme="light"] .news-date {
+  background: rgba(250,252,250,0.9);
+  border: 1px solid rgba(15,81,75,0.09);
+  color: var(--teal);
+  box-shadow: var(--shadow-xs);
 }
 :root[data-theme="light"] .news-cat { color: var(--teal-glow); }
 :root[data-theme="light"] .news-title { color: var(--teal); }
-:root[data-theme="light"] .news-card:hover .news-title { color: var(--teal-light); }
 :root[data-theme="light"] .news-excerpt { color: var(--ink-dim); }
 :root[data-theme="light"] .news-link { color: var(--teal); }
-:root[data-theme="light"] .news-card:hover .news-link { color: var(--teal-light); }
 
-/* --- مشارکت مالی (Donate) — کرمسون رو نگه می‌داریم چون رنگ هشدار/فوریت محتواییه --- */
 :root[data-theme="light"] .donate-card {
-  background: linear-gradient(135deg, rgba(178,58,80,0.06), var(--surface-2));
-  border: 1px solid rgba(178,58,80,0.18);
+  background:
+    radial-gradient(520px 300px at 50% 0%, rgba(178,58,80,0.035), transparent 72%),
+    linear-gradient(150deg, #FCFCFA 0%, #F8F1E6 100%);
+  border: 1px solid rgba(169,148,101,0.24);
+  box-shadow: var(--shadow-lg);
 }
 :root[data-theme="light"] .donate-card::before {
-  background: radial-gradient(circle, rgba(178,58,80,0.12), transparent 70%);
+  background: radial-gradient(circle, rgba(178,58,80,0.055), transparent 70%);
 }
-:root[data-theme="light"] .donate-icon {
-  background: linear-gradient(145deg, #E7566F, #B23A50);
-  box-shadow: 0 10px 26px -8px rgba(178,58,80,0.55), inset 0 1px 0 rgba(255,255,255,0.25);
-}
-:root[data-theme="light"] .donate-icon::before {
-  border-color: #C94A63;
-}
-:root[data-theme="light"] .donate-card h3 { -webkit-text-fill-color: var(--teal); background: none; }
 :root[data-theme="light"] .donate-card p { color: var(--ink-dim); }
+:root[data-theme="light"] .donate-icon {
+  background: linear-gradient(135deg, #B23A50, #C9556B);
+  color: #FFF6EC;
+  box-shadow: 0 11px 25px -11px rgba(178,58,80,0.48);
+}
 :root[data-theme="light"] .progress-info .label { color: var(--ink-dim); }
 :root[data-theme="light"] .progress-info .value { color: var(--teal); }
-:root[data-theme="light"] .progress-bar { background: rgba(15,81,75,0.08); }
+:root[data-theme="light"] .progress-bar { background: rgba(23,53,49,0.07); }
 :root[data-theme="light"] .progress-fill {
-  background: linear-gradient(90deg, var(--teal), var(--teal-light), var(--teal-glow));
-  box-shadow: 0 0 10px rgba(15,81,75,0.35);
+  background: linear-gradient(90deg, #0F514B, #158F80 60%, #2EA98F);
+  box-shadow: 0 2px 8px rgba(21,143,128,0.32);
 }
-:root[data-theme="light"] .donate-stat strong { color: var(--teal); }
-:root[data-theme="light"] .donate-stat span { color: var(--ink-dim); }
-
-/* --- نقل قول --- */
-:root[data-theme="light"] .quote-section {
-  background: linear-gradient(180deg, transparent, var(--bg-deep));
+:root[data-theme="light"] .donate-stat {
+  background: rgba(255,255,255,0.72);
+  border: 1px solid rgba(15,81,75,0.08);
 }
-:root[data-theme="light"] .quote-text { -webkit-text-fill-color: var(--teal); background: none; }
-:root[data-theme="light"] .quote-author { color: var(--teal-glow); }
+:root[data-theme="light"] .donate-stat:hover {
+  border-color: rgba(169,148,101,0.42);
+  box-shadow: var(--shadow-sm);
+}
 
-/* --- پنل CTA --- */
 :root[data-theme="light"] .panel-cta {
-  background: linear-gradient(135deg, #FFFFFF, var(--surface-2));
-  border: 1px solid var(--line);
-  box-shadow: 0 2px 12px rgba(15,81,75,0.05);
+  background:
+    radial-gradient(560px 260px at 18% 45%, rgba(21,143,128,0.08), transparent 70%),
+    linear-gradient(135deg, #FBFCFA 0%, #F1F6F3 100%);
+  border: 1px solid rgba(15,81,75,0.085);
+  box-shadow: var(--shadow-lg);
 }
 :root[data-theme="light"] .panel-cta::before {
-  background: radial-gradient(600px 300px at 20% 50%, rgba(15,81,75,0.06), transparent 60%),
-              radial-gradient(600px 300px at 80% 50%, rgba(21,143,128,0.05), transparent 60%);
+  background:
+    radial-gradient(640px 300px at 18% 40%, rgba(21,143,128,0.07), transparent 65%),
+    radial-gradient(640px 300px at 82% 60%, rgba(169,148,101,0.07), transparent 65%);
 }
-:root[data-theme="light"] .panel-cta h3 { -webkit-text-fill-color: var(--teal); background: none; }
 :root[data-theme="light"] .panel-cta p { color: var(--ink-dim); }
 
-/* --- فوتر --- */
 :root[data-theme="light"] footer {
-  background: var(--bg-deep);
-  border-top: 1px solid var(--line);
-}
-:root[data-theme="light"] footer::before {
-  background: linear-gradient(90deg, transparent, var(--teal), transparent);
-}
-:root[data-theme="light"] .footer-col h4 { color: var(--teal); }
-:root[data-theme="light"] .footer-col a:hover { color: var(--teal); }
-:root[data-theme="light"] .footer-brand p { color: var(--ink-dim); }
-:root[data-theme="light"] .footer-bottom { color: var(--ink-faint); border-top-color: var(--line); }
-:root[data-theme="light"] .footer-social a {
-  background: #FFFFFF; border-color: var(--line); color: var(--ink-dim);
-}
-:root[data-theme="light"] .footer-social a::before {
-  background: linear-gradient(135deg, var(--teal), var(--teal-glow));
-}
-:root[data-theme="light"] .footer-social a:hover {
-  color: #FFFFFF; box-shadow: 0 6px 16px -6px rgba(15,81,75,0.4);
+  margin-top: 0;
+  padding: 76px 0 28px;
+  background:
+    radial-gradient(700px 340px at 15% 5%, rgba(67,163,147,0.12), transparent 68%),
+    radial-gradient(620px 360px at 88% 72%, rgba(180,150,98,0.055), transparent 70%),
+    linear-gradient(180deg, #0A332E 0%, #072C28 52%, #051F1C 100%);
+  border-top: 0;
+  color: #E7F1ED;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 -18px 48px -34px rgba(6,30,26,0.45);
 }
 
-/* --- ناوبار پایین موبایل --- */
-:root[data-theme="light"] .bottom-nav {
-  background: rgba(255,255,255,0.94);
-  border-top: 1px solid var(--line);
+:root[data-theme="light"] footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 4%, rgba(180,150,98,0.55) 25%, rgba(67,163,147,0.9) 50%, rgba(180,150,98,0.55) 75%, transparent 96%);
+  z-index: 3;
 }
+
+:root[data-theme="light"] footer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.09;
+  background-image:
+    var(--pat-girih),
+    radial-gradient(circle at center, rgba(255,255,255,0.05) 0 1px, transparent 1.5px);
+  background-size: 118px 118px, 22px 22px;
+  mix-blend-mode: screen;
+}
+
+:root[data-theme="light"] footer > * {
+  position: relative;
+  z-index: 2;
+}
+
+:root[data-theme="light"] .footer-grid {
+  margin-bottom: 38px;
+}
+
+:root[data-theme="light"] .footer-col h4 {
+  color: #D5B777;
+  margin-bottom: 17px;
+}
+
+:root[data-theme="light"] .footer-col a {
+  color: #B7CBC5;
+}
+
+:root[data-theme="light"] .footer-col a:hover {
+  color: #F0E0B8;
+}
+
+:root[data-theme="light"] .footer-brand p {
+  color: #A9C0B9;
+}
+
+:root[data-theme="light"] .footer-bottom {
+  border-top-color: rgba(214,183,119,0.17);
+  color: #809A93;
+}
+
+:root[data-theme="light"] .footer-social a {
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(203,222,215,0.16);
+  color: #C7D8D3;
+  box-shadow: 0 5px 16px rgba(0,0,0,0.12);
+}
+
+:root[data-theme="light"] .footer-social a::before {
+  background: linear-gradient(135deg, #B49662, #17665E);
+}
+
+:root[data-theme="light"] .footer-social a:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: 0 10px 24px -8px rgba(0,0,0,0.35);
+}
+
+:root[data-theme="light"] .bottom-nav {
+  background: rgba(248,251,249,0.94);
+  backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(15,81,75,0.1);
+  box-shadow: 0 -7px 26px rgba(23,53,49,0.08);
+}
+:root[data-theme="light"] .bottom-nav-item { color: var(--ink-dim); }
 :root[data-theme="light"] .bottom-nav-item:hover { color: var(--teal); }
 :root[data-theme="light"] .bottom-nav-item.active {
-  color: var(--teal); background: rgba(15,81,75,0.07);
-}
-:root[data-theme="light"] .bottom-nav-item.active svg {
-  stroke: var(--teal); filter: drop-shadow(0 0 4px rgba(15,81,75,0.3));
+  color: var(--teal);
+  background: rgba(21,143,128,0.085);
 }
 :root[data-theme="light"] .bottom-nav-item.active::before {
-  background: linear-gradient(90deg, var(--teal), var(--teal-light));
-  box-shadow: 0 0 8px rgba(15,81,75,0.35);
+  background: linear-gradient(90deg, var(--teal), var(--teal-glow));
+  box-shadow: none;
+}
+:root[data-theme="light"] .bottom-nav-item.active svg { filter: none; }
+
+@media (max-width: 900px) {
+  :root[data-theme="light"] section { padding: 58px 0; }
+  :root[data-theme="light"] .section-head { margin-bottom: 36px; }
+  :root[data-theme="light"] .stats-section { padding: 30px 18px; }
+  :root[data-theme="light"] .stat-num { font-size: 36px; }
+  :root[data-theme="light"] .hero-slider::after {
+    height: 48px;
+    background: linear-gradient(180deg, rgba(248,247,242,0) 0%, rgba(248,247,242,0.58) 60%, #F8F7F2 100%);
+  }
+  :root[data-theme="light"] section:has(.about-grid)::after,
+  :root[data-theme="light"] section:has(.countdown-section)::after,
+  :root[data-theme="light"] section:has(.gallery-grid)::after,
+  :root[data-theme="light"] .quote-section::after { width: 190px; }
+  :root[data-theme="light"] footer { padding: 62px 0 24px; }
 }
 
-/* ------------------------------------------------------------
-   پنل کاربری / پنل ادمین / احراز هویت
-   (این کلاس‌ها تو فایل‌های جدا تعریف شدن؛ چون این سلکتورها اختصاصی‌تر
-   از تعریف اصلی‌شونن، همینجا override می‌شن — بدون باز کردن اون فایل‌ها)
-   ------------------------------------------------------------ */
-
-/* اینپوت‌های فرم در همه‌ی صفحات پنل کاربری/ادمین/ورود */
-:root[data-theme="light"] .auth-input,
-:root[data-theme="light"] .pf-input,
-:root[data-theme="light"] .tr-input,
-:root[data-theme="light"] .wl-input,
-:root[data-theme="light"] .tk-input,
-:root[data-theme="light"] .mg-input,
-:root[data-theme="light"] .mg-file-input,
-:root[data-theme="light"] .ma-input,
-:root[data-theme="light"] .tg-input,
-:root[data-theme="light"] .pd-input,
-:root[data-theme="light"] .atp-input,
-:root[data-theme="light"] .aus-search-input,
-:root[data-theme="light"] .art-search-input,
-:root[data-theme="light"] .art-reject-input {
-  background: #FFFFFF;
-  border-color: var(--line);
-  color: var(--ink);
+@media (max-width: 560px) {
+  :root[data-theme="light"] section { padding: 48px 0; }
+  :root[data-theme="light"] .stats-section { padding: 26px 14px; }
+  :root[data-theme="light"] footer { padding: 52px 0 22px; }
 }
-:root[data-theme="light"] .auth-input:focus,
-:root[data-theme="light"] .pf-input:focus,
-:root[data-theme="light"] .tr-input:focus,
-:root[data-theme="light"] .wl-input:focus,
-:root[data-theme="light"] .tk-input:focus,
-:root[data-theme="light"] .mg-input:focus,
-:root[data-theme="light"] .ma-input:focus,
-:root[data-theme="light"] .tg-input:focus,
-:root[data-theme="light"] .pd-input:focus,
-:root[data-theme="light"] .atp-input:focus,
-:root[data-theme="light"] .aus-search-input:focus,
-:root[data-theme="light"] .art-search-input:focus,
-:root[data-theme="light"] .art-reject-input:focus {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(15,81,75,0.1);
-}
-:root[data-theme="light"] .auth-input::placeholder,
-:root[data-theme="light"] .pf-input::placeholder,
-:root[data-theme="light"] .tr-input::placeholder,
-:root[data-theme="light"] .wl-input::placeholder,
-:root[data-theme="light"] .tk-input::placeholder,
-:root[data-theme="light"] .ma-input::placeholder,
-:root[data-theme="light"] .tg-input::placeholder,
-:root[data-theme="light"] .atp-input::placeholder,
-:root[data-theme="light"] .aus-search-input::placeholder,
-:root[data-theme="light"] .art-search-input::placeholder {
-  color: var(--ink-faint);
-}
-
-/* کارت‌های احراز هویت (Login/Register) */
-:root[data-theme="light"] .auth-page { background: var(--bg); }
-:root[data-theme="light"] .auth-card {
-  background: #FFFFFF;
-  border-color: var(--line);
-  box-shadow: 0 20px 50px -20px rgba(15,81,75,0.18);
-}
-:root[data-theme="light"] .auth-orb-1,
-:root[data-theme="light"] .auth-orb-2 { opacity: 0.08; }
-:root[data-theme="light"] .auth-submit,
-:root[data-theme="light"] .tk-submit-btn,
-:root[data-theme="light"] .tk-send-btn,
-:root[data-theme="light"] .ma-submit-btn,
-:root[data-theme="light"] .mg-submit-btn,
-:root[data-theme="light"] .pf-submit,
-:root[data-theme="light"] .tr-submit,
-:root[data-theme="light"] .wl-charge-btn,
-:root[data-theme="light"] .mt-new-btn,
-:root[data-theme="light"] .tk-new-btn,
-:root[data-theme="light"] .mg-new-btn,
-:root[data-theme="light"] .db-quicklink,
-:root[data-theme="light"] .atp-new-btn,
-:root[data-theme="light"] .atp-submit-btn {
-  color: #FFFFFF;
-  box-shadow: 0 8px 20px -6px rgba(15,81,75,0.4);
-}
-
-/* پنل‌های داخلی تیره (رنگ ثابت rgba(10,21,18..) که تو چندتا فایل جدا استفاده شده) */
-:root[data-theme="light"] .tr-conditions,
-:root[data-theme="light"] .tk-msg-bubble,
-:root[data-theme="light"] .mt-financials {
-  background: var(--surface-2);
-  border-color: var(--line);
-  color: var(--ink);
-}
-:root[data-theme="light"] .mt-financials p { color: var(--ink-faint); }
-:root[data-theme="light"] .mt-financials strong { color: var(--ink); }
-:root[data-theme="light"] .tk-msg-row.mine .tk-msg-bubble {
-  background: linear-gradient(135deg, var(--teal), var(--teal-light));
-  color: #FFFFFF;
-}
-
-/* بج‌های رنگی نقش (پنل ادمین) */
-:root[data-theme="light"] .adm-role-badge {
-  background: rgba(15,81,75,0.08);
-  color: var(--teal);
-  border-color: rgba(15,81,75,0.25);
-}
-:root[data-theme="light"] .adm-role-badge.super {
-  background: rgba(178,58,80,0.08);
-  color: #A02C42;
-  border-color: rgba(178,58,80,0.25);
-}
-:root[data-theme="light"] .adm-topbar { background: #FFFFFF; border-bottom-color: var(--line); }
-:root[data-theme="light"] .adm-sidebar { background: #FFFFFF; border-left-color: var(--line); }
-:root[data-theme="light"] .adm-nav-item.active {
-  background: rgba(15,81,75,0.08); color: var(--teal); border-color: rgba(15,81,75,0.25);
-}
-:root[data-theme="light"] .adm-nav-item:hover { background: var(--surface-2); color: var(--ink); }
-
-/* آیکون‌باکس‌های آماری داشبورد کاربری/ادمین */
-:root[data-theme="light"] .db-stat-icon,
-:root[data-theme="light"] .db-quicklink-icon,
-:root[data-theme="light"] .adb-card {
-  background: var(--surface);
-}
-:root[data-theme="light"] .db-stat-icon {
-  background: rgba(15,81,75,0.08);
-  color: var(--teal);
-}
-
-/* بنرهای بزرگ پرشده (خوش‌آمدگویی داشبورد، کارت موجودی کیف پول) —
-   از تُن سبز روشن‌تر استفاده می‌کنن تا سطح بزرگ سنگین به‌نظر نرسه،
-   و چون h1/h2 روشون قبلاً رنگش var(--gold-light) بود (که الان سبزه)
-   با پس‌زمینه یکی می‌شد و محو می‌شد — الان سفید شده تا خونا بمونه */
-:root[data-theme="light"] .db-welcome,
-:root[data-theme="light"] .wl-balance-card {
-  background: linear-gradient(135deg, var(--teal-soft), var(--teal-soft-light));
-  box-shadow: 0 12px 30px -14px rgba(28,122,110,0.4);
-}
-:root[data-theme="light"] .db-welcome h1,
-:root[data-theme="light"] .wl-balance-card h2 {
-  color: #FFFFFF;
-  -webkit-text-fill-color: #FFFFFF;
-}
-:root[data-theme="light"] .db-welcome p,
-:root[data-theme="light"] .wl-balance-card p {
-  color: rgba(255,255,255,0.85);
-}
-:root[data-theme="light"] .db-welcome-avatar {
-  background: rgba(255,255,255,0.2);
-  border-color: rgba(255,255,255,0.55);
-  color: #FFFFFF;
-}
-
-/* ------------------------------------------------------------
-   Scrollbar سبک (فقط زیبایی، اختیاری ولی به حس Premium کمک می‌کنه)
-   ------------------------------------------------------------ */
-:root[data-theme="light"] ::-webkit-scrollbar { width: 10px; height: 10px; }
-:root[data-theme="light"] ::-webkit-scrollbar-track { background: var(--bg); }
-:root[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: var(--line); border-radius: 999px; border: 2px solid var(--bg);
-}
-:root[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: var(--teal-light); }
