@@ -28,6 +28,19 @@
   --input-bg: rgba(10,21,18,0.6);
   --input-bg-focus: rgba(10,21,18,0.85);
   --panel-inset-bg: rgba(10,21,18,0.5);
+
+  /* توکن‌های رنگ وضعیت (پابرجا در همه‌ی صفحات: ثبت‌نام، تیکت، گالری، دلنوشته، عودت وجه و...)
+     در تم شب همون رنگ‌های پاستلی قبلی‌ان؛ در تم روز پررنگ‌تر می‌شن تا رو پس‌زمینه‌ی روشن محو نشن */
+  --status-warn: #d8b568;
+  --status-warn-bg: rgba(216,181,104,0.12);
+  --status-ok: #4bd6ac;
+  --status-ok-bg: rgba(75,214,172,0.12);
+  --status-danger: #ff6b7d;
+  --status-danger-bg: rgba(255,107,125,0.12);
+  --status-neutral: #af9f88;
+  --status-neutral-bg: rgba(175,159,136,0.12);
+  --status-info: #7fb7ff;
+  --status-info-bg: rgba(127,183,255,0.12);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -563,26 +576,26 @@ section { padding: 70px 0; position: relative; }
 .promo-card:hover::before { opacity: 0.3; transform: scale(1.1); }
 .promo-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(6,13,11,0.85), rgba(15,32,25,0.7)); }
 .promo-card > * { position: relative; z-index: 2; }
-.promo-card.gold-theme { background: linear-gradient(135deg, rgba(216,181,104,0.08), rgba(169,132,63,0.04)); }
+.promo-card.gold-theme { background: linear-gradient(135deg, rgba(15,111,92,0.1), rgba(31,163,130,0.04)); }
 .promo-card.teal-theme { background: linear-gradient(135deg, rgba(15,111,92,0.12), rgba(31,163,130,0.04)); }
-.promo-card:hover.gold-theme { border-color: var(--gold); box-shadow: 0 20px 40px -15px rgba(216,181,104,0.3); }
+.promo-card:hover.gold-theme { border-color: var(--teal-glow); box-shadow: 0 20px 40px -15px rgba(15,111,92,0.3); }
 .promo-card:hover.teal-theme { border-color: var(--teal-glow); box-shadow: 0 20px 40px -15px rgba(79,214,172,0.3); }
 .promo-icon {
   width: 52px; height: 52px; border-radius: 14px;
   display: grid; place-items: center; font-size: 24px; margin-bottom: 14px;
   transition: all .4s ease;
 }
-.gold-theme .promo-icon { background: rgba(216,181,104,0.15); color: var(--gold-light); border: 1px solid rgba(216,181,104,0.3); }
+.gold-theme .promo-icon { background: rgba(15,111,92,0.12); color: var(--teal-glow); border: 1px solid rgba(15,111,92,0.3); }
 .teal-theme .promo-icon { background: rgba(79,214,172,0.12); color: var(--teal-glow); border: 1px solid rgba(79,214,172,0.3); }
 .promo-card:hover .promo-icon { transform: rotate(-10deg) scale(1.1); }
 .promo-card h3 { font-family: var(--font-display); font-size: 22px; margin-bottom: 8px; line-height: 1.4; }
-.gold-theme.promo-card h3 { color: var(--gold-light); }
+.gold-theme.promo-card h3 { color: var(--teal-glow); }
 .teal-theme.promo-card h3 { color: var(--teal-glow); }
 .promo-card p { color: var(--ink-dim); font-size: 13px; margin-bottom: 16px; line-height: 1.8; }
-.gold-theme .promo-link { color: var(--gold); }
+.gold-theme .promo-link { color: var(--teal-glow); }
 .teal-theme .promo-link { color: var(--teal-glow); }
 .promo-link { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; transition: gap .3s; }
-.gold-theme.promo-card:hover .promo-link { gap: 14px; color: var(--gold-light); }
+.gold-theme.promo-card:hover .promo-link { gap: 14px; color: var(--teal-light); }
 .teal-theme.promo-card:hover .promo-link { gap: 14px; color: var(--teal-light); }
 
 /* ============ GALLERY ============ */
@@ -1137,6 +1150,17 @@ footer::before { content: ""; position: absolute; top: 0; left: 0; right: 0; hei
   --input-bg-focus: #FFFFFF;
   --panel-inset-bg: #EAF1EE;
 
+  --status-warn: #A8720C;
+  --status-warn-bg: rgba(168,114,12,0.14);
+  --status-ok: #0E9F6E;
+  --status-ok-bg: rgba(14,159,110,0.14);
+  --status-danger: #E11D48;
+  --status-danger-bg: rgba(225,29,72,0.14);
+  --status-neutral: #6B6156;
+  --status-neutral-bg: rgba(107,97,86,0.14);
+  --status-info: #2563EB;
+  --status-info-bg: rgba(37,99,235,0.14);
+
   --pat-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke='%230F514B' stroke-width='0.8'%3E%3Crect x='26' y='26' width='32' height='32'/%3E%3Crect x='26' y='26' width='32' height='32' transform='rotate(45 42 42)'/%3E%3Ccircle cx='42' cy='42' r='2.2'/%3E%3C/g%3E%3C/svg%3E");
   --pat-girih: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cg fill='none' stroke='%230F514B' stroke-width='0.7'%3E%3Cpath d='M38 7l8 23 23 8-23 8-8 23-8-23-23-8 23-8z'/%3E%3Ccircle cx='38' cy='38' r='7.5'/%3E%3C/g%3E%3C/svg%3E");
   --pat-lattice: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%230F514B' stroke-width='0.6'%3E%3Cpath d='M28 0L56 28 28 56 0 28z'/%3E%3Cpath d='M28 13l15 15-15 15-15-15z'/%3E%3C/g%3E%3C/svg%3E");
@@ -1287,6 +1311,8 @@ footer::before { content: ""; position: absolute; top: 0; left: 0; right: 0; hei
   background: rgba(8,35,30,0.55);
 }
 :root[data-theme="light"] .slider-arrow:hover { border-color: rgba(255,255,255,0.55); }
+:root[data-theme="light"] .dot { background: rgba(15,81,75,0.18); }
+:root[data-theme="light"] .dot:hover { background: rgba(15,81,75,0.32); }
 :root[data-theme="light"] .dot.active { background: #67C8B4; box-shadow: 0 0 9px rgba(103,200,180,0.62); }
 
 :root[data-theme="light"] section {
@@ -1539,13 +1565,16 @@ footer::before { content: ""; position: absolute; top: 0; left: 0; right: 0; hei
 :root[data-theme="light"] .promo-card::before { opacity: 0.1; }
 :root[data-theme="light"] .promo-card:hover::before { opacity: 0.18; }
 :root[data-theme="light"] .teal-theme.promo-card h3 { color: var(--teal); }
+:root[data-theme="light"] .gold-theme.promo-card h3 { color: var(--teal); }
 :root[data-theme="light"] .promo-card p { color: var(--ink-dim); }
 :root[data-theme="light"] .teal-theme .promo-link { color: var(--teal); }
+:root[data-theme="light"] .gold-theme .promo-link { color: var(--teal); }
 :root[data-theme="light"] .teal-theme.promo-card:hover .promo-link { color: var(--teal-light); }
+:root[data-theme="light"] .gold-theme.promo-card:hover .promo-link { color: var(--teal-light); }
 :root[data-theme="light"] .gold-theme .promo-icon {
-  background: rgba(169,148,101,0.12);
-  color: #826D43;
-  border: 1px solid rgba(169,148,101,0.26);
+  background: rgba(21,143,128,0.075);
+  color: var(--teal);
+  border: 1px solid rgba(21,143,128,0.17);
 }
 :root[data-theme="light"] .teal-theme .promo-icon {
   background: rgba(21,143,128,0.085);
@@ -1554,7 +1583,7 @@ footer::before { content: ""; position: absolute; top: 0; left: 0; right: 0; hei
 }
 :root[data-theme="light"] .promo-card:hover { box-shadow: var(--shadow-lg); }
 :root[data-theme="light"] .promo-card:hover.teal-theme { border-color: rgba(21,143,128,0.35); }
-:root[data-theme="light"] .promo-card:hover.gold-theme { border-color: rgba(169,148,101,0.42); }
+:root[data-theme="light"] .promo-card:hover.gold-theme { border-color: rgba(21,143,128,0.35); }
 
 :root[data-theme="light"] .gallery-tab {
   background: rgba(250,252,250,0.82);
@@ -1764,6 +1793,18 @@ footer::before { content: ""; position: absolute; top: 0; left: 0; right: 0; hei
   box-shadow: none;
 }
 :root[data-theme="light"] .bottom-nav-item.active svg { filter: none; }
+
+/* بج نقش ادمین/سوپرادمین (AdminLayout) — در تم روز نسخه‌ی تیره‌ترشون تا رو پس‌زمینه‌ی روشن واضح بمونن */
+:root[data-theme="light"] .adm-role-badge {
+  background: rgba(155,128,80,0.14);
+  color: #7A5F30;
+  border-color: rgba(155,128,80,0.35);
+}
+:root[data-theme="light"] .adm-role-badge.super {
+  background: rgba(225,29,72,0.12);
+  color: #B4123A;
+  border-color: rgba(225,29,72,0.35);
+}
 
 @media (max-width: 900px) {
   :root[data-theme="light"] section { padding: 58px 0; }

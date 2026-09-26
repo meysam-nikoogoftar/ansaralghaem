@@ -52,12 +52,12 @@ function Dashboard() {
   ]
 
   const statusConfig = {
-    approved: { label: 'تایید شده', color: '#4bd6ac' },
-    pending: { label: 'در انتظار', color: '#d8b568' },
-    rejected: { label: 'رد شده', color: '#ff6b7d' },
-    cancelled: { label: 'انصراف داده', color: '#af9f88' },
-    attended: { label: 'شرکت کرد', color: '#4bd6ac' },
-    absent: { label: 'شرکت نکرد', color: '#ff6b7d' },
+    approved: { label: 'تایید شده', color: 'var(--status-ok)', bg: 'var(--status-ok-bg)' },
+    pending: { label: 'در انتظار', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
+    rejected: { label: 'رد شده', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
+    cancelled: { label: 'انصراف داده', color: 'var(--status-neutral)', bg: 'var(--status-neutral-bg)' },
+    attended: { label: 'شرکت کرد', color: 'var(--status-ok)', bg: 'var(--status-ok-bg)' },
+    absent: { label: 'شرکت نکرد', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
   }
 
   return (
@@ -121,7 +121,7 @@ function Dashboard() {
                   style={{
                     color: statusConfig[trip.status]?.color,
                     borderColor: statusConfig[trip.status]?.color,
-                    background: `${statusConfig[trip.status]?.color}1a`,
+                    background: statusConfig[trip.status]?.bg,
                   }}
                 >
                   {statusConfig[trip.status]?.label || trip.status}

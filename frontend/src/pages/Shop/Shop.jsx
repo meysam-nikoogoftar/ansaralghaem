@@ -112,10 +112,10 @@ function Shop() {
           transition: all .3s ease;
           font-family: var(--font-body);
         }
-        .sp-cat-btn:hover { color: var(--gold-light); border-color: var(--gold); }
+        .sp-cat-btn:hover { color: var(--teal-glow); border-color: var(--teal-glow); }
         .sp-cat-btn.active {
-          color: #1a1206; border-color: transparent;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold));
+          color: #eefaf5; border-color: transparent;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal));
         }
 
         .sp-loading, .sp-empty {
@@ -137,27 +137,27 @@ function Shop() {
         }
         .sp-card:hover {
           transform: translateY(-8px);
-          border-color: var(--gold);
-          box-shadow: 0 25px 45px -20px rgba(216,181,104,0.3);
+          border-color: var(--teal-glow);
+          box-shadow: 0 25px 45px -20px rgba(15,111,92,0.3);
         }
         .sp-card img { width: 100%; height: 190px; object-fit: cover; }
         .sp-card-placeholder {
           width: 100%; height: 190px;
           display: grid; place-items: center;
-          background: rgba(10,21,18,0.5);
+          background: var(--panel-inset-bg);
           font-size: 40px;
         }
         .sp-card-body { padding: 16px; }
         .sp-card-body h2 { color: var(--ink); font-size: 14px; font-weight: 700; margin-bottom: 4px; }
         .sp-card-body p { color: var(--ink-faint); font-size: 11px; margin-bottom: 12px; }
         .sp-card-footer { display: flex; align-items: center; justify-content: space-between; }
-        .sp-price { color: var(--gold-light); font-weight: 700; font-size: 14px; }
+        .sp-price { color: var(--teal-glow); font-weight: 700; font-size: 14px; }
         .sp-price-old { color: var(--ink-faint); font-size: 11px; text-decoration: line-through; }
         .sp-stock {
           font-size: 11px; padding: 4px 10px; border-radius: 999px;
         }
-        .sp-stock.in { background: rgba(75,214,172,0.12); color: var(--teal-glow); }
-        .sp-stock.out { background: rgba(255,107,125,0.12); color: #ff9aa8; }
+        .sp-stock.in { background: var(--status-ok-bg); color: var(--status-ok); }
+        .sp-stock.out { background: var(--status-danger-bg); color: var(--status-danger); }
       `}</style>
     </div>
   )

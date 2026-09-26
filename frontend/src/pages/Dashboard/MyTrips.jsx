@@ -14,18 +14,18 @@ function MyTrips() {
   }, [])
 
   const statusConfig = {
-    pending: { label: 'در انتظار بررسی', color: '#d8b568' },
-    approved: { label: 'تایید شده', color: '#4bd6ac' },
-    rejected: { label: 'رد شده', color: '#ff6b7d' },
-    cancelled: { label: 'انصراف داده', color: '#af9f88' },
-    attended: { label: 'شرکت کرد', color: '#7fb7ff' },
-    absent: { label: 'شرکت نکرد', color: '#ff6b7d' },
+    pending: { label: 'در انتظار بررسی', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
+    approved: { label: 'تایید شده', color: 'var(--status-ok)', bg: 'var(--status-ok-bg)' },
+    rejected: { label: 'رد شده', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
+    cancelled: { label: 'انصراف داده', color: 'var(--status-neutral)', bg: 'var(--status-neutral-bg)' },
+    attended: { label: 'شرکت کرد', color: 'var(--status-info)', bg: 'var(--status-info-bg)' },
+    absent: { label: 'شرکت نکرد', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
   }
 
   const paymentConfig = {
-    unpaid: { label: 'پرداخت نشده', color: '#ff6b7d' },
-    partial: { label: 'نیمه‌کامل', color: '#d8b568' },
-    paid: { label: 'پرداخت کامل', color: '#4bd6ac' },
+    unpaid: { label: 'پرداخت نشده', color: 'var(--status-danger)' },
+    partial: { label: 'نیمه‌کامل', color: 'var(--status-warn)' },
+    paid: { label: 'پرداخت کامل', color: 'var(--status-ok)' },
   }
 
   const handleCancel = async (id) => {
@@ -68,7 +68,7 @@ function MyTrips() {
                   style={{
                     color: statusConfig[trip.status]?.color,
                     borderColor: statusConfig[trip.status]?.color,
-                    background: `${statusConfig[trip.status]?.color}1a`,
+                    background: statusConfig[trip.status]?.bg,
                   }}
                 >
                   {statusConfig[trip.status]?.label}

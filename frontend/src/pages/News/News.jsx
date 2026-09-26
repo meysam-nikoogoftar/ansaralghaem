@@ -74,8 +74,8 @@ function News() {
         }
         .nw-card:hover {
           transform: translateY(-8px);
-          border-color: var(--gold);
-          box-shadow: 0 25px 45px -20px rgba(216,181,104,0.3);
+          border-color: var(--teal-glow);
+          box-shadow: 0 25px 45px -20px rgba(15,111,92,0.3);
         }
         .nw-card img {
           width: 100%; height: 170px; object-fit: cover;
@@ -85,7 +85,7 @@ function News() {
         .nw-card-body { padding: 18px; flex: 1; display: flex; flex-direction: column; }
         .nw-card-body h2 {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 16px;
           line-height: 1.6;
           margin-bottom: 8px;

@@ -46,15 +46,15 @@ function MyTickets() {
   }
 
   const statusConfig = {
-    pending: { label: 'در انتظار پاسخ', color: '#d8b568' },
-    answered: { label: 'پاسخ داده شده', color: '#4bd6ac' },
-    closed: { label: 'بسته شده', color: '#af9f88' },
+    pending: { label: 'در انتظار پاسخ', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
+    answered: { label: 'پاسخ داده شده', color: 'var(--status-ok)', bg: 'var(--status-ok-bg)' },
+    closed: { label: 'بسته شده', color: 'var(--status-neutral)', bg: 'var(--status-neutral-bg)' },
   }
 
   const priorityConfig = {
-    low: { label: 'کم', color: '#af9f88' },
-    medium: { label: 'متوسط', color: '#d8b568' },
-    high: { label: 'زیاد', color: '#ff6b7d' },
+    low: { label: 'کم', color: 'var(--status-neutral)' },
+    medium: { label: 'متوسط', color: 'var(--status-warn)' },
+    high: { label: 'زیاد', color: 'var(--status-danger)' },
   }
 
   if (selectedTicket) {
@@ -170,7 +170,7 @@ function MyTickets() {
                 style={{
                   color: statusConfig[ticket.status]?.color,
                   borderColor: statusConfig[ticket.status]?.color,
-                  background: `${statusConfig[ticket.status]?.color}1a`,
+                  background: statusConfig[ticket.status]?.bg,
                 }}
               >
                 {statusConfig[ticket.status]?.label}

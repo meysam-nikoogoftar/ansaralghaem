@@ -51,7 +51,7 @@ function NewsDetail() {
           display: flex; align-items: center; gap: 8px;
           margin-bottom: 24px;
         }
-        .nd-back:hover { color: var(--gold-light); }
+        .nd-back:hover { color: var(--teal-glow); }
 
         .nd-image {
           width: 100%; height: 320px; object-fit: cover;
@@ -62,7 +62,7 @@ function NewsDetail() {
 
         .nd-title {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 26px;
           line-height: 1.5;
           margin-bottom: 16px;

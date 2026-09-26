@@ -23,12 +23,12 @@ function TrackRegistration() {
   }
 
   const statusConfig = {
-    pending: { label: 'در انتظار بررسی', color: '#d8b568' },
-    approved: { label: 'تایید شده', color: '#4bd6ac' },
-    rejected: { label: 'رد شده', color: '#ff6b7d' },
-    cancelled: { label: 'انصراف داده', color: '#af9f88' },
-    attended: { label: 'شرکت کرد', color: '#7fb7ff' },
-    absent: { label: 'شرکت نکرد', color: '#ff6b7d' },
+    pending: { label: 'در انتظار بررسی', color: 'var(--status-warn)' },
+    approved: { label: 'تایید شده', color: 'var(--status-ok)' },
+    rejected: { label: 'رد شده', color: 'var(--status-danger)' },
+    cancelled: { label: 'انصراف داده', color: 'var(--status-neutral)' },
+    attended: { label: 'شرکت کرد', color: 'var(--status-info)' },
+    absent: { label: 'شرکت نکرد', color: 'var(--status-danger)' },
   }
 
   return (

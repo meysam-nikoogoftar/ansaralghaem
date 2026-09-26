@@ -137,7 +137,7 @@ function ProductDetail() {
           display: flex; align-items: center; gap: 8px;
           margin-bottom: 24px;
         }
-        .pd-back:hover { color: var(--gold-light); }
+        .pd-back:hover { color: var(--teal-glow); }
 
         .pd-card {
           background: var(--surface);
@@ -146,7 +146,7 @@ function ProductDetail() {
           overflow: hidden;
         }
         .pd-grid { display: grid; grid-template-columns: 1fr 1fr; }
-        .pd-image { background: rgba(10,21,18,0.5); min-height: 320px; }
+        .pd-image { background: var(--panel-inset-bg); min-height: 320px; }
         .pd-image img { width: 100%; height: 100%; object-fit: cover; }
         .pd-image-placeholder {
           width: 100%; height: 100%;
@@ -158,7 +158,7 @@ function ProductDetail() {
         .pd-category { color: var(--ink-faint); font-size: 12px; margin-bottom: 6px; }
         .pd-info h1 {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 22px;
           margin-bottom: 6px;
         }
@@ -176,8 +176,8 @@ function ProductDetail() {
           font-size: 12px; padding: 6px 14px; border-radius: 999px;
           margin-bottom: 20px;
         }
-        .pd-stock.in { background: rgba(75,214,172,0.12); color: var(--teal-glow); }
-        .pd-stock.out { background: rgba(255,107,125,0.12); color: #ff9aa8; }
+        .pd-stock.in { background: var(--status-ok-bg); color: var(--status-ok); }
+        .pd-stock.out { background: var(--status-danger-bg); color: var(--status-danger); }
 
         .pd-order-form { display: flex; flex-direction: column; gap: 14px; }
         .pd-qty-row { display: flex; align-items: center; gap: 14px; }
@@ -190,14 +190,14 @@ function ProductDetail() {
           color: var(--ink-dim);
           cursor: pointer;
         }
-        .pd-qty-control button:hover { border-color: var(--gold); color: var(--gold-light); }
+        .pd-qty-control button:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
         .pd-qty-control span { color: var(--ink); font-weight: 600; width: 20px; text-align: center; }
 
         .pd-field label { display: block; color: var(--ink-dim); font-size: 13px; margin-bottom: 6px; }
         .pd-input {
           width: 100%;
           padding: 10px 14px;
-          background: rgba(10,21,18,0.6);
+          background: var(--input-bg);
           border: 1px solid var(--line);
           border-radius: var(--radius-sm);
           color: var(--ink);
@@ -205,7 +205,7 @@ function ProductDetail() {
           font-size: 13px;
           outline: none;
         }
-        .pd-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.12); }
+        .pd-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.12); }
 
         .pd-message {
           padding: 10px 14px;
@@ -231,9 +231,9 @@ function ProductDetail() {
           cursor: pointer;
           font-family: var(--font-body);
           font-size: 15px; font-weight: 700;
-          color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
-          box-shadow: 0 6px 20px -6px rgba(216,181,104,0.45);
+          color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
+          box-shadow: 0 6px 20px -6px rgba(15,111,92,0.45);
           transition: transform .25s ease;
         }
         .pd-submit:hover:not(:disabled) { transform: translateY(-2px); }

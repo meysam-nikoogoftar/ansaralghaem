@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import api from '../../services/api'
 
 const refundStatusMeta = {
-  pending: { label: 'در انتظار بررسی', color: '#d8b568' },
-  approved: { label: 'تایید و واریز شد', color: '#4bd6ac' },
-  rejected: { label: 'رد شده', color: '#ff6b7d' },
+  pending: { label: 'در انتظار بررسی', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
+  approved: { label: 'تایید و واریز شد', color: 'var(--status-ok)', bg: 'var(--status-ok-bg)' },
+  rejected: { label: 'رد شده', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
 }
 
 function AdminRefunds() {
@@ -76,7 +76,7 @@ function AdminRefunds() {
                   style={{
                     color: refundStatusMeta[r.refund_status]?.color,
                     borderColor: refundStatusMeta[r.refund_status]?.color,
-                    background: `${refundStatusMeta[r.refund_status]?.color}1a`,
+                    background: refundStatusMeta[r.refund_status]?.bg,
                   }}
                 >
                   {refundStatusMeta[r.refund_status]?.label || r.refund_status}
@@ -113,10 +113,10 @@ function AdminRefunds() {
       <style>{`
         .arf-page { display: flex; flex-direction: column; gap: 8px; }
         .arf-head { display: flex; align-items: center; gap: 12px; }
-        .arf-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 21px; }
+        .arf-head h1 { font-family: var(--font-display); color: var(--teal-glow); font-size: 21px; }
         .arf-pending-badge {
           font-size: 11.5px; padding: 4px 12px; border-radius: 999px;
-          background: rgba(216,181,104,0.12); color: var(--gold-light); border: 1px solid rgba(216,181,104,0.3);
+          background: var(--status-warn-bg); color: var(--status-warn); border: 1px solid var(--status-warn);
         }
         .arf-desc { color: var(--ink-faint); font-size: 12.5px; margin-bottom: 10px; }
 
@@ -138,14 +138,14 @@ function AdminRefunds() {
 
         .arf-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .arf-amount-input {
-          padding: 8px 12px; background: rgba(10,21,18,0.6); border: 1px solid var(--line);
+          padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--line);
           border-radius: var(--radius-sm); color: var(--ink); font-size: 12.5px; outline: none; width: 160px;
         }
-        .arf-amount-input:focus { border-color: var(--gold); }
+        .arf-amount-input:focus { border-color: var(--teal-glow); }
         .arf-approve-btn, .arf-reject-btn { font-size: 12.5px; padding: 8px 18px; border-radius: 999px; cursor: pointer; border: 1px solid; }
-        .arf-approve-btn { background: rgba(75,214,172,0.12); color: var(--teal-glow); border-color: rgba(75,214,172,0.4); }
+        .arf-approve-btn { background: var(--status-ok-bg); color: var(--status-ok); border-color: var(--status-ok); }
         .arf-approve-btn:hover { background: rgba(75,214,172,0.22); }
-        .arf-reject-btn { background: transparent; color: #ff9aa8; border-color: rgba(255,107,125,0.4); }
+        .arf-reject-btn { background: transparent; color: var(--status-danger); border-color: var(--status-danger); }
         .arf-reject-btn:hover { background: rgba(122,35,48,0.12); }
         .arf-approve-btn:disabled, .arf-reject-btn:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>

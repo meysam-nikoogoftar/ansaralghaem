@@ -76,7 +76,7 @@ function Gallery() {
           cursor: pointer;
           transition: all .4s ease;
         }
-        .gl-item:hover { transform: translateY(-6px); border-color: var(--gold); box-shadow: 0 20px 40px -15px rgba(216,181,104,0.3); }
+        .gl-item:hover { transform: translateY(-6px); border-color: var(--teal-glow); box-shadow: 0 20px 40px -15px rgba(15,111,92,0.3); }
         .gl-item img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
         .gl-item:hover img { transform: scale(1.1); }
         .gl-item-overlay {
@@ -86,7 +86,7 @@ function Gallery() {
           opacity: 0; transition: opacity .3s ease;
         }
         .gl-item:hover .gl-item-overlay { opacity: 1; }
-        .gl-item-overlay span { color: var(--gold-light); font-size: 13px; font-weight: 600; }
+        .gl-item-overlay span { color: var(--teal-glow); font-size: 13px; font-weight: 600; }
 
         .gl-lightbox {
           position: fixed; inset: 0; z-index: 200;
@@ -100,20 +100,20 @@ function Gallery() {
           width: 100%; border-radius: var(--radius-lg);
           border: 1px solid var(--line);
         }
-        .gl-lightbox-title { color: var(--gold-light); margin-top: 16px; font-weight: 600; }
+        .gl-lightbox-title { color: var(--teal-glow); margin-top: 16px; font-weight: 600; }
         .gl-lightbox-uploader { color: var(--ink-faint); font-size: 12px; margin-top: 4px; }
         .gl-lightbox-close {
           margin: 18px auto 0; display: block;
           padding: 10px 24px;
           border-radius: 999px;
-          border: 1px solid var(--gold);
+          border: 1px solid var(--teal-glow);
           background: transparent;
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 13px;
           cursor: pointer;
           transition: all .25s ease;
         }
-        .gl-lightbox-close:hover { background: rgba(216,181,104,0.1); }
+        .gl-lightbox-close:hover { background: rgba(15,111,92,0.1); }
       `}</style>
     </div>
   )

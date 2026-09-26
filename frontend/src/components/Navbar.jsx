@@ -104,7 +104,7 @@ function Navbar() {
       {/* Mobile Menu */}
       {menuOpen && (
         <div style={{
-          background: 'rgba(10,21,18,0.98)',
+          background: 'var(--surface-2)',
           backdropFilter: 'blur(20px)',
           borderTop: '1px solid var(--line)',
           padding: '16px 24px 24px',
@@ -117,7 +117,7 @@ function Navbar() {
               onClick={() => setMenuOpen(false)}
               style={{
                 padding: '12px 16px', borderRadius: 12,
-                color: location.pathname === item.path ? 'var(--gold-light)' : 'var(--ink-dim)',
+                color: location.pathname === item.path ? 'var(--teal-glow)' : 'var(--ink-dim)',
                 background: location.pathname === item.path ? 'rgba(216,181,104,0.08)' : 'transparent',
                 fontWeight: 500, fontSize: 15,
               }}

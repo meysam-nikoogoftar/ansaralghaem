@@ -412,11 +412,11 @@ function Home() {
             {isAuthenticated && walletBalance !== null && (
               <div style={{
                 marginTop: 16, padding: '12px 18px', borderRadius: 12,
-                background: 'rgba(216,181,104,0.08)', border: '1px solid var(--line)',
+                background: 'rgba(15,111,92,0.1)', border: '1px solid var(--line)',
                 display: 'inline-flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2,
               }}>
                 <span style={{ color: 'var(--ink-dim)', fontSize: 13 }}>موجودی کیف پول:</span>
-                <span style={{ color: 'var(--gold-light)', fontWeight: 700 }}>
+                <span style={{ color: 'var(--teal-glow)', fontWeight: 700 }}>
                   {walletBalance.toLocaleString('fa-IR')} تومان
                 </span>
                 <Link to="/dashboard/wallet" style={{ color: 'var(--teal-glow)', fontSize: 13 }}>

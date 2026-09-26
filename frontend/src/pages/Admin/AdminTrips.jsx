@@ -221,11 +221,11 @@ function AdminTrips() {
       <style>{`
         .atp-page { display: flex; flex-direction: column; gap: 18px; }
         .atp-head { display: flex; align-items: center; justify-content: space-between; }
-        .atp-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 21px; }
+        .atp-head h1 { font-family: var(--font-display); color: var(--teal-glow); font-size: 21px; }
         .atp-new-btn {
           padding: 9px 18px; border-radius: 999px; border: none; cursor: pointer;
-          font-size: 12.5px; font-weight: 700; color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          font-size: 12.5px; font-weight: 700; color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
         }
 
         .atp-message {
@@ -235,36 +235,36 @@ function AdminTrips() {
         }
 
         .atp-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px 22px; }
-        .atp-card h2 { font-family: var(--font-display); color: var(--gold-light); font-size: 15px; margin-bottom: 16px; }
+        .atp-card h2 { font-family: var(--font-display); color: var(--teal-glow); font-size: 15px; margin-bottom: 16px; }
 
         .atp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .atp-span-2 { grid-column: span 2; }
         .atp-field label { display: block; color: var(--ink-dim); font-size: 12.5px; margin-bottom: 6px; }
         .atp-input {
           width: 100%; padding: 10px 13px;
-          background: rgba(10,21,18,0.6); border: 1px solid var(--line);
+          background: var(--input-bg); border: 1px solid var(--line);
           border-radius: var(--radius-sm); color: var(--ink); font-family: var(--font-body);
           font-size: 13px; outline: none;
         }
-        .atp-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.1); }
+        .atp-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.12); }
         select.atp-input option { background: var(--surface-2); color: var(--ink); }
 
         .atp-checkbox-label { display: flex; align-items: center; gap: 9px; cursor: pointer; margin-top: 6px; }
-        .atp-checkbox-label input { width: 16px; height: 16px; accent-color: var(--gold); }
+        .atp-checkbox-label input { width: 16px; height: 16px; accent-color: var(--teal-glow); }
         .atp-checkbox-label span { color: var(--ink-dim); font-size: 12.5px; }
 
         .atp-form-actions { display: flex; gap: 10px; margin-top: 16px; }
         .atp-submit-btn {
           padding: 10px 22px; border-radius: var(--radius-sm); border: none; cursor: pointer;
-          font-size: 13px; font-weight: 700; color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          font-size: 13px; font-weight: 700; color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
         }
         .atp-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .atp-cancel-btn {
           padding: 10px 22px; border-radius: var(--radius-sm); border: 1px solid var(--line);
           background: transparent; color: var(--ink-dim); font-size: 13px; cursor: pointer;
         }
-        .atp-cancel-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+        .atp-cancel-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
 
         .atp-loading, .atp-empty { text-align: center; padding: 50px 0; color: var(--ink-dim); font-size: 13px; }
 
@@ -277,8 +277,8 @@ function AdminTrips() {
         .atp-edit-btn, .atp-delete-btn {
           font-size: 11.5px; padding: 6px 13px; border-radius: 999px; cursor: pointer; border: 1px solid;
         }
-        .atp-edit-btn { color: var(--gold-light); border-color: rgba(216,181,104,0.4); background: transparent; }
-        .atp-edit-btn:hover { background: rgba(216,181,104,0.1); }
+        .atp-edit-btn { color: var(--teal-glow); border-color: rgba(15,111,92,0.4); background: transparent; }
+        .atp-edit-btn:hover { background: rgba(15,111,92,0.1); }
         .atp-delete-btn { color: #ff9aa8; border-color: rgba(255,107,125,0.4); background: transparent; }
         .atp-delete-btn:hover { background: rgba(122,35,48,0.12); }
 
@@ -287,7 +287,7 @@ function AdminTrips() {
           font-size: 11.5px; padding: 5px 12px; border-radius: 999px; cursor: pointer;
           border: 1px solid var(--line); background: transparent; color: var(--ink-faint);
         }
-        .atp-toggle-pill.on { color: var(--teal-glow); border-color: rgba(75,214,172,0.4); background: rgba(75,214,172,0.1); }
+        .atp-toggle-pill.on { color: var(--status-ok); border-color: var(--status-ok); background: var(--status-ok-bg); }
       `}</style>
     </div>
   )

@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import api from '../../services/api'
 
 const statusMeta = {
-  pending: { label: 'در انتظار بررسی', color: '#d8b568' },
-  approved: { label: 'تایید شده', color: '#4bd6ac' },
-  rejected: { label: 'رد شده', color: '#ff6b7d' },
-  cancelled: { label: 'انصراف داده', color: '#af9f88' },
-  attended: { label: 'شرکت کرد', color: '#7fb7ff' },
-  absent: { label: 'شرکت نکرد', color: '#ff6b7d' },
+  pending: { label: 'در انتظار بررسی', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
+  approved: { label: 'تایید شده', color: 'var(--status-ok)', bg: 'var(--status-ok-bg)' },
+  rejected: { label: 'رد شده', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
+  cancelled: { label: 'انصراف داده', color: 'var(--status-neutral)', bg: 'var(--status-neutral-bg)' },
+  attended: { label: 'شرکت کرد', color: 'var(--status-info)', bg: 'var(--status-info-bg)' },
+  absent: { label: 'شرکت نکرد', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
 }
 
 function AdminDashboard() {
@@ -28,7 +28,7 @@ function AdminDashboard() {
 
   const cards = [
     { label: 'کاربران عادی', value: stats.total_users, color: 'var(--teal-glow)' },
-    { label: 'ادمین‌ها', value: stats.total_admins, color: 'var(--gold)' },
+    { label: 'ادمین‌ها', value: stats.total_admins, color: 'var(--teal-light)' },
     { label: 'سفرهای فعال', value: stats.total_trips, color: '#7fb7ff' },
     { label: 'موجودی کل کیف‌پول‌ها', value: `${stats.total_wallet_balance.toLocaleString('fa-IR')} ت`, color: 'var(--gold-light)' },
     { label: 'تیکت در انتظار', value: stats.pending_tickets, color: '#ff9aa8' },
@@ -95,7 +95,7 @@ function AdminDashboard() {
                     style={{
                       color: statusMeta[r.status]?.color,
                       borderColor: statusMeta[r.status]?.color,
-                      background: `${statusMeta[r.status]?.color}1a`,
+                      background: statusMeta[r.status]?.bg,
                     }}
                   >
                     {statusMeta[r.status]?.label || r.status}
@@ -115,7 +115,7 @@ function AdminDashboard() {
         .adb-error { color: #ff9aa8; }
 
         .adb-page { display: flex; flex-direction: column; gap: 22px; }
-        .adb-heading { font-family: var(--font-display); color: var(--gold-light); font-size: 21px; }
+        .adb-heading { font-family: var(--font-display); color: var(--teal-glow); font-size: 21px; }
 
         .adb-cards {
           display: grid;
@@ -144,7 +144,7 @@ function AdminDashboard() {
         }
         .adb-panel h2 {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 15px;
           margin-bottom: 16px;
         }

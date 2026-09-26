@@ -178,11 +178,11 @@ function AdminContributions() {
       <style>{`
         .acn-page { display: flex; flex-direction: column; gap: 18px; }
         .acn-head { display: flex; align-items: center; justify-content: space-between; }
-        .acn-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 21px; }
+        .acn-head h1 { font-family: var(--font-display); color: var(--teal-glow); font-size: 21px; }
         .acn-new-btn {
           padding: 9px 18px; border-radius: 999px; border: none; cursor: pointer;
-          font-size: 12.5px; font-weight: 700; color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          font-size: 12.5px; font-weight: 700; color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
         }
 
         .acn-message {
@@ -192,26 +192,26 @@ function AdminContributions() {
         }
 
         .acn-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px 22px; max-width: 560px; }
-        .acn-card h2 { font-family: var(--font-display); color: var(--gold-light); font-size: 15px; margin-bottom: 16px; }
+        .acn-card h2 { font-family: var(--font-display); color: var(--teal-glow); font-size: 15px; margin-bottom: 16px; }
         .acn-form { display: flex; flex-direction: column; gap: 14px; }
         .acn-field label { display: block; color: var(--ink-dim); font-size: 12.5px; margin-bottom: 6px; }
         .acn-input {
           width: 100%; padding: 10px 13px;
-          background: rgba(10,21,18,0.6); border: 1px solid var(--line);
+          background: var(--input-bg); border: 1px solid var(--line);
           border-radius: var(--radius-sm); color: var(--ink); font-family: var(--font-body);
           font-size: 13px; outline: none;
         }
-        .acn-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.1); }
+        .acn-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.12); }
         .acn-checks { display: flex; gap: 18px; }
         .acn-checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .acn-checkbox-label input { width: 16px; height: 16px; accent-color: var(--gold); }
+        .acn-checkbox-label input { width: 16px; height: 16px; accent-color: var(--teal-glow); }
         .acn-checkbox-label span { color: var(--ink-dim); font-size: 13px; }
 
         .acn-form-actions { display: flex; gap: 10px; }
         .acn-submit-btn {
           padding: 10px 22px; border-radius: var(--radius-sm); border: none; cursor: pointer;
-          font-size: 13px; font-weight: 700; color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          font-size: 13px; font-weight: 700; color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
         }
         .acn-cancel-btn {
           padding: 10px 22px; border-radius: var(--radius-sm); border: 1px solid var(--line);
@@ -227,7 +227,7 @@ function AdminContributions() {
         .acn-item-top p { color: var(--ink-faint); font-size: 12px; margin-top: 4px; }
         .acn-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
         .acn-edit-btn, .acn-delete-btn { font-size: 11.5px; padding: 6px 13px; border-radius: 999px; cursor: pointer; border: 1px solid; }
-        .acn-edit-btn { color: var(--gold-light); border-color: rgba(216,181,104,0.4); background: transparent; }
+        .acn-edit-btn { color: var(--teal-glow); border-color: rgba(15,111,92,0.4); background: transparent; }
         .acn-delete-btn { color: #ff9aa8; border-color: rgba(255,107,125,0.4); background: transparent; }
 
         .acn-progress-wrap { margin-bottom: 14px; }

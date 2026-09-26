@@ -31,9 +31,9 @@ function MyArticles() {
   }
 
   const statusConfig = {
-    pending: { label: 'در انتظار بررسی', color: '#d8b568' },
-    approved: { label: 'تایید شده', color: '#4bd6ac' },
-    rejected: { label: 'رد شده', color: '#ff6b7d' },
+    pending: { label: 'در انتظار بررسی', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
+    approved: { label: 'تایید شده', color: 'var(--status-ok)', bg: 'var(--status-ok-bg)' },
+    rejected: { label: 'رد شده', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
   }
 
   const categoryOptions = [
@@ -124,7 +124,7 @@ function MyArticles() {
                 style={{
                   color: statusConfig[article.status]?.color,
                   borderColor: statusConfig[article.status]?.color,
-                  background: `${statusConfig[article.status]?.color}1a`,
+                  background: statusConfig[article.status]?.bg,
                 }}
               >
                 {statusConfig[article.status]?.label}

@@ -3,9 +3,9 @@ import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
 
 const typeMeta = {
-  user: { label: 'کاربر عادی', color: '#af9f88' },
-  admin: { label: 'ادمین', color: '#d8b568' },
-  superadmin: { label: 'سوپرادمین', color: '#ff9aa8' },
+  user: { label: 'کاربر عادی', color: 'var(--status-neutral)', bg: 'var(--status-neutral-bg)' },
+  admin: { label: 'ادمین', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
+  superadmin: { label: 'سوپرادمین', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
 }
 
 function AdminUsers() {
@@ -123,7 +123,7 @@ function AdminUsers() {
                   <td>
                     <span
                       className="aus-role-pill"
-                      style={{ color: typeMeta[u.user_type]?.color, borderColor: typeMeta[u.user_type]?.color, background: `${typeMeta[u.user_type]?.color}1a` }}
+                      style={{ color: typeMeta[u.user_type]?.color, borderColor: typeMeta[u.user_type]?.color, background: typeMeta[u.user_type]?.bg }}
                     >
                       {typeMeta[u.user_type]?.label || u.user_type}
                     </span>
@@ -153,7 +153,7 @@ function AdminUsers() {
 
       <style>{`
         .aus-page { display: flex; flex-direction: column; gap: 18px; }
-        .aus-heading { font-family: var(--font-display); color: var(--gold-light); font-size: 21px; }
+        .aus-heading { font-family: var(--font-display); color: var(--teal-glow); font-size: 21px; }
 
         .aus-message {
           padding: 11px 14px; border-radius: var(--radius-sm);
@@ -171,21 +171,21 @@ function AdminUsers() {
           background: var(--surface); border: 1px solid var(--line);
           border-radius: var(--radius-sm); color: var(--ink); font-size: 13px; outline: none;
         }
-        .aus-search-input:focus { border-color: var(--gold); }
+        .aus-search-input:focus { border-color: var(--teal-glow); }
         .aus-search-btn {
           padding: 0 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);
           background: transparent; color: var(--ink-dim); font-size: 13px; cursor: pointer;
         }
-        .aus-search-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+        .aus-search-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
 
         .aus-type-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
         .aus-type-tab {
           padding: 7px 14px; border-radius: 999px; font-size: 12px;
           border: 1px solid var(--line); background: transparent; color: var(--ink-dim); cursor: pointer;
         }
-        .aus-type-tab:hover { color: var(--gold-light); border-color: var(--gold); }
+        .aus-type-tab:hover { color: var(--teal-glow); border-color: var(--teal-glow); }
         .aus-type-tab.active {
-          background: rgba(216,181,104,0.12); color: var(--gold-light); border-color: var(--gold);
+          background: rgba(15,111,92,0.12); color: var(--teal-glow); border-color: var(--teal-glow);
         }
 
         .aus-loading, .aus-empty {
@@ -227,10 +227,10 @@ function AdminUsers() {
 
         .aus-role-btn {
           font-size: 11.5px; padding: 6px 13px; border-radius: 999px;
-          border: 1px solid rgba(216,181,104,0.4); background: transparent;
-          color: var(--gold-light); cursor: pointer;
+          border: 1px solid rgba(15,111,92,0.4); background: transparent;
+          color: var(--teal-glow); cursor: pointer;
         }
-        .aus-role-btn:hover { background: rgba(216,181,104,0.1); }
+        .aus-role-btn:hover { background: rgba(15,111,92,0.1); }
         .aus-role-btn.demote { border-color: rgba(255,107,125,0.4); color: #ff9aa8; }
         .aus-role-btn.demote:hover { background: rgba(122,35,48,0.12); }
         .aus-role-btn:disabled { opacity: 0.5; cursor: not-allowed; }

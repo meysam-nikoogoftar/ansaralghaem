@@ -26,7 +26,7 @@ function Announcement() {
 
   const typeConfig = {
     info: { icon: 'ℹ️', accent: 'var(--teal-glow)' },
-    warning: { icon: '⚠️', accent: 'var(--gold)' },
+    warning: { icon: '⚠️', accent: 'var(--status-warn)' },
     welcome: { icon: '✦', accent: 'var(--teal-glow)' },
   }
   const config = typeConfig[announcement.announcement_type] || typeConfig.info

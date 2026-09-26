@@ -2,18 +2,18 @@ import { useEffect, useState } from 'react'
 import api from '../../services/api'
 
 const statusMeta = {
-  pending: { label: 'در انتظار بررسی', color: '#d8b568' },
-  approved: { label: 'تایید شده', color: '#4bd6ac' },
-  rejected: { label: 'رد شده', color: '#ff6b7d' },
-  cancelled: { label: 'انصراف داده', color: '#af9f88' },
-  attended: { label: 'شرکت کرد', color: '#7fb7ff' },
-  absent: { label: 'شرکت نکرد', color: '#ff6b7d' },
+  pending: { label: 'در انتظار بررسی', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
+  approved: { label: 'تایید شده', color: 'var(--status-ok)', bg: 'var(--status-ok-bg)' },
+  rejected: { label: 'رد شده', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
+  cancelled: { label: 'انصراف داده', color: 'var(--status-neutral)', bg: 'var(--status-neutral-bg)' },
+  attended: { label: 'شرکت کرد', color: 'var(--status-info)', bg: 'var(--status-info-bg)' },
+  absent: { label: 'شرکت نکرد', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
 }
 
 const paymentMeta = {
-  unpaid: { label: 'پرداخت نشده', color: '#ff9aa8' },
-  partial: { label: 'نیمه‌کامل', color: '#d8b568' },
-  paid: { label: 'کامل', color: '#4bd6ac' },
+  unpaid: { label: 'پرداخت نشده', color: 'var(--status-danger)' },
+  partial: { label: 'نیمه‌کامل', color: 'var(--status-warn)' },
+  paid: { label: 'کامل', color: 'var(--status-ok)' },
 }
 
 function AdminRegistrations() {
@@ -127,7 +127,7 @@ function AdminRegistrations() {
                 </div>
                 <span
                   className="art-badge"
-                  style={{ color: statusMeta[r.status]?.color, borderColor: statusMeta[r.status]?.color, background: `${statusMeta[r.status]?.color}1a` }}
+                  style={{ color: statusMeta[r.status]?.color, borderColor: statusMeta[r.status]?.color, background: statusMeta[r.status]?.bg }}
                 >
                   {statusMeta[r.status]?.label || r.status}
                 </span>
@@ -181,7 +181,7 @@ function AdminRegistrations() {
 
       <style>{`
         .art-page { display: flex; flex-direction: column; gap: 18px; }
-        .art-heading { font-family: var(--font-display); color: var(--gold-light); font-size: 21px; }
+        .art-heading { font-family: var(--font-display); color: var(--teal-glow); font-size: 21px; }
 
         .art-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
         .art-search-form { display: flex; gap: 8px; flex: 1; min-width: 240px; max-width: 380px; }
@@ -189,20 +189,20 @@ function AdminRegistrations() {
           flex: 1; padding: 9px 14px; background: var(--surface); border: 1px solid var(--line);
           border-radius: var(--radius-sm); color: var(--ink); font-size: 13px; outline: none;
         }
-        .art-search-input:focus { border-color: var(--gold); }
+        .art-search-input:focus { border-color: var(--teal-glow); }
         .art-search-btn {
           padding: 0 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);
           background: transparent; color: var(--ink-dim); font-size: 13px; cursor: pointer;
         }
-        .art-search-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+        .art-search-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
 
         .art-status-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
         .art-status-tab {
           padding: 7px 14px; border-radius: 999px; font-size: 12px;
           border: 1px solid var(--line); background: transparent; color: var(--ink-dim); cursor: pointer;
         }
-        .art-status-tab:hover { color: var(--gold-light); border-color: var(--gold); }
-        .art-status-tab.active { background: rgba(216,181,104,0.12); color: var(--gold-light); border-color: var(--gold); }
+        .art-status-tab:hover { color: var(--teal-glow); border-color: var(--teal-glow); }
+        .art-status-tab.active { background: rgba(15,111,92,0.12); color: var(--teal-glow); border-color: var(--teal-glow); }
 
         .art-loading, .art-empty { text-align: center; padding: 50px 0; color: var(--ink-dim); font-size: 13px; }
 
@@ -229,30 +229,30 @@ function AdminRegistrations() {
         .art-approve-btn, .art-reject-btn {
           font-size: 12.5px; padding: 8px 18px; border-radius: 999px; cursor: pointer; border: 1px solid;
         }
-        .art-approve-btn { background: rgba(75,214,172,0.12); color: var(--teal-glow); border-color: rgba(75,214,172,0.4); }
+        .art-approve-btn { background: var(--status-ok-bg); color: var(--status-ok); border-color: var(--status-ok); }
         .art-approve-btn:hover { background: rgba(75,214,172,0.22); }
-        .art-reject-btn { background: transparent; color: #ff9aa8; border-color: rgba(255,107,125,0.4); }
+        .art-reject-btn { background: transparent; color: var(--status-danger); border-color: var(--status-danger); }
         .art-reject-btn:hover { background: rgba(122,35,48,0.12); }
         .art-approve-btn:disabled, .art-reject-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .art-reject-box { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
         .art-reject-input {
-          width: 100%; padding: 9px 12px; background: rgba(10,21,18,0.6);
+          width: 100%; padding: 9px 12px; background: var(--input-bg);
           border: 1px solid var(--line); border-radius: var(--radius-sm);
           color: var(--ink); font-family: var(--font-body); font-size: 12.5px; outline: none; resize: vertical;
         }
-        .art-reject-input:focus { border-color: var(--gold); }
+        .art-reject-input:focus { border-color: var(--teal-glow); }
         .art-reject-actions { display: flex; gap: 8px; margin-top: 8px; }
         .art-reject-confirm {
           font-size: 12px; padding: 7px 16px; border-radius: 999px; cursor: pointer;
-          background: rgba(122,35,48,0.25); color: #ff9aa8; border: 1px solid rgba(122,35,48,0.5);
+          background: rgba(122,35,48,0.25); color: var(--status-danger); border: 1px solid rgba(122,35,48,0.5);
         }
         .art-reject-cancel {
           font-size: 12px; padding: 7px 16px; border-radius: 999px; cursor: pointer;
           background: transparent; color: var(--ink-dim); border: 1px solid var(--line);
         }
 
-        .art-rejection-note { margin-top: 10px; color: #ff9aa8; font-size: 12px; }
+        .art-rejection-note { margin-top: 10px; color: var(--status-danger); font-size: 12px; }
       `}</style>
     </div>
   )
