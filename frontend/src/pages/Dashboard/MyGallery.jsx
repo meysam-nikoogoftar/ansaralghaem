@@ -127,7 +127,7 @@ function MyGallery() {
       <style>{`
         .mg-page { display: flex; flex-direction: column; gap: 20px; }
         .mg-head { display: flex; align-items: center; justify-content: space-between; }
-        .mg-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 22px; }
+        .mg-head h1 { font-family: var(--font-display); color: var(--teal-glow); font-size: 22px; }
 
         .mg-new-btn {
           padding: 10px 20px;
@@ -135,9 +135,9 @@ function MyGallery() {
           border: none;
           cursor: pointer;
           font-size: 13px; font-weight: 700;
-          color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
-          box-shadow: 0 6px 18px -6px rgba(216,181,104,0.45);
+          color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
+          box-shadow: 0 6px 18px -6px rgba(15,111,92,0.45);
         }
 
         .mg-card {
@@ -149,7 +149,7 @@ function MyGallery() {
         }
         .mg-card h2 {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 15px;
           margin-bottom: 14px;
         }
@@ -159,7 +159,7 @@ function MyGallery() {
         .mg-input, .mg-file-input {
           width: 100%;
           padding: 11px 14px;
-          background: rgba(10,21,18,0.6);
+          background: var(--input-bg);
           border: 1px solid var(--line);
           border-radius: var(--radius-sm);
           color: var(--ink);
@@ -167,10 +167,10 @@ function MyGallery() {
           font-size: 13px;
           outline: none;
         }
-        .mg-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.12); }
+        .mg-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.15); }
         .mg-file-input::file-selector-button {
           background: var(--teal);
-          color: var(--gold-light);
+          color: #eefaf5;
           border: none;
           border-radius: 8px;
           padding: 6px 12px;
@@ -186,8 +186,8 @@ function MyGallery() {
           border: none;
           cursor: pointer;
           font-size: 13px; font-weight: 700;
-          color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
         }
         .mg-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .mg-cancel-btn {
@@ -199,7 +199,7 @@ function MyGallery() {
           font-size: 13px;
           cursor: pointer;
         }
-        .mg-cancel-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+        .mg-cancel-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
 
         .mg-empty {
           background: var(--surface);
@@ -223,7 +223,7 @@ function MyGallery() {
           overflow: hidden;
           transition: all .3s ease;
         }
-        .mg-item:hover { border-color: var(--gold); transform: translateY(-3px); }
+        .mg-item:hover { border-color: var(--teal-glow); transform: translateY(-3px); }
         .mg-item img { width: 100%; height: 150px; object-fit: cover; display: block; }
         .mg-item-body { padding: 12px; }
         .mg-item-body p { color: var(--ink); font-size: 13px; font-weight: 500; margin-bottom: 8px; }

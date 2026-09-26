@@ -127,7 +127,7 @@ function AdminLayout() {
           padding: 0 22px;
         }
         .adm-topbar-right, .adm-topbar-left { display: flex; align-items: center; gap: 14px; }
-        .adm-title { font-family: var(--font-display); color: var(--gold-light); font-size: 16px; }
+        .adm-title { font-family: var(--font-display); color: var(--teal-glow); font-size: 16px; }
         .adm-sidebar-toggle {
           display: none;
           background: none; border: 1px solid var(--line); border-radius: 8px;
@@ -161,7 +161,7 @@ function AdminLayout() {
           display: grid; place-items: center;
           color: var(--ink-dim);
         }
-        .adm-site-link:hover { color: var(--gold-light); border-color: var(--gold); }
+        .adm-site-link:hover { color: var(--teal-glow); border-color: var(--teal-glow); }
 
         .adm-logout-btn {
           background: none; border: 1px solid var(--line); border-radius: 8px;
@@ -191,14 +191,14 @@ function AdminLayout() {
         .adm-nav-item {
           display: flex; align-items: center; gap: 10px;
           padding: 10px 12px; border-radius: 10px;
-          color: var(--ink-dim); font-size: 13px;
+          color: var(--ink); font-size: 13px; font-weight: 500;
           text-decoration: none;
           transition: all .2s ease;
         }
-        .adm-nav-item:hover { background: var(--surface); color: var(--ink); }
+        .adm-nav-item:hover { background: var(--surface); color: var(--teal-glow); }
         .adm-nav-item.active {
-          background: rgba(216,181,104,0.1); color: var(--gold-light);
-          border: 1px solid rgba(216,181,104,0.25);
+          background: rgba(15,111,92,0.12); color: var(--teal-glow); font-weight: 700;
+          border: 1px solid rgba(15,111,92,0.28);
         }
 
         .adm-sidebar-note {

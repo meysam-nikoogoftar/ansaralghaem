@@ -122,16 +122,16 @@ function MyTrips() {
 
         .mt-page { display: flex; flex-direction: column; gap: 22px; }
         .mt-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-        .mt-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 22px; }
+        .mt-head h1 { font-family: var(--font-display); color: var(--teal-glow); font-size: 22px; }
 
         .mt-new-btn {
           display: inline-flex; align-items: center;
           padding: 10px 20px;
           border-radius: 999px;
           font-size: 13px; font-weight: 700;
-          color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
-          box-shadow: 0 6px 18px -6px rgba(216,181,104,0.45);
+          color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
+          box-shadow: 0 6px 18px -6px rgba(15,111,92,0.45);
           transition: transform .25s ease;
         }
         .mt-new-btn:hover { transform: translateY(-2px); }
@@ -171,7 +171,7 @@ function MyTrips() {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 12px;
-          background: rgba(10,21,18,0.5);
+          background: var(--panel-inset-bg);
           border: 1px solid var(--line);
           border-radius: var(--radius-md);
           padding: 14px;
@@ -192,7 +192,7 @@ function MyTrips() {
           border: 1px solid; cursor: pointer;
           font-family: var(--font-body);
         }
-        .mt-action-btn.primary { color: #1a1206; background: var(--gold); border-color: var(--gold); }
+        .mt-action-btn.primary { color: #eefaf5; background: var(--teal); border-color: var(--teal); }
         .mt-action-btn.danger { color: #ff9aa8; background: transparent; border-color: rgba(255,107,125,0.4); }
         .mt-action-btn.danger:hover { background: rgba(122,35,48,0.15); }
 

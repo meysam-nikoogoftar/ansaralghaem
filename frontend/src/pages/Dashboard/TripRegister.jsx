@@ -162,7 +162,7 @@ function TripRegister() {
 
       <style>{`
         .tr-page { display: flex; flex-direction: column; gap: 18px; max-width: 680px; }
-        .tr-heading { font-family: var(--font-display); color: var(--gold-light); font-size: 22px; }
+        .tr-heading { font-family: var(--font-display); color: var(--teal-glow); font-size: 22px; }
 
         .tr-card {
           background: var(--surface);
@@ -172,7 +172,7 @@ function TripRegister() {
         }
         .tr-card h2 {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 15px;
           margin-bottom: 14px;
         }
@@ -187,17 +187,17 @@ function TripRegister() {
           cursor: pointer;
           transition: all .25s ease;
         }
-        .tr-trip-option:hover { border-color: rgba(216,181,104,0.4); }
+        .tr-trip-option:hover { border-color: rgba(15,111,92,0.4); }
         .tr-trip-option.selected {
-          border-color: var(--gold);
-          background: rgba(216,181,104,0.06);
+          border-color: var(--teal-glow);
+          background: rgba(15,111,92,0.08);
         }
         .tr-trip-option h3 { color: var(--ink); font-size: 14px; font-weight: 600; }
         .tr-trip-option p { color: var(--ink-faint); font-size: 12px; margin-top: 4px; }
-        .tr-trip-option strong { color: var(--gold-light); font-size: 14px; }
+        .tr-trip-option strong { color: var(--teal-glow); font-size: 14px; }
 
         .tr-conditions {
-          background: rgba(10,21,18,0.5);
+          background: var(--panel-inset-bg);
           border: 1px solid var(--line);
           border-radius: var(--radius-md);
           padding: 14px;
@@ -211,21 +211,21 @@ function TripRegister() {
           display: flex; align-items: center; gap: 10px;
           margin-top: 14px; cursor: pointer;
         }
-        .tr-agree input { width: 16px; height: 16px; accent-color: var(--gold); }
+        .tr-agree input { width: 16px; height: 16px; accent-color: var(--teal-glow); }
         .tr-agree span { color: var(--ink-dim); font-size: 13px; }
 
         .tr-search-row { display: flex; gap: 10px; margin-bottom: 14px; }
         .tr-input {
           flex: 1;
           padding: 11px 14px;
-          background: rgba(10,21,18,0.6);
+          background: var(--input-bg);
           border: 1px solid var(--line);
           border-radius: var(--radius-sm);
           color: var(--ink);
           font-size: 13px;
           outline: none;
         }
-        .tr-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.12); }
+        .tr-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.15); }
         .tr-search-btn {
           padding: 0 20px;
           border-radius: var(--radius-sm);
@@ -235,7 +235,7 @@ function TripRegister() {
           font-size: 13px;
           cursor: pointer;
         }
-        .tr-search-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+        .tr-search-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
 
         .tr-search-error { color: #ff9aa8; font-size: 13px; margin-bottom: 12px; }
 
@@ -271,7 +271,7 @@ function TripRegister() {
         .tr-companion-list { display: flex; flex-direction: column; gap: 8px; }
         .tr-companion-row {
           display: flex; align-items: center; justify-content: space-between;
-          background: rgba(10,21,18,0.5);
+          background: var(--panel-inset-bg);
           border: 1px solid var(--line);
           border-radius: var(--radius-sm);
           padding: 10px 14px;
@@ -290,9 +290,9 @@ function TripRegister() {
           cursor: pointer;
           font-family: var(--font-body);
           font-size: 15px; font-weight: 700;
-          color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
-          box-shadow: 0 6px 20px -6px rgba(216,181,104,0.45);
+          color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
+          box-shadow: 0 6px 20px -6px rgba(15,111,92,0.45);
           transition: transform .25s ease, opacity .25s ease;
         }
         .tr-submit:hover:not(:disabled) { transform: translateY(-2px); }

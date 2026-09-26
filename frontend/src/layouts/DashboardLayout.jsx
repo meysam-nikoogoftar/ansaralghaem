@@ -150,36 +150,36 @@ function DashboardLayout() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '11px 14px', borderRadius: 12,
-                    color: isActive ? 'var(--gold-light)' : 'var(--ink-dim)',
-                    background: isActive ? 'rgba(216,181,104,0.1)' : 'transparent',
-                    border: `1px solid ${isActive ? 'rgba(216,181,104,0.2)' : 'transparent'}`,
-                    fontSize: 13, fontWeight: isActive ? 600 : 400,
+                    color: isActive ? 'var(--teal-glow)' : 'var(--ink)',
+                    background: isActive ? 'rgba(15,111,92,0.12)' : 'transparent',
+                    border: `1px solid ${isActive ? 'rgba(15,111,92,0.25)' : 'transparent'}`,
+                    fontSize: 13, fontWeight: isActive ? 700 : 500,
                     transition: 'all 0.25s ease',
                     textDecoration: 'none',
                     position: 'relative',
                   }}
                   onMouseEnter={e => {
                     if (!isActive) {
-                      e.currentTarget.style.color = 'var(--ink)'
+                      e.currentTarget.style.color = 'var(--teal-glow)'
                       e.currentTarget.style.background = 'var(--surface)'
                     }
                   }}
                   onMouseLeave={e => {
                     if (!isActive) {
-                      e.currentTarget.style.color = 'var(--ink-dim)'
+                      e.currentTarget.style.color = 'var(--ink)'
                       e.currentTarget.style.background = 'transparent'
                     }
                   }}
                 >
-                  <span style={{ color: isActive ? 'var(--gold)' : 'var(--ink-faint)', flexShrink: 0 }}>
+                  <span style={{ color: isActive ? 'var(--teal-glow)' : 'var(--ink-faint)', flexShrink: 0 }}>
                     <SvgIcon name={item.icon} />
                   </span>
                   <span>{item.label}</span>
                   {isActive && (
                     <span style={{
                       marginRight: 'auto', width: 6, height: 6, borderRadius: '50%',
-                      background: 'var(--gold)',
-                      boxShadow: '0 0 8px rgba(216,181,104,0.8)',
+                      background: 'var(--teal-glow)',
+                      boxShadow: '0 0 8px rgba(75,214,172,0.8)',
                     }} />
                   )}
                 </Link>

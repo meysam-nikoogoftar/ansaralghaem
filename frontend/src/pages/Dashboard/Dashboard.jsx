@@ -154,7 +154,7 @@ function Dashboard() {
         .db-welcome-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .db-welcome h1 {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: #eefaf5;
           font-size: 19px;
         }
         .db-welcome p { color: rgba(238,230,214,0.75); font-size: 13px; margin-top: 4px; }
@@ -171,11 +171,11 @@ function Dashboard() {
           padding: 18px;
           transition: all .3s ease;
         }
-        .db-stat-card:hover { border-color: var(--gold); transform: translateY(-3px); }
+        .db-stat-card:hover { border-color: var(--teal-glow); transform: translateY(-3px); }
         .db-stat-icon {
           width: 36px; height: 36px; border-radius: 10px;
-          background: rgba(216,181,104,0.1);
-          color: var(--gold);
+          background: rgba(15,111,92,0.1);
+          color: var(--teal-glow);
           display: grid; place-items: center;
           margin-bottom: 10px;
         }
@@ -184,7 +184,7 @@ function Dashboard() {
 
         .db-section h2 {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 17px;
           margin-bottom: 16px;
         }
@@ -193,8 +193,8 @@ function Dashboard() {
           margin-bottom: 16px;
         }
         .db-section-head h2 { margin-bottom: 0; }
-        .db-section-head a { color: var(--gold); font-size: 13px; }
-        .db-section-head a:hover { color: var(--gold-light); }
+        .db-section-head a { color: var(--teal-glow); font-size: 13px; }
+        .db-section-head a:hover { color: var(--teal-light); }
 
         .db-quicklinks {
           display: grid;
@@ -210,8 +210,8 @@ function Dashboard() {
           transition: all .3s ease;
         }
         .db-quicklink:hover {
-          border-color: var(--gold);
-          background: rgba(216,181,104,0.06);
+          border-color: var(--teal-glow);
+          background: rgba(15,111,92,0.08);
           transform: translateY(-3px);
         }
         .db-quicklink-icon {

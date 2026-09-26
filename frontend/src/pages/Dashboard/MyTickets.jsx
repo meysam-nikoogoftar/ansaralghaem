@@ -188,7 +188,7 @@ function MyTickets() {
 const ticketStyles = `
   .tk-page { display: flex; flex-direction: column; gap: 20px; max-width: 680px; }
   .tk-head { display: flex; align-items: center; justify-content: space-between; }
-  .tk-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 22px; }
+  .tk-head h1 { font-family: var(--font-display); color: var(--teal-glow); font-size: 22px; }
 
   .tk-new-btn {
     padding: 10px 20px;
@@ -196,9 +196,9 @@ const ticketStyles = `
     border: none;
     cursor: pointer;
     font-size: 13px; font-weight: 700;
-    color: #1a1206;
-    background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
-    box-shadow: 0 6px 18px -6px rgba(216,181,104,0.45);
+    color: #eefaf5;
+    background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
+    box-shadow: 0 6px 18px -6px rgba(15,111,92,0.45);
   }
 
   .tk-card {
@@ -209,7 +209,7 @@ const ticketStyles = `
   }
   .tk-card h2 {
     font-family: var(--font-display);
-    color: var(--gold-light);
+    color: var(--teal-glow);
     font-size: 15px;
     margin-bottom: 14px;
   }
@@ -219,7 +219,7 @@ const ticketStyles = `
   .tk-input {
     width: 100%;
     padding: 11px 14px;
-    background: rgba(10,21,18,0.6);
+    background: var(--input-bg);
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
     color: var(--ink);
@@ -227,7 +227,7 @@ const ticketStyles = `
     font-size: 13px;
     outline: none;
   }
-  .tk-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.12); }
+  .tk-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.15); }
   select.tk-input option { background: var(--surface-2); color: var(--ink); }
 
   .tk-form-actions { display: flex; gap: 10px; }
@@ -237,8 +237,8 @@ const ticketStyles = `
     border: none;
     cursor: pointer;
     font-size: 13px; font-weight: 700;
-    color: #1a1206;
-    background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+    color: #eefaf5;
+    background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
   }
   .tk-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .tk-cancel-btn {
@@ -250,7 +250,7 @@ const ticketStyles = `
     font-size: 13px;
     cursor: pointer;
   }
-  .tk-cancel-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+  .tk-cancel-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
 
   .tk-empty {
     background: var(--surface);
@@ -273,7 +273,7 @@ const ticketStyles = `
     cursor: pointer;
     transition: all .25s ease;
   }
-  .tk-row:hover { border-color: var(--gold); }
+  .tk-row:hover { border-color: var(--teal-glow); }
   .tk-row h3 { color: var(--ink); font-size: 14px; font-weight: 600; }
   .tk-row p { font-size: 12px; margin-top: 4px; }
   .tk-badge {
@@ -283,8 +283,8 @@ const ticketStyles = `
 
   .tk-thread-head { display: flex; align-items: center; gap: 16px; }
   .tk-back-btn { background: none; border: none; color: var(--ink-dim); font-size: 13px; cursor: pointer; }
-  .tk-back-btn:hover { color: var(--gold-light); }
-  .tk-thread-head h1 { font-family: var(--font-display); color: var(--gold-light); font-size: 19px; }
+  .tk-back-btn:hover { color: var(--teal-glow); }
+  .tk-thread-head h1 { font-family: var(--font-display); color: var(--teal-glow); font-size: 19px; }
 
   .tk-messages { display: flex; flex-direction: column; gap: 12px; }
   .tk-msg-row { display: flex; justify-content: flex-start; }
@@ -293,7 +293,7 @@ const ticketStyles = `
     max-width: 75%;
     border-radius: var(--radius-md);
     padding: 12px 16px;
-    background: rgba(10,21,18,0.6);
+    background: var(--input-bg);
     border: 1px solid var(--line);
   }
   .tk-msg-row.mine .tk-msg-bubble {
@@ -312,8 +312,8 @@ const ticketStyles = `
     border: none;
     cursor: pointer;
     font-size: 13px; font-weight: 700;
-    color: #1a1206;
-    background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+    color: #eefaf5;
+    background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
     white-space: nowrap;
   }
 `

@@ -123,7 +123,7 @@ function TrackRegistration() {
         .tg-input {
           width: 100%;
           padding: 12px 16px;
-          background: rgba(10,21,18,0.6);
+          background: var(--input-bg);
           border: 1px solid var(--line);
           border-radius: var(--radius-sm);
           color: var(--ink);
@@ -131,7 +131,7 @@ function TrackRegistration() {
           font-size: 13px;
           outline: none;
         }
-        .tg-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.12); }
+        .tg-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.15); }
 
         .tg-submit {
           width: 100%;
@@ -141,9 +141,9 @@ function TrackRegistration() {
           cursor: pointer;
           font-family: var(--font-body);
           font-size: 14px; font-weight: 700;
-          color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
-          box-shadow: 0 6px 20px -6px rgba(216,181,104,0.45);
+          color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
+          box-shadow: 0 6px 20px -6px rgba(15,111,92,0.45);
           transition: transform .25s ease;
         }
         .tg-submit:hover:not(:disabled) { transform: translateY(-2px); }
@@ -168,7 +168,7 @@ function TrackRegistration() {
         }
         .tg-result h2 {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 16px;
           margin-bottom: 14px;
         }

@@ -168,7 +168,7 @@ function Profile() {
         }
         .pf-heading {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 22px;
         }
         .pf-message {
@@ -195,7 +195,7 @@ function Profile() {
         }
         .pf-card-title {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 16px;
           padding-bottom: 12px;
           margin-bottom: 16px;
@@ -218,7 +218,7 @@ function Profile() {
         .pf-input {
           width: 100%;
           padding: 11px 14px;
-          background: rgba(10,21,18,0.6);
+          background: var(--input-bg);
           border: 1px solid var(--line);
           border-radius: var(--radius-sm);
           color: var(--ink);
@@ -228,8 +228,8 @@ function Profile() {
           transition: all .25s ease;
         }
         .pf-input:focus {
-          border-color: var(--gold);
-          box-shadow: 0 0 0 3px rgba(216,181,104,0.12);
+          border-color: var(--teal-glow);
+          box-shadow: 0 0 0 3px rgba(15,111,92,0.15);
         }
         select.pf-input option { background: var(--surface-2); color: var(--ink); }
 
@@ -242,7 +242,7 @@ function Profile() {
         }
         .pf-checkbox {
           width: 17px; height: 17px;
-          accent-color: var(--gold);
+          accent-color: var(--teal-glow);
         }
 
         .pf-submit {
@@ -254,9 +254,9 @@ function Profile() {
           font-family: var(--font-body);
           font-size: 15px;
           font-weight: 700;
-          color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
-          box-shadow: 0 6px 20px -6px rgba(216,181,104,0.45);
+          color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
+          box-shadow: 0 6px 20px -6px rgba(15,111,92,0.45);
           transition: transform .25s ease, opacity .25s ease;
         }
         .pf-submit:hover:not(:disabled) { transform: translateY(-2px); }

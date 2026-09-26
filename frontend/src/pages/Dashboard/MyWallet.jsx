@@ -116,7 +116,7 @@ function MyWallet() {
 
       <style>{`
         .wl-page { display: flex; flex-direction: column; gap: 20px; max-width: 640px; }
-        .wl-heading { font-family: var(--font-display); color: var(--gold-light); font-size: 22px; }
+        .wl-heading { font-family: var(--font-display); color: var(--teal-glow); font-size: 22px; }
 
         .wl-balance-card {
           background: linear-gradient(135deg, var(--teal), var(--teal-light));
@@ -128,7 +128,7 @@ function MyWallet() {
         .wl-balance-card p { color: rgba(238,230,214,0.8); font-size: 13px; margin-bottom: 8px; }
         .wl-balance-card h2 {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: #eefaf5;
           font-size: 30px;
         }
 
@@ -140,7 +140,7 @@ function MyWallet() {
         }
         .wl-card h2 {
           font-family: var(--font-display);
-          color: var(--gold-light);
+          color: var(--teal-glow);
           font-size: 15px;
           margin-bottom: 14px;
         }
@@ -166,22 +166,22 @@ function MyWallet() {
         .wl-input {
           flex: 1;
           padding: 12px 16px;
-          background: rgba(10,21,18,0.6);
+          background: var(--input-bg);
           border: 1px solid var(--line);
           border-radius: var(--radius-sm);
           color: var(--ink);
           font-size: 13px;
           outline: none;
         }
-        .wl-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(216,181,104,0.12); }
+        .wl-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.15); }
         .wl-charge-btn {
           padding: 0 22px;
           border-radius: var(--radius-sm);
           border: none;
           cursor: pointer;
           font-size: 13px; font-weight: 700;
-          color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
+          color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
           white-space: nowrap;
         }
         .wl-charge-btn:disabled { opacity: 0.6; cursor: not-allowed; }

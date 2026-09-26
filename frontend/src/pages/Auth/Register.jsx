@@ -239,7 +239,7 @@ function Register() {
         .auth-input {
           width: 100%;
           padding: 12px 16px;
-          background: rgba(10,21,18,0.6);
+          background: var(--input-bg);
           border: 1px solid var(--line);
           border-radius: var(--radius-md);
           color: var(--ink);
@@ -250,9 +250,9 @@ function Register() {
         }
         .auth-input::placeholder { color: var(--ink-faint); }
         .auth-input:focus {
-          border-color: var(--gold);
-          box-shadow: 0 0 0 3px rgba(216,181,104,0.12);
-          background: rgba(10,21,18,0.85);
+          border-color: var(--teal-glow);
+          box-shadow: 0 0 0 3px rgba(15,111,92,0.15);
+          background: var(--input-bg-focus);
         }
 
         .auth-submit {
@@ -265,14 +265,14 @@ function Register() {
           font-family: var(--font-body);
           font-size: 15px;
           font-weight: 700;
-          color: #1a1206;
-          background: linear-gradient(135deg, var(--gold-light), var(--gold) 50%, var(--gold-dark));
-          box-shadow: 0 6px 20px -6px rgba(216,181,104,0.45);
+          color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
+          box-shadow: 0 6px 20px -6px rgba(15,111,92,0.45);
           transition: transform .25s ease, box-shadow .25s ease, opacity .25s ease;
         }
         .auth-submit:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 12px 28px -8px rgba(216,181,104,0.6);
+          box-shadow: 0 12px 28px -8px rgba(15,111,92,0.6);
         }
         .auth-submit:disabled { opacity: 0.65; cursor: not-allowed; }
 
@@ -283,10 +283,10 @@ function Register() {
           color: var(--ink-dim);
         }
         .auth-footer-link a {
-          color: var(--gold);
+          color: var(--teal-glow);
           font-weight: 600;
         }
-        .auth-footer-link a:hover { color: var(--gold-light); }
+        .auth-footer-link a:hover { color: var(--teal-light); }
 
         .auth-quote {
           margin-top: 22px;
