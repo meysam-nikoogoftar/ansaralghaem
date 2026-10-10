@@ -1,3 +1,4 @@
+from .permissions import IsAdminOrSuperAdmin, IsSuperAdmin, HasAdminPermission
 from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -10,7 +11,7 @@ from .permissions import IsAdminOrSuperAdmin, IsSuperAdmin
 from .serializers import (
     RegisterSerializer, UserProfileSerializer,
     UserListSerializer, ChangePasswordSerializer,
-    SearchUserSerializer
+    SearchUserSerializer, AdminUserPermissionsSerializer
 )
 
 
@@ -163,7 +164,7 @@ class AdminUserListView(generics.ListAPIView):
     """
     لیست کاربران برای پنل ادمین (بر پایه user_type، نه is_staff).
     """
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_users')]
     serializer_class = UserListSerializer
 
     def get_queryset(self):
@@ -206,5 +207,30 @@ class PromoteUserView(APIView):
 
         user.user_type = new_type
         user.is_staff = new_type == 'admin'
+        if new_type == 'user':
+            user.admin_role = 'custom'
+            for field in ('perm_users', 'perm_trips', 'perm_registrations', 'perm_attendance',
+                          'perm_financial', 'perm_shop', 'perm_content', 'perm_tickets',
+                          'perm_announcements', 'perm_sms'):
+                setattr(user, field, False)
         user.save()
         return Response(UserListSerializer(user).data)
+
+class AdminUserDetailView(generics.RetrieveAPIView):
+    """جزئیات کامل یک کاربر برای پنل ادمین (همه‌ی فیلدهای پروفایل، بدون پسورد)."""
+    permission_classes = [IsAdminOrSuperAdmin]
+    serializer_class = UserProfileSerializer
+    queryset = User.objects.all()
+
+class AdminUserDetailView(generics.RetrieveAPIView):
+    """جزئیات کامل یک کاربر برای پنل ادمین (همه‌ی فیلدهای پروفایل، بدون پسورد)."""
+    permission_classes = [HasAdminPermission('perm_users')]
+    serializer_class = UserProfileSerializer
+    queryset = User.objects.all()
+
+
+class AdminUserPermissionsView(generics.RetrieveUpdateAPIView):
+    """مشاهده/ویرایش دسترسی‌های گزینشی یک ادمین. فقط سوپرادمین."""
+    permission_classes = [IsSuperAdmin]
+    serializer_class = AdminUserPermissionsSerializer
+    queryset = User.objects.all()

@@ -1,6 +1,7 @@
 from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from accounts.permissions import HasAdminPermission
 from .models import Ticket, TicketMessage
 from .serializers import TicketSerializer, CreateTicketSerializer, TicketMessageSerializer
 
@@ -62,7 +63,7 @@ class ReplyTicketView(APIView):
 
 
 class AllTicketsView(generics.ListAPIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [HasAdminPermission('perm_tickets')]
     serializer_class = TicketSerializer
 
     def get_queryset(self):
@@ -74,7 +75,7 @@ class AllTicketsView(generics.ListAPIView):
 
 
 class AdminReplyTicketView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [HasAdminPermission('perm_tickets')]
 
     def post(self, request, pk):
         try:
@@ -98,7 +99,7 @@ class AdminReplyTicketView(APIView):
 
 
 class CloseTicketView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [HasAdminPermission('perm_tickets')]
 
     def post(self, request, pk):
         try:

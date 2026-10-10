@@ -1,7 +1,9 @@
 from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Wallet, WalletTransaction, HampaQafele, FinancialContribution, ContributionPayment, Expense
+from django.db.models import Sum
+from accounts.permissions import IsAdminOrSuperAdmin, HasAdminPermission
+from .models import Wallet, WalletTransaction, HampaQafele, FinancialContribution, ContributionPayment, Expense, DirectPaymentRecord
 from .serializers import (
     WalletSerializer, WalletTransactionSerializer, ChargeWalletSerializer,
     HampaQafeleSerializer, FinancialContributionSerializer,
@@ -218,28 +220,28 @@ class FinancialContributionSerializer(drf_serializers.ModelSerializer):
 
 class AdminExpenseListView(generics.ListCreateAPIView):
     """لیست/ایجاد ریزهزینه‌ها (فقط ادمین/سوپرادمین)."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_financial')]
     serializer_class = ExpenseSerializer
     queryset = Expense.objects.all().order_by('-id')
 
 
 class AdminExpenseDetailView(generics.RetrieveUpdateDestroyAPIView):
     """ویرایش/حذف یک ریزهزینه."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_financial')]
     serializer_class = ExpenseSerializer
     queryset = Expense.objects.all()
 
 
 class AdminContributionListView(generics.ListCreateAPIView):
     """لیست/ایجاد کمپین‌های مشارکت مالی."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_financial')]
     serializer_class = FinancialContributionSerializer
     queryset = FinancialContribution.objects.all().order_by('-id')
 
 
 class AdminContributionDetailView(generics.RetrieveUpdateDestroyAPIView):
     """ویرایش/حذف یک کمپین مشارکت مالی."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_financial')]
     serializer_class = FinancialContributionSerializer
     queryset = FinancialContribution.objects.all()
 
@@ -248,7 +250,7 @@ class AdminWalletOverviewView(APIView):
     """
     لیست کیف‌پول‌های کاربران به همراه موجودی، برای دید کلی مالی ادمین.
     """
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_financial')]
 
     def get(self, request):
         wallets = Wallet.objects.select_related('user').order_by('-balance')
@@ -262,3 +264,67 @@ class AdminWalletOverviewView(APIView):
             for w in wallets
         ]
         return Response(data)
+
+class MyFinancialReportView(APIView):
+    """گزارش مالی کامل کاربر لاگین‌شده."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response(build_financial_report(request.user))
+
+
+class AdminFinancialReportView(APIView):
+    """گزارش مالی یک کاربر مشخص، برای مشاهده‌ی ادمین."""
+    permission_classes = [HasAdminPermission('perm_financial')]
+
+    def get(self, request, user_id):
+        from accounts.models import User
+        try:
+            target_user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'کاربر یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(build_financial_report(target_user))
+
+
+def build_financial_report(user):
+    wallet, _ = Wallet.objects.get_or_create(user=user)
+    wallet_transactions = WalletTransaction.objects.filter(wallet=wallet).order_by('-created_at')
+    direct_payments = DirectPaymentRecord.objects.filter(user=user).select_related('registration__trip').order_by('-created_at')
+    contribution_payments = ContributionPayment.objects.filter(payer=user).select_related('contribution').order_by('-created_at')
+
+    total_charged = wallet_transactions.filter(transaction_type='charge', status='success').aggregate(s=Sum('amount'))['s'] or 0
+    total_wallet_spent = wallet_transactions.filter(transaction_type='trip_payment', status='success').aggregate(s=Sum('amount'))['s'] or 0
+    total_refunded = wallet_transactions.filter(transaction_type='refund', status='success').aggregate(s=Sum('amount'))['s'] or 0
+    total_direct_paid = direct_payments.aggregate(s=Sum('amount'))['s'] or 0
+    total_contributed = contribution_payments.aggregate(s=Sum('amount'))['s'] or 0
+
+    return {
+        'user_name': user.full_name,
+        'summary': {
+            'wallet_balance': wallet.balance,
+            'total_charged': total_charged,
+            'total_wallet_spent': total_wallet_spent,
+            'total_direct_paid': total_direct_paid,
+            'total_refunded': total_refunded,
+            'total_contributed': total_contributed,
+        },
+        'wallet_transactions': WalletTransactionSerializer(wallet_transactions, many=True).data,
+        'direct_payments': [
+            {
+                'id': p.id,
+                'amount': p.amount,
+                'trip_title': p.registration.trip.title,
+                'created_at': p.created_at,
+            }
+            for p in direct_payments
+        ],
+        'contribution_payments': [
+            {
+                'id': p.id,
+                'amount': p.amount,
+                'contribution_title': p.contribution.title,
+                'created_at': p.created_at,
+            }
+            for p in contribution_payments
+        ],
+    }

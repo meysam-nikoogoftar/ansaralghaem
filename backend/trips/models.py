@@ -79,6 +79,7 @@ class Registration(models.Model):
     refund_requested = models.BooleanField(default=False, verbose_name='درخواست عودت وجه')
     refund_status = models.CharField(max_length=20, blank=True, verbose_name='وضعیت عودت وجه')
     admin_note = models.TextField(blank=True, verbose_name='توضیحات ادمین')
+    group_code = models.CharField(max_length=20, blank=True, verbose_name='کد گروه (اتوبوس)')
     registered_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

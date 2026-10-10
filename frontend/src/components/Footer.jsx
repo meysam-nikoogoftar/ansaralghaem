@@ -5,6 +5,7 @@ const footerLinks = {
   quick: [
     { to: '/', label: 'صفحه اصلی' },
     { to: '/news', label: 'اخبار و اطلاعیه‌ها' },
+    { to: '/articles', label: 'دلنوشته‌ها' },
     { to: '/gallery', label: 'گالری تصاویر' },
     { to: '/shop', label: 'فروشگاه' },
     { to: '/track', label: 'پیگیری ثبت‌نام' },
@@ -14,7 +15,7 @@ const footerLinks = {
     { to: '/dashboard/trips', label: 'سفرهای من' },
     { to: '/dashboard/wallet', label: 'کیف پول' },
     { to: '/dashboard/tickets', label: 'تیکت‌ها' },
-    { to: '/dashboard/articles', label: 'دلنوشته‌ها' },
+    { to: '/dashboard/articles', label: 'دلنوشته‌های من' },
   ],
 }
 

@@ -21,4 +21,6 @@ urlpatterns = [
     path('admin/contributions/', views.AdminContributionListView.as_view(), name='admin_contribution_list'),
     path('admin/contributions/<int:pk>/', views.AdminContributionDetailView.as_view(), name='admin_contribution_detail'),
     path('admin/wallets/', views.AdminWalletOverviewView.as_view(), name='admin_wallet_overview'),
+    path('report/', views.MyFinancialReportView.as_view(), name='my_financial_report'),
+    path('admin/report/<int:user_id>/', views.AdminFinancialReportView.as_view(), name='admin_financial_report'),
 ]

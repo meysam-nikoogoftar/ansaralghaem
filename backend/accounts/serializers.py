@@ -42,3 +42,13 @@ class SearchUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'first_name', 'last_name', 'national_code', 'profile_image', 'mobile')
+
+class AdminUserPermissionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'id', 'admin_role', 'perm_users', 'perm_trips', 'perm_registrations',
+            'perm_attendance', 'perm_financial', 'perm_shop', 'perm_content',
+            'perm_tickets', 'perm_announcements', 'perm_sms',
+        )
+        read_only_fields = ('id',)

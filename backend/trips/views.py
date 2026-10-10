@@ -2,7 +2,7 @@ from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
-from accounts.permissions import IsAdminOrSuperAdmin
+from accounts.permissions import IsAdminOrSuperAdmin, HasAdminPermission
 from .models import Trip, Registration, TravelCompanion, AttendancePeriod, AttendanceRecord
 from .serializers import (
     TripSerializer, RegistrationSerializer, CreateRegistrationSerializer,
@@ -170,21 +170,21 @@ class RecordAttendanceView(APIView):
 
 class AdminTripListView(generics.ListCreateAPIView):
     """لیست همه‌ی سفرها (فعال و غیرفعال) + ایجاد سفر جدید."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_trips')]
     serializer_class = TripSerializer
     queryset = Trip.objects.all()
 
 
 class AdminTripDetailView(generics.RetrieveUpdateDestroyAPIView):
     """ویرایش/حذف یک سفر."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_trips')]
     serializer_class = TripSerializer
     queryset = Trip.objects.all()
 
 
 class AdminRegistrationListView(generics.ListAPIView):
     """لیست همه‌ی ثبت‌نام‌ها (همه‌ی کاربران) با فیلتر و جستجو."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_registrations')]
     serializer_class = RegistrationSerializer
 
     def get_queryset(self):
@@ -192,6 +192,12 @@ class AdminRegistrationListView(generics.ListAPIView):
         status_param = self.request.query_params.get('status', '')
         trip_id = self.request.query_params.get('trip_id', '')
         search = self.request.query_params.get('search', '')
+        gender = self.request.query_params.get('gender', '')
+        education_level = self.request.query_params.get('education_level', '')
+        nationality = self.request.query_params.get('nationality', '')
+        payment_method = self.request.query_params.get('payment_method', '')
+        refund_status = self.request.query_params.get('refund_status', '')
+
         if status_param:
             queryset = queryset.filter(status=status_param)
         if trip_id:
@@ -203,12 +209,23 @@ class AdminRegistrationListView(generics.ListAPIView):
                 Q(user__mobile__icontains=search) |
                 Q(tracking_code__icontains=search)
             )
+        if gender:
+            queryset = queryset.filter(user__gender=gender)
+        if education_level:
+            queryset = queryset.filter(user__education_level=education_level)
+        if nationality:
+            queryset = queryset.filter(user__nationality__icontains=nationality)
+        if payment_method:
+            queryset = queryset.filter(payment_method=payment_method)
+        if refund_status:
+            queryset = queryset.filter(refund_status=refund_status)
+
         return queryset
 
 
 class AdminRegistrationActionView(APIView):
     """تایید یا رد یک ثبت‌نام توسط ادمین. body: {action: 'approve'|'reject', rejection_reason?, admin_note?}"""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_registrations')]
 
     def post(self, request, pk):
         try:
@@ -233,13 +250,10 @@ class AdminRegistrationActionView(APIView):
         registration.save()
         return Response(RegistrationSerializer(registration).data)
 
-# این کلاس‌ها رو به انتهای backend/trips/views.py اضافه کن
-# (چون فیلدهای refund_requested/refund_status روی مدل Registration
-# تو اپ trips هستن، نه financial)
 
 class AdminRefundListView(generics.ListAPIView):
-    """لیست درخواست‌های عودت وجه در انتظار بررسی (از انصراف سفر)."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    """لیست درخواست‌های عودت وجه (از انصراف سفر) — شامل تاریخچه‌ی کامل، نه فقط در انتظار."""
+    permission_classes = [HasAdminPermission('perm_financial')]
     serializer_class = RegistrationSerializer
 
     def get_queryset(self):
@@ -252,9 +266,9 @@ class AdminRefundActionView(APIView):
     """
     تایید یا رد یک درخواست عودت وجه.
     body: { "action": "approve" | "reject", "amount"?: عدد اختیاری برای override مبلغ }
-    در حالت تایید، مبلغ به کیف‌پول کاربر اضافه می‌شود و یک تراکنش ثبت می‌شود.
+    در حالت تایید، مبلغ به کیف‌پول کاربر اضافه می‌شود و یک تراکنش موفق ثبت می‌شود.
     """
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_financial')]
 
     def post(self, request, pk):
         from financial.models import Wallet, WalletTransaction
@@ -262,6 +276,12 @@ class AdminRefundActionView(APIView):
             registration = Registration.objects.get(pk=pk, refund_requested=True)
         except Registration.DoesNotExist:
             return Response({'error': 'درخواست عودتی با این مشخصات یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+        if registration.refund_status in ('approved', 'rejected'):
+            return Response(
+                {'error': 'این درخواست قبلاً بررسی شده و نمی‌توان دوباره روی آن اقدام کرد'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         action = request.data.get('action')
         if action == 'approve':
@@ -279,6 +299,7 @@ class AdminRefundActionView(APIView):
                 wallet=wallet,
                 transaction_type='refund',
                 amount=amount,
+                status='success',
                 description=f'عودت وجه سفر «{registration.trip.title}» (کد پیگیری {registration.tracking_code})'
             )
 
@@ -292,3 +313,95 @@ class AdminRefundActionView(APIView):
             return Response(RegistrationSerializer(registration).data)
 
         return Response({'error': 'عملیات نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+class PayDirectRegistrationView(APIView):
+    """
+    پرداخت مستقیم (آنلاین، خارج از کیف پول) برای یک ثبت‌نام.
+    body: { "amount"?: عدد اختیاری، پیش‌فرض کل مبلغ باقیمانده }
+
+    TODO (اتصال درگاه): اینجا باید به‌جای ثبت مستقیم، کاربر به درگاه زرین‌پال
+    ریدایرکت بشه و این منطق (پایین) فقط در callback بعد از تایید پرداخت واقعی
+    اجرا بشه. فعلاً چون درگاه وصل نیست، برای تست مستقیم موفق ثبت می‌شود.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        from financial.models import DirectPaymentRecord
+        try:
+            registration = Registration.objects.get(pk=pk, user=request.user)
+        except Registration.DoesNotExist:
+            return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+        amount = request.data.get('amount')
+        try:
+            amount = int(amount) if amount not in (None, '') else registration.remaining_amount
+        except (TypeError, ValueError):
+            return Response({'error': 'مبلغ نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount <= 0 or amount > registration.remaining_amount:
+            return Response({'error': 'مبلغ نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        registration.paid_directly += amount
+        registration.payment_method = 'online'
+        registration.save()
+
+        DirectPaymentRecord.objects.create(
+            user=request.user,
+            registration=registration,
+            amount=amount,
+        )
+        return Response(RegistrationSerializer(registration).data)
+class AdminSetGroupCodeView(APIView):
+    """تنظیم کد گروه (اتوبوس) یک ثبت‌نام. body: { "group_code": "1" }"""
+    permission_classes = [HasAdminPermission('perm_registrations')]
+
+    def post(self, request, pk):
+        try:
+            registration = Registration.objects.get(pk=pk)
+        except Registration.DoesNotExist:
+            return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+        registration.group_code = request.data.get('group_code', '')
+        registration.save()
+        return Response(RegistrationSerializer(registration).data)
+
+
+class AdminRegistrationCompanionsNetworkView(APIView):
+    """
+    لیست ثبت‌نام‌های مرتبط (همسفرهای دوطرفه) با یک ثبت‌نام مشخص، برای همون سفر —
+    تا ادمین بتونه هم‌زمان کد گروه رو به همسفرها هم اختصاص بده.
+    """
+    permission_classes = [HasAdminPermission('perm_registrations')]
+
+    def get(self, request, pk):
+        try:
+            registration = Registration.objects.select_related('trip', 'user').get(pk=pk)
+        except Registration.DoesNotExist:
+            return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+        added_by_me = TravelCompanion.objects.filter(registration=registration).values_list('companion_id', flat=True)
+        added_me = TravelCompanion.objects.filter(
+            companion=registration.user, registration__trip=registration.trip
+        ).exclude(registration=registration).values_list('registration__user_id', flat=True)
+
+        related_user_ids = (set(added_by_me) | set(added_me)) - {registration.user_id}
+
+        related_registrations = Registration.objects.filter(
+            trip=registration.trip, user_id__in=related_user_ids
+        ).select_related('user').exclude(pk=registration.pk)
+
+        return Response(RegistrationSerializer(related_registrations, many=True).data)
+
+
+class AdminBulkSetGroupCodeView(APIView):
+    """تنظیم یکجای کد گروه برای چند ثبت‌نام. body: { "registration_ids": [..], "group_code": "1" }"""
+    permission_classes = [HasAdminPermission('perm_registrations')]
+
+    def post(self, request):
+        ids = request.data.get('registration_ids', [])
+        group_code = request.data.get('group_code', '')
+        if not isinstance(ids, list) or not ids:
+            return Response({'error': 'لیست ثبت‌نام‌ها الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated = Registration.objects.filter(pk__in=ids).update(group_code=group_code)
+        return Response({'updated_count': updated})

@@ -29,7 +29,7 @@ class ArticleDetailView(APIView):
             article = Article.objects.get(pk=pk, status='approved')
             article.views_count += 1
             article.save()
-            return Response(ArticleSerializer(article).data)
+            return Response(ArticleSerializer(article, context={'request': request}).data)
         except Article.DoesNotExist:
             return Response({'error': 'دلنوشته یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -69,7 +69,7 @@ class NewsDetailView(APIView):
             news = News.objects.get(pk=pk, is_published=True)
             news.views_count += 1
             news.save()
-            return Response(NewsSerializer(news).data)
+            return Response(NewsSerializer(news, context={'request': request}).data)
         except News.DoesNotExist:
             return Response({'error': 'خبر یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -138,12 +138,13 @@ class ActiveAnnouncementView(generics.ListAPIView):
 # (بالای فایل باید IsAdminOrSuperAdmin ایمپورت بشه، پایین آورده شده)
 
 from accounts.permissions import IsAdminOrSuperAdmin
+from accounts.permissions import HasAdminPermission
 from django.utils import timezone
 
 
 class AdminArticleListView(generics.ListAPIView):
     """لیست همه‌ی دلنوشته‌ها (هر وضعیتی) برای بررسی ادمین."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_content')]
     serializer_class = ArticleSerializer
 
     def get_queryset(self):
@@ -156,7 +157,7 @@ class AdminArticleListView(generics.ListAPIView):
 
 class AdminArticleActionView(APIView):
     """تایید یا رد یک دلنوشته. body: { "action": "approve" | "reject" }"""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_content')]
 
     def post(self, request, pk):
         try:
@@ -179,7 +180,7 @@ class AdminArticleActionView(APIView):
 
 class AdminGalleryListView(generics.ListAPIView):
     """لیست همه‌ی تصاویر گالری (هر وضعیتی) برای بررسی ادمین."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_content')]
     serializer_class = GallerySerializer
 
     def get_queryset(self):
@@ -192,7 +193,7 @@ class AdminGalleryListView(generics.ListAPIView):
 
 class AdminGalleryActionView(APIView):
     """تایید یا رد یک تصویر گالری. body: { "action": "approve" | "reject" }"""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_content')]
 
     def post(self, request, pk):
         try:
@@ -215,13 +216,13 @@ class AdminGalleryActionView(APIView):
 
 class AdminNewsListView(generics.ListCreateAPIView):
     """لیست/ایجاد اخبار توسط ادمین (بدون نیاز به تایید، مستقیم منتشر می‌شه)."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_content')]
     serializer_class = NewsSerializer
     queryset = News.objects.all().order_by('-created_at')
 
 
 class AdminNewsDetailView(generics.RetrieveUpdateDestroyAPIView):
     """ویرایش/حذف یک خبر."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_content')]
     serializer_class = NewsSerializer
     queryset = News.objects.all()

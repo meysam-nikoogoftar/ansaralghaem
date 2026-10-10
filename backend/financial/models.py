@@ -1,6 +1,6 @@
 from django.db import models
 from accounts.models import User
-from trips.models import Trip
+from trips.models import Trip, Registration
 
 
 class Wallet(models.Model):
@@ -137,3 +137,18 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.trip.title} - {self.title} - {self.amount}"
+
+class DirectPaymentRecord(models.Model):
+    """ثبت تاریخچه‌ی هر پرداخت مستقیم (آنلاین/درگاه) برای یک ثبت‌نام سفر."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='direct_payments', verbose_name='کاربر')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='direct_payment_records', verbose_name='ثبت‌نام')
+    amount = models.BigIntegerField(verbose_name='مبلغ')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'پرداخت مستقیم سفر'
+        verbose_name_plural = 'پرداخت‌های مستقیم سفر'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.full_name} - {self.registration.trip.title} - {self.amount}"

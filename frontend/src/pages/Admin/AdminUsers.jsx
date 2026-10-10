@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
 
@@ -104,6 +105,7 @@ function AdminUsers() {
                 <th>کد ملی</th>
                 <th>نقش</th>
                 <th>تاریخ عضویت</th>
+                <th>جزئیات</th>
                 {isSuperAdmin && <th>عملیات</th>}
               </tr>
             </thead>
@@ -129,6 +131,9 @@ function AdminUsers() {
                     </span>
                   </td>
                   <td className="aus-date">{new Date(u.date_joined).toLocaleDateString('fa-IR')}</td>
+                  <td>
+                     <Link to={`/admin/users/${u.id}`} className="aus-detail-btn">مشاهده جزئیات</Link>
+                   </td>
                   {isSuperAdmin && (
                     <td>
                       {u.user_type === 'superadmin' ? (
@@ -235,6 +240,12 @@ function AdminUsers() {
         .aus-role-btn.demote:hover { background: rgba(122,35,48,0.12); }
         .aus-role-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .aus-locked { color: var(--ink-faint); font-size: 12px; }
+        .aus-detail-btn {
+           font-size: 11.5px; padding: 6px 14px; border-radius: 999px;
+           border: 1px solid rgba(15,111,92,0.4); color: var(--teal-glow);
+           text-decoration: none; white-space: nowrap; display: inline-block;
+         }
+        .aus-detail-btn:hover { background: rgba(15,111,92,0.1); }
       `}</style>
     </div>
   )

@@ -14,5 +14,9 @@ urlpatterns = [
     # پنل ادمین
     path('admin/dashboard-stats/', views.AdminDashboardStatsView.as_view(), name='admin_dashboard_stats'),
     path('admin/users/', views.AdminUserListView.as_view(), name='admin_user_list'),
+    path('admin/users/<int:pk>/', views.AdminUserDetailView.as_view(), name='admin_user_detail'),
+    path('admin/users/<int:pk>/', views.AdminUserDetailView.as_view(), name='admin_user_detail'),
+    path('admin/users/<int:pk>/permissions/', views.AdminUserPermissionsView.as_view(), name='admin_user_permissions'),
     path('admin/users/<int:pk>/promote/', views.PromoteUserView.as_view(), name='promote_user'),
+    
 ]

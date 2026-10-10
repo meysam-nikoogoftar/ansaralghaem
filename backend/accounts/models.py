@@ -117,6 +117,25 @@ class User(AbstractBaseUser, PermissionsMixin):
     student_card_image = models.ImageField(upload_to='student_cards/', null=True, blank=True, verbose_name='تصویر کارت دانشجویی')
     commitment_form = models.FileField(upload_to='commitments/', null=True, blank=True, verbose_name='تعهدنامه/رضایت‌نامه')
     passport_image = models.ImageField(upload_to='passports/', null=True, blank=True, verbose_name='تصویر گذرنامه')
+    ADMIN_ROLE_CHOICES = (
+        ('custom', 'سفارشی'),
+        ('financial', 'مسئول مالی'),
+        ('registration', 'مسئول ثبت‌نام'),
+        ('content', 'مسئول محتوا'),
+        ('full', 'دسترسی کامل'),
+    )
+
+    admin_role = models.CharField(max_length=20, choices=ADMIN_ROLE_CHOICES, default='custom', blank=True, verbose_name='نقش ادمین')
+    perm_users = models.BooleanField(default=False, verbose_name='مدیریت کاربران')
+    perm_trips = models.BooleanField(default=False, verbose_name='مدیریت سفرها')
+    perm_registrations = models.BooleanField(default=False, verbose_name='مدیریت ثبت‌نام‌ها')
+    perm_attendance = models.BooleanField(default=False, verbose_name='مدیریت حضور و غیاب')
+    perm_financial = models.BooleanField(default=False, verbose_name='مدیریت مالی')
+    perm_shop = models.BooleanField(default=False, verbose_name='مدیریت فروشگاه')
+    perm_content = models.BooleanField(default=False, verbose_name='مدیریت محتوا')
+    perm_tickets = models.BooleanField(default=False, verbose_name='مدیریت تیکت‌ها')
+    perm_announcements = models.BooleanField(default=False, verbose_name='مدیریت اعلانات')
+    perm_sms = models.BooleanField(default=False, verbose_name='ارسال پیامک')
     objects = UserManager()
 
     USERNAME_FIELD = 'mobile'

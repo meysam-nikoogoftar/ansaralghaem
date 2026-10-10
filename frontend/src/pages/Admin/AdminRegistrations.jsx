@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import api from '../../services/api'
 
 const statusMeta = {
@@ -24,14 +24,31 @@ function AdminRegistrations() {
   const [busyId, setBusyId] = useState(null)
   const [rejectingId, setRejectingId] = useState(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [advancedFilters, setAdvancedFilters] = useState({
+    gender: '', education_level: '', nationality: '', payment_method: '', refund_status: '',
+  })
+  const [showAdvanced, setShowAdvanced] = useState(false)
+
+  const [groupCodes, setGroupCodes] = useState({})
+  const [savingGroupId, setSavingGroupId] = useState(null)
+  const [companionPanels, setCompanionPanels] = useState({})
+  const groupCodeTimers = useRef({})
 
   const fetchRegistrations = () => {
     setIsLoading(true)
     const params = new URLSearchParams()
     if (search) params.append('search', search)
     if (statusFilter) params.append('status', statusFilter)
+    Object.entries(advancedFilters).forEach(([key, value]) => {
+      if (value) params.append(key, value)
+    })
     api.get(`/trips/admin/registrations/?${params.toString()}`)
-      .then(res => setRegistrations(res.data))
+      .then(res => {
+        setRegistrations(res.data)
+        const codes = {}
+        res.data.forEach(r => { codes[r.id] = r.group_code || '' })
+        setGroupCodes(codes)
+      })
       .catch(() => {})
       .finally(() => setIsLoading(false))
   }
@@ -39,12 +56,22 @@ function AdminRegistrations() {
   useEffect(() => {
     fetchRegistrations()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter])
+  }, [statusFilter, advancedFilters])
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     fetchRegistrations()
   }
+
+  const handleAdvancedChange = (key, value) => {
+    setAdvancedFilters({ ...advancedFilters, [key]: value })
+  }
+
+  const clearAdvancedFilters = () => {
+    setAdvancedFilters({ gender: '', education_level: '', nationality: '', payment_method: '', refund_status: '' })
+  }
+
+  const activeAdvancedCount = Object.values(advancedFilters).filter(Boolean).length
 
   const handleApprove = async (id) => {
     setBusyId(id)
@@ -75,6 +102,91 @@ function AdminRegistrations() {
       alert(err.response?.data?.error || 'خطا در رد ثبت‌نام')
     }
     setBusyId(null)
+  }
+
+  // ---------- کد گروه (اتوبوس) ----------
+
+  const handleGroupCodeChange = (id, value) => {
+    setGroupCodes({ ...groupCodes, [id]: value })
+
+    clearTimeout(groupCodeTimers.current[id])
+    groupCodeTimers.current[id] = setTimeout(() => {
+      saveGroupCode(id, value)
+    }, 600)
+  }
+
+  const saveGroupCode = async (id, value) => {
+    setSavingGroupId(id)
+    try {
+      const res = await api.post(`/trips/admin/registrations/${id}/group-code/`, { group_code: value })
+      setRegistrations(regs => regs.map(r => r.id === id ? res.data : r))
+
+      if (value) {
+        const netRes = await api.get(`/trips/admin/registrations/${id}/companions-network/`)
+        if (netRes.data.length > 0) {
+          const selected = {}
+          netRes.data.forEach(r => { selected[r.id] = true })
+          setCompanionPanels(p => ({ ...p, [id]: { list: netRes.data, selected, applying: false } }))
+        }
+      } else {
+        setCompanionPanels(p => {
+          const next = { ...p }
+          delete next[id]
+          return next
+        })
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || 'خطا در ثبت کد گروه')
+    }
+    setSavingGroupId(null)
+  }
+
+  const toggleCompanionSelected = (regId, companionRegId) => {
+    setCompanionPanels(p => ({
+      ...p,
+      [regId]: {
+        ...p[regId],
+        selected: { ...p[regId].selected, [companionRegId]: !p[regId].selected[companionRegId] },
+      },
+    }))
+  }
+
+  const applyGroupCodeToCompanions = async (regId) => {
+    const panel = companionPanels[regId]
+    const selectedIds = Object.entries(panel.selected).filter(([, v]) => v).map(([k]) => Number(k))
+    if (selectedIds.length === 0) return
+
+    setCompanionPanels(p => ({ ...p, [regId]: { ...p[regId], applying: true } }))
+    try {
+      await api.post('/trips/admin/registrations/bulk-group-code/', {
+        registration_ids: selectedIds,
+        group_code: groupCodes[regId],
+      })
+      setGroupCodes(gc => {
+        const next = { ...gc }
+        selectedIds.forEach(id => { next[id] = groupCodes[regId] })
+        return next
+      })
+      setRegistrations(regs => regs.map(r =>
+        selectedIds.includes(r.id) ? { ...r, group_code: groupCodes[regId] } : r
+      ))
+      setCompanionPanels(p => {
+        const next = { ...p }
+        delete next[regId]
+        return next
+      })
+    } catch {
+      alert('خطا در اعمال کد گروه')
+      setCompanionPanels(p => ({ ...p, [regId]: { ...p[regId], applying: false } }))
+    }
+  }
+
+  const closeCompanionPanel = (regId) => {
+    setCompanionPanels(p => {
+      const next = { ...p }
+      delete next[regId]
+      return next
+    })
   }
 
   return (
@@ -112,70 +224,179 @@ function AdminRegistrations() {
         </div>
       </div>
 
+      <div className="art-advanced-wrap">
+        <button onClick={() => setShowAdvanced(!showAdvanced)} className="art-advanced-toggle">
+          فیلتر پیشرفته {activeAdvancedCount > 0 && <span className="art-advanced-count">{activeAdvancedCount}</span>}
+          <span className={`art-advanced-arrow${showAdvanced ? ' open' : ''}`}>▾</span>
+        </button>
+
+        {showAdvanced && (
+          <div className="art-advanced-panel">
+            <div className="art-advanced-field">
+              <label>جنسیت</label>
+              <select value={advancedFilters.gender} onChange={(e) => handleAdvancedChange('gender', e.target.value)}>
+                <option value="">همه</option>
+                <option value="male">برادر</option>
+                <option value="female">خواهر</option>
+              </select>
+            </div>
+            <div className="art-advanced-field">
+              <label>مقطع تحصیلی</label>
+              <select value={advancedFilters.education_level} onChange={(e) => handleAdvancedChange('education_level', e.target.value)}>
+                <option value="">همه</option>
+                <option value="diploma">دیپلم</option>
+                <option value="associate">فوق دیپلم</option>
+                <option value="bachelor">لیسانس</option>
+                <option value="master">فوق لیسانس</option>
+                <option value="phd">دکترا</option>
+              </select>
+            </div>
+            <div className="art-advanced-field">
+              <label>ملیت</label>
+              <input
+                type="text"
+                value={advancedFilters.nationality}
+                onChange={(e) => handleAdvancedChange('nationality', e.target.value)}
+                placeholder="مثلاً: ایران"
+              />
+            </div>
+            <div className="art-advanced-field">
+              <label>نحوه پرداخت</label>
+              <select value={advancedFilters.payment_method} onChange={(e) => handleAdvancedChange('payment_method', e.target.value)}>
+                <option value="">همه</option>
+                <option value="online">آنلاین</option>
+                <option value="cash">نقدی</option>
+                <option value="wallet">کیف پول</option>
+              </select>
+            </div>
+            <div className="art-advanced-field">
+              <label>وضعیت عودت وجه</label>
+              <select value={advancedFilters.refund_status} onChange={(e) => handleAdvancedChange('refund_status', e.target.value)}>
+                <option value="">همه</option>
+                <option value="pending">در انتظار</option>
+                <option value="approved">تایید شده</option>
+                <option value="rejected">رد شده</option>
+              </select>
+            </div>
+            {activeAdvancedCount > 0 && (
+              <button onClick={clearAdvancedFilters} className="art-advanced-clear">پاک کردن فیلترها</button>
+            )}
+          </div>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="art-loading">در حال بارگذاری...</div>
       ) : registrations.length === 0 ? (
         <div className="art-empty">ثبت‌نامی یافت نشد</div>
       ) : (
         <div className="art-list">
-          {registrations.map(r => (
-            <div key={r.id} className="art-card">
-              <div className="art-card-top">
-                <div>
-                  <h3>{r.user_name}</h3>
-                  <p>{r.trip_detail?.title} · کد پیگیری: <span className="art-mono">{r.tracking_code}</span></p>
-                </div>
-                <span
-                  className="art-badge"
-                  style={{ color: statusMeta[r.status]?.color, borderColor: statusMeta[r.status]?.color, background: statusMeta[r.status]?.bg }}
-                >
-                  {statusMeta[r.status]?.label || r.status}
-                </span>
-              </div>
-
-              <div className="art-card-meta">
-                <span>هزینه کل: <strong>{r.total_cost?.toLocaleString('fa-IR')} ت</strong></span>
-                <span>باقیمانده: <strong>{r.remaining_amount?.toLocaleString('fa-IR')} ت</strong></span>
-                <span style={{ color: paymentMeta[r.payment_status]?.color }}>
-                  پرداخت: {paymentMeta[r.payment_status]?.label}
-                </span>
-                <span>تاریخ: {new Date(r.registered_at).toLocaleDateString('fa-IR')}</span>
-              </div>
-
-              {r.status === 'pending' && (
-                <div className="art-actions">
-                  <button onClick={() => handleApprove(r.id)} disabled={busyId === r.id} className="art-approve-btn">
-                    {busyId === r.id ? '...' : 'تایید ثبت‌نام'}
-                  </button>
-                  <button onClick={() => openReject(r.id)} disabled={busyId === r.id} className="art-reject-btn">
-                    رد کردن
-                  </button>
-                </div>
-              )}
-
-              {rejectingId === r.id && (
-                <div className="art-reject-box">
-                  <textarea
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="دلیل رد ثبت‌نام (اختیاری)..."
-                    rows={2}
-                    className="art-reject-input"
-                  />
-                  <div className="art-reject-actions">
-                    <button onClick={() => submitReject(r.id)} disabled={busyId === r.id} className="art-reject-confirm">
-                      {busyId === r.id ? '...' : 'تایید رد ثبت‌نام'}
-                    </button>
-                    <button onClick={() => setRejectingId(null)} className="art-reject-cancel">انصراف</button>
+          {registrations.map(r => {
+            const panel = companionPanels[r.id]
+            return (
+              <div key={r.id} className="art-card">
+                <div className="art-card-top">
+                  <div>
+                    <h3>{r.user_name}</h3>
+                    <p>{r.trip_detail?.title} · کد پیگیری: <span className="art-mono">{r.tracking_code}</span></p>
                   </div>
+                  <span
+                    className="art-badge"
+                    style={{ color: statusMeta[r.status]?.color, borderColor: statusMeta[r.status]?.color, background: statusMeta[r.status]?.bg }}
+                  >
+                    {statusMeta[r.status]?.label || r.status}
+                  </span>
                 </div>
-              )}
 
-              {r.status === 'rejected' && r.rejection_reason && (
-                <p className="art-rejection-note">دلیل رد: {r.rejection_reason}</p>
-              )}
-            </div>
-          ))}
+                <div className="art-card-meta">
+                  <span>هزینه کل: <strong>{r.total_cost?.toLocaleString('fa-IR')} ت</strong></span>
+                  <span>باقیمانده: <strong>{r.remaining_amount?.toLocaleString('fa-IR')} ت</strong></span>
+                  <span style={{ color: paymentMeta[r.payment_status]?.color }}>
+                    پرداخت: {paymentMeta[r.payment_status]?.label}
+                  </span>
+                  <span>تاریخ: {new Date(r.registered_at).toLocaleDateString('fa-IR')}</span>
+                </div>
+
+                <div className="art-group-code-row">
+                  <label>کد گروه (اتوبوس):</label>
+                  <input
+                    type="text"
+                    value={groupCodes[r.id] ?? ''}
+                    onChange={(e) => handleGroupCodeChange(r.id, e.target.value)}
+                    placeholder="مثلاً: 1"
+                    className="art-group-code-input"
+                  />
+                  {savingGroupId === r.id && <span className="art-group-code-saving">در حال ذخیره...</span>}
+                </div>
+
+                {panel && (
+                  <div className="art-companion-panel">
+                    <p className="art-companion-panel-title">
+                      اعمال کد گروه «{groupCodes[r.id]}» به همسفرهای {r.user_name}:
+                    </p>
+                    <div className="art-companion-checklist">
+                      {panel.list.map(c => (
+                        <label key={c.id} className="art-companion-check">
+                          <input
+                            type="checkbox"
+                            checked={!!panel.selected[c.id]}
+                            onChange={() => toggleCompanionSelected(r.id, c.id)}
+                          />
+                          <span>{c.user_name}</span>
+                          {c.group_code && <span className="art-companion-current-code">(فعلی: {c.group_code})</span>}
+                        </label>
+                      ))}
+                    </div>
+                    <div className="art-companion-actions">
+                      <button
+                        onClick={() => applyGroupCodeToCompanions(r.id)}
+                        disabled={panel.applying}
+                        className="art-companion-apply"
+                      >
+                        {panel.applying ? '...' : 'اعمال به انتخاب‌شده‌ها'}
+                      </button>
+                      <button onClick={() => closeCompanionPanel(r.id)} className="art-companion-skip">
+                        بی‌خیال
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {r.status === 'pending' && (
+                  <div className="art-actions">
+                    <button onClick={() => handleApprove(r.id)} disabled={busyId === r.id} className="art-approve-btn">
+                      {busyId === r.id ? '...' : 'تایید ثبت‌نام'}
+                    </button>
+                    <button onClick={() => openReject(r.id)} disabled={busyId === r.id} className="art-reject-btn">
+                      رد کردن
+                    </button>
+                  </div>
+                )}
+
+                {rejectingId === r.id && (
+                  <div className="art-reject-box">
+                    <textarea
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      placeholder="دلیل رد ثبت‌نام (اختیاری)..."
+                      rows={2}
+                      className="art-reject-input"
+                    />
+                    <div className="art-reject-actions">
+                      <button onClick={() => submitReject(r.id)} disabled={busyId === r.id} className="art-reject-confirm">
+                        {busyId === r.id ? '...' : 'تایید رد ثبت‌نام'}
+                      </button>
+                      <button onClick={() => setRejectingId(null)} className="art-reject-cancel">انصراف</button>
+                    </div>
+                  </div>
+                )}
+
+                {r.status === 'rejected' && r.rejection_reason && (
+                  <p className="art-rejection-note">دلیل رد: {r.rejection_reason}</p>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -204,6 +425,41 @@ function AdminRegistrations() {
         .art-status-tab:hover { color: var(--teal-glow); border-color: var(--teal-glow); }
         .art-status-tab.active { background: rgba(15,111,92,0.12); color: var(--teal-glow); border-color: var(--teal-glow); }
 
+        .art-advanced-wrap { display: flex; flex-direction: column; gap: 10px; }
+        .art-advanced-toggle {
+          align-self: flex-start; display: flex; align-items: center; gap: 8px;
+          padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);
+          background: transparent; color: var(--ink-dim); font-size: 12.5px; cursor: pointer;
+        }
+        .art-advanced-toggle:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
+        .art-advanced-count {
+          background: var(--teal-glow); color: #06130f; font-size: 10.5px; font-weight: 700;
+          padding: 1px 7px; border-radius: 999px;
+        }
+        .art-advanced-arrow { transition: transform .2s ease; font-size: 10px; }
+        .art-advanced-arrow.open { transform: rotate(180deg); }
+
+        .art-advanced-panel {
+          display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+          gap: 12px; align-items: end;
+          background: var(--surface); border: 1px solid var(--line);
+          border-radius: var(--radius-md); padding: 16px 18px;
+        }
+        .art-advanced-field label { display: block; color: var(--ink-faint); font-size: 11.5px; margin-bottom: 6px; }
+        .art-advanced-field select, .art-advanced-field input {
+          width: 100%; padding: 8px 11px;
+          background: var(--input-bg); border: 1px solid var(--line);
+          border-radius: var(--radius-sm); color: var(--ink); font-family: var(--font-body);
+          font-size: 12.5px; outline: none;
+        }
+        .art-advanced-field select:focus, .art-advanced-field input:focus { border-color: var(--teal-glow); }
+        .art-advanced-field select option { background: var(--surface-2); color: var(--ink); }
+        .art-advanced-clear {
+          align-self: center; padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,107,125,0.4);
+          background: transparent; color: #ff9aa8; font-size: 12px; cursor: pointer; white-space: nowrap;
+        }
+        .art-advanced-clear:hover { background: rgba(122,35,48,0.12); }
+
         .art-loading, .art-empty { text-align: center; padding: 50px 0; color: var(--ink-dim); font-size: 13px; }
 
         .art-list { display: flex; flex-direction: column; gap: 14px; }
@@ -224,6 +480,36 @@ function AdminRegistrations() {
           margin-bottom: 12px;
         }
         .art-card-meta strong { color: var(--ink); }
+
+        .art-group-code-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .art-group-code-row label { color: var(--ink-dim); font-size: 12.5px; white-space: nowrap; }
+        .art-group-code-input {
+          width: 100px; padding: 7px 11px;
+          background: var(--input-bg); border: 1px solid var(--line);
+          border-radius: var(--radius-sm); color: var(--ink); font-size: 12.5px; outline: none;
+        }
+        .art-group-code-input:focus { border-color: var(--teal-glow); }
+        .art-group-code-saving { color: var(--ink-faint); font-size: 11px; }
+
+        .art-companion-panel {
+          background: var(--panel-inset-bg); border: 1px dashed var(--line);
+          border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 12px;
+        }
+        .art-companion-panel-title { color: var(--teal-glow); font-size: 12.5px; font-weight: 600; margin-bottom: 10px; }
+        .art-companion-checklist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .art-companion-check { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--ink); }
+        .art-companion-check input { width: 15px; height: 15px; accent-color: var(--teal-glow); }
+        .art-companion-current-code { color: var(--ink-faint); font-size: 11px; }
+        .art-companion-actions { display: flex; gap: 10px; }
+        .art-companion-apply {
+          font-size: 12px; padding: 7px 16px; border-radius: 999px; cursor: pointer;
+          background: var(--status-ok-bg); color: var(--status-ok); border: 1px solid var(--status-ok);
+        }
+        .art-companion-apply:disabled { opacity: 0.6; cursor: not-allowed; }
+        .art-companion-skip {
+          font-size: 12px; padding: 7px 16px; border-radius: 999px; cursor: pointer;
+          background: transparent; color: var(--ink-faint); border: 1px solid var(--line);
+        }
 
         .art-actions { display: flex; gap: 10px; }
         .art-approve-btn, .art-reject-btn {

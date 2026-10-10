@@ -19,8 +19,11 @@ import MyWallet from './pages/Dashboard/MyWallet'
 import MyTickets from './pages/Dashboard/MyTickets'
 import MyGallery from './pages/Dashboard/MyGallery'
 import MyArticles from './pages/Dashboard/MyArticles'
+import FinancialReport from './pages/Dashboard/FinancialReport'
 import News from './pages/News/News'
 import NewsDetail from './pages/News/NewsDetail'
+import Articles from './pages/Content/Articles'
+import ArticleDetail from './pages/Content/ArticleDetail'
 import Gallery from './pages/Gallery/Gallery'
 import Shop from './pages/Shop/Shop'
 import ProductDetail from './pages/Shop/ProductDetail'
@@ -28,8 +31,12 @@ import TripRegister from './pages/Dashboard/TripRegister'
 import TrackRegistration from './pages/Dashboard/TrackRegistration'
 import AdminDashboard from './pages/Admin/AdminDashboard'
 import AdminUsers from './pages/Admin/AdminUsers'
+import AdminUserDetail from './pages/Admin/AdminUserDetail'
 import AdminTrips from './pages/Admin/AdminTrips'
 import AdminRegistrations from './pages/Admin/AdminRegistrations'
+import AdminArticles from './pages/Admin/AdminArticles'
+import AdminGalleryModeration from './pages/Admin/AdminGalleryModeration'
+import AdminNews from './pages/Admin/AdminNews'
 import AdminExpenses from './pages/Admin/AdminExpenses'
 import AdminContributions from './pages/Admin/AdminContributions'
 import AdminRefunds from './pages/Admin/AdminRefunds'
@@ -87,6 +94,8 @@ function App() {
             <Route index element={<Home />} />
             <Route path="news" element={<News />} />
             <Route path="news/:id" element={<NewsDetail />} />
+            <Route path="articles" element={<Articles />} />
+            <Route path="articles/:id" element={<ArticleDetail />} />
             <Route path="gallery" element={<Gallery />} />
             <Route path="shop" element={<Shop />} />
             <Route path="shop/:id" element={<ProductDetail />} />
@@ -111,6 +120,7 @@ function App() {
             <Route path="tickets" element={<MyTickets />} />
             <Route path="gallery" element={<MyGallery />} />
             <Route path="articles" element={<MyArticles />} />
+            <Route path="financial-report" element={<FinancialReport />} />
           </Route>
 
           {/* Protected Admin Routes */}
@@ -121,8 +131,12 @@ function App() {
           }>
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="users/:id" element={<AdminUserDetail />} />
             <Route path="trips" element={<AdminTrips />} />
             <Route path="registrations" element={<AdminRegistrations />} />
+            <Route path="articles" element={<AdminArticles />} />
+            <Route path="gallery" element={<AdminGalleryModeration />} />
+            <Route path="news" element={<AdminNews />} />
             <Route path="expenses" element={<AdminExpenses />} />
             <Route path="contributions" element={<AdminContributions />} />
             <Route path="refunds" element={<AdminRefunds />} />
