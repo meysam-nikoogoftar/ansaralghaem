@@ -61,17 +61,16 @@ class TrackRegistrationView(APIView):
                 {'error': 'کد پیگیری و کد ملی الزامی است'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        try:
-            registration = Registration.objects.get(
-                tracking_code=tracking_code,
-                user__national_code=national_code
-            )
-            return Response(RegistrationSerializer(registration).data)
-        except Registration.DoesNotExist:
+        registration = Registration.objects.filter(
+            tracking_code=tracking_code,
+            user__national_code=national_code
+        ).order_by('-registered_at').first()
+        if not registration:
             return Response(
                 {'error': 'ثبت‌نامی با این مشخصات یافت نشد'},
                 status=status.HTTP_404_NOT_FOUND
             )
+        return Response(RegistrationSerializer(registration).data)
 
 
 class RegistrationDetailView(generics.RetrieveAPIView):
@@ -101,6 +100,43 @@ class CancelRegistrationView(APIView):
         except Registration.DoesNotExist:
             return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
+class RequestRefundView(APIView):
+    """
+    درخواست عودت وجه برای یک ثبت‌نامِ رد‌شده (بدون اینکه انصراف محسوب بشه).
+    body: { "amount": عدد }
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            registration = Registration.objects.get(pk=pk, user=request.user)
+        except Registration.DoesNotExist:
+            return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+        if registration.status != 'rejected':
+            return Response({'error': 'درخواست عودت فقط برای ثبت‌نام رد‌شده امکان‌پذیر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if registration.refund_requested:
+            return Response({'error': 'قبلاً درخواست عودت ثبت شده است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        total_paid = registration.paid_from_wallet + registration.paid_directly
+        if total_paid <= 0:
+            return Response({'error': 'مبلغی برای عودت پرداخت نشده است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        amount = request.data.get('amount')
+        try:
+            amount = int(amount)
+        except (TypeError, ValueError):
+            return Response({'error': 'مبلغ نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount <= 0 or amount > total_paid:
+            return Response({'error': 'مبلغ نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        registration.refund_requested = True
+        registration.refund_status = 'pending'
+        registration.requested_refund_amount = amount
+        registration.save()
+        return Response(RegistrationSerializer(registration).data)
 
 class AddCompanionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -197,8 +233,17 @@ class AdminRegistrationListView(generics.ListAPIView):
         nationality = self.request.query_params.get('nationality', '')
         payment_method = self.request.query_params.get('payment_method', '')
         refund_status = self.request.query_params.get('refund_status', '')
+        student_status = self.request.query_params.get('student_status', '')
+        university = self.request.query_params.get('university', '')
+        group_code = self.request.query_params.get('group_code', '')
+        first_name = self.request.query_params.get('first_name', '')
+        last_name = self.request.query_params.get('last_name', '')
+        national_code = self.request.query_params.get('national_code', '')
+        mobile = self.request.query_params.get('mobile', '')
 
-        if status_param:
+        if status_param == '__blank__':
+            queryset = queryset.filter(status='')
+        elif status_param:
             queryset = queryset.filter(status=status_param)
         if trip_id:
             queryset = queryset.filter(trip_id=trip_id)
@@ -207,6 +252,7 @@ class AdminRegistrationListView(generics.ListAPIView):
                 Q(user__first_name__icontains=search) |
                 Q(user__last_name__icontains=search) |
                 Q(user__mobile__icontains=search) |
+                Q(user__national_code__icontains=search) |
                 Q(tracking_code__icontains=search)
             )
         if gender:
@@ -217,14 +263,31 @@ class AdminRegistrationListView(generics.ListAPIView):
             queryset = queryset.filter(user__nationality__icontains=nationality)
         if payment_method:
             queryset = queryset.filter(payment_method=payment_method)
-        if refund_status:
+        if refund_status == '__none__':
+            queryset = queryset.filter(refund_status='')
+        elif refund_status:
             queryset = queryset.filter(refund_status=refund_status)
+        if student_status:
+            queryset = queryset.filter(user__student_status=student_status)
+        if university:
+            queryset = queryset.filter(user__university__icontains=university)
+        if group_code:
+            queryset = queryset.filter(group_code__icontains=group_code)
+        if first_name:
+            queryset = queryset.filter(user__first_name__icontains=first_name)
+        if last_name:
+            queryset = queryset.filter(user__last_name__icontains=last_name)
+        if national_code:
+            queryset = queryset.filter(user__national_code__icontains=national_code)
+        if mobile:
+            queryset = queryset.filter(user__mobile__icontains=mobile)
+
 
         return queryset
 
 
 class AdminRegistrationActionView(APIView):
-    """تایید یا رد یک ثبت‌نام توسط ادمین. body: {action: 'approve'|'reject', rejection_reason?, admin_note?}"""
+    """تایید/رد/علامت‌گذاری «در دست بررسی» یک ثبت‌نام. body: {action: 'approve'|'reject'|'mark_pending', rejection_reason?, admin_note?}"""
     permission_classes = [HasAdminPermission('perm_registrations')]
 
     def post(self, request, pk):
@@ -240,6 +303,8 @@ class AdminRegistrationActionView(APIView):
         elif action == 'reject':
             registration.status = 'rejected'
             registration.rejection_reason = request.data.get('rejection_reason', '')
+        elif action == 'mark_pending':
+            registration.status = 'pending'
         else:
             return Response({'error': 'عملیات نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -287,7 +352,12 @@ class AdminRefundActionView(APIView):
         if action == 'approve':
             amount = request.data.get('amount')
             try:
-                amount = int(amount) if amount not in (None, '') else int(registration.trip.refund_amount or 0)
+                if amount not in (None, ''):
+                    amount = int(amount)
+                elif registration.requested_refund_amount:
+                    amount = registration.requested_refund_amount
+                else:
+                    amount = int(registration.trip.refund_amount or 0)
             except (TypeError, ValueError):
                 amount = 0
 

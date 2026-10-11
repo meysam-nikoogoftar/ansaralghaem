@@ -2,6 +2,73 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 
+function RefundRequestBox({ trip, onDone }) {
+  const [open, setOpen] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [fullAmount, setFullAmount] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [message, setMessage] = useState('')
+
+  const totalPaid = trip.paid_from_wallet + trip.paid_directly
+
+  const handleFullToggle = () => {
+    const next = !fullAmount
+    setFullAmount(next)
+    setAmount(next ? String(totalPaid) : '')
+  }
+
+  const handleSubmit = async () => {
+    setMessage('')
+    const value = Number(amount)
+    if (!value || value <= 0 || value > totalPaid) {
+      setMessage('مبلغ نامعتبر است')
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      await api.post(`/trips/registration/${trip.id}/request-refund/`, { amount: value })
+      onDone()
+    } catch (err) {
+      setMessage(err.response?.data?.error || 'خطا در ثبت درخواست')
+    }
+    setIsSubmitting(false)
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="mt-action-btn outline" style={{ marginTop: 14 }}>
+        درخواست عودت وجه
+      </button>
+    )
+  }
+
+  return (
+    <div className="mt-refund-box">
+      <p>مبلغ پرداخت‌شده: <strong>{totalPaid.toLocaleString('fa-IR')} تومان</strong></p>
+      <label className="mt-refund-checkbox">
+        <input type="checkbox" checked={fullAmount} onChange={handleFullToggle} />
+        <span>کل مبلغ پرداخت‌شده</span>
+      </label>
+      <input
+        type="number"
+        min="1"
+        max={totalPaid}
+        value={amount}
+        onChange={(e) => { setAmount(e.target.value); setFullAmount(false) }}
+        readOnly={fullAmount}
+        placeholder="مبلغ درخواستی برای عودت"
+        className="mt-pay-input"
+      />
+      <div className="mt-pay-btns">
+        <button onClick={handleSubmit} disabled={isSubmitting} className="mt-action-btn primary">
+          {isSubmitting ? '...' : 'ثبت درخواست عودت وجه'}
+        </button>
+        <button onClick={() => setOpen(false)} className="mt-action-btn outline">انصراف</button>
+      </div>
+      {message && <div className="mt-pay-feedback error"><span>{message}</span></div>}
+    </div>
+  )
+}
 function MyTrips() {
   const navigate = useNavigate()
   const [trips, setTrips] = useState([])
@@ -24,7 +91,8 @@ function MyTrips() {
   }
 
   const statusConfig = {
-    pending: { label: 'در انتظار بررسی', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
+    '': { label: 'بدون وضعیت', color: 'var(--status-neutral)', bg: 'var(--status-neutral-bg)' },
+    pending: { label: 'در دست بررسی', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
     approved: { label: 'تایید شده', color: 'var(--status-ok)', bg: 'var(--status-ok-bg)' },
     rejected: { label: 'رد شده', color: 'var(--status-danger)', bg: 'var(--status-danger-bg)' },
     cancelled: { label: 'انصراف داده', color: 'var(--status-neutral)', bg: 'var(--status-neutral-bg)' },
@@ -168,12 +236,12 @@ function MyTrips() {
                   <p style={{ color: paymentConfig[trip.payment_status]?.color }}>
                     وضعیت پرداخت: {paymentConfig[trip.payment_status]?.label}
                   </p>
-                  {trip.status === 'pending' && (
+                  {(trip.status === 'pending' || trip.status === '') && (
                     <button onClick={() => handleCancel(trip.id)} className="mt-action-btn danger">انصراف</button>
                   )}
                 </div>
 
-                {['pending', 'approved'].includes(trip.status) && trip.remaining_amount > 0 && (
+                {['', 'pending'].includes(trip.status) && trip.remaining_amount > 0 && (
                   <div className="mt-pay-box">
                     <input
                       type="number"
@@ -213,6 +281,25 @@ function MyTrips() {
                     )}
                   </div>
                 )}
+                  {trip.status === 'rejected' && (trip.paid_from_wallet + trip.paid_directly) > 0 && !trip.refund_requested && (
+                  <RefundRequestBox trip={trip} onDone={fetchTrips} />
+                )}
+
+                {trip.refund_requested && (
+                  <div className="mt-refund-status">
+                    وضعیت درخواست عودت وجه:{' '}
+                    <strong style={{
+                      color: trip.refund_status === 'approved' ? 'var(--status-ok)'
+                        : trip.refund_status === 'rejected' ? 'var(--status-danger)'
+                        : 'var(--status-warn)'
+                    }}>
+                      {trip.refund_status === 'approved' ? 'تایید و واریز شد'
+                        : trip.refund_status === 'rejected' ? 'رد شد'
+                        : 'در انتظار بررسی'}
+                    </strong>
+                  </div>
+                )}
+
 
                 {trip.companions?.length > 0 && (
                   <div className="mt-companions">
@@ -301,6 +388,16 @@ function MyTrips() {
           margin-bottom: 16px;
           text-align: center;
         }
+        .mt-refund-box {
+          display: flex; flex-direction: column; gap: 10px;
+          margin-top: 14px; padding: 14px; background: var(--panel-inset-bg);
+          border: 1px dashed var(--line); border-radius: var(--radius-md);
+        }
+        .mt-refund-box p { font-size: 13px; color: var(--ink-dim); }
+        .mt-refund-box p strong { color: var(--ink); }
+        .mt-refund-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; color: var(--ink-dim); }
+        .mt-refund-checkbox input { width: 15px; height: 15px; accent-color: var(--teal-glow); }
+        .mt-refund-status { margin-top: 12px; font-size: 13px; color: var(--ink-dim); }
         .mt-financials p { color: var(--ink-faint); font-size: 11px; margin-bottom: 4px; }
         .mt-financials strong { color: var(--ink); font-size: 13px; }
         .mt-paid { color: var(--teal-glow) !important; }

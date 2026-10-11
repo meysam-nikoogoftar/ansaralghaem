@@ -85,6 +85,9 @@ function AdminRefunds() {
 
               <div className="arf-meta">
                 <span>مبلغ پرداخت‌شده: <strong>{((r.paid_from_wallet || 0) + (r.paid_directly || 0)).toLocaleString('fa-IR')} ت</strong></span>
+                 {r.requested_refund_amount > 0 && (
+                <span>مبلغ درخواستی کاربر: <strong style={{ color: 'var(--teal-glow)' }}>{r.requested_refund_amount.toLocaleString('fa-IR')} ت</strong></span>
+                )}
                 <span>مبلغ عودت پیش‌فرض سفر: <strong>{Number(r.trip_detail?.refund_amount || 0).toLocaleString('fa-IR')} ت</strong></span>
               </div>
 

@@ -41,7 +41,7 @@ function Dashboard() {
     { label: 'تعداد سفرها', value: trips.length, icon: 'plane' },
     { label: 'موجودی کیف پول', value: wallet ? `${wallet.balance.toLocaleString('fa-IR')} تومان` : '---', icon: 'wallet' },
     { label: 'سفرهای تایید شده', value: trips.filter(t => t.status === 'approved').length, icon: 'check' },
-    { label: 'در انتظار بررسی', value: trips.filter(t => t.status === 'pending').length, icon: 'clock' },
+    { label: 'در دست بررسی', value: trips.filter(t => t.status === 'pending').length, icon: 'clock' },
   ]
 
   const quickLinks = [

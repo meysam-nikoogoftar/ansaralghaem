@@ -44,7 +44,8 @@ class Trip(models.Model):
 class Registration(models.Model):
 
     STATUS_CHOICES = (
-        ('pending', 'در انتظار بررسی'),
+        ('', 'بدون وضعیت'),
+        ('pending', 'در دست بررسی'),
         ('approved', 'تایید شده'),
         ('rejected', 'رد شده'),
         ('cancelled', 'انصراف زائر'),
@@ -66,8 +67,8 @@ class Registration(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='registrations', verbose_name='کاربر')
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='registrations', verbose_name='سفر')
-    tracking_code = models.CharField(max_length=20, unique=True, verbose_name='کد پیگیری')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name='وضعیت')
+    tracking_code = models.CharField(max_length=5, verbose_name='کد پیگیری')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, blank=True, default='', verbose_name='وضعیت')
     rejection_reason = models.TextField(blank=True, verbose_name='دلیل رد')
     total_cost = models.BigIntegerField(default=0, verbose_name='مبلغ کل سفر')
     paid_from_wallet = models.BigIntegerField(default=0, verbose_name='پرداخت از کیف پول')
@@ -78,6 +79,7 @@ class Registration(models.Model):
     card_number = models.CharField(max_length=20, blank=True, verbose_name='شماره کارت')
     refund_requested = models.BooleanField(default=False, verbose_name='درخواست عودت وجه')
     refund_status = models.CharField(max_length=20, blank=True, verbose_name='وضعیت عودت وجه')
+    requested_refund_amount = models.BigIntegerField(default=0, verbose_name='مبلغ درخواستی کاربر برای عودت')
     admin_note = models.TextField(blank=True, verbose_name='توضیحات ادمین')
     group_code = models.CharField(max_length=20, blank=True, verbose_name='کد گروه (اتوبوس)')
     registered_at = models.DateTimeField(auto_now_add=True)
@@ -86,6 +88,7 @@ class Registration(models.Model):
         verbose_name = 'ثبت‌نام'
         verbose_name_plural = 'ثبت‌نام‌ها'
         ordering = ['-registered_at']
+        unique_together = ('trip', 'tracking_code')
 
     def __str__(self):
         return f"{self.user.full_name} - {self.trip.title}"
@@ -94,7 +97,11 @@ class Registration(models.Model):
         if not self.tracking_code:
             import random
             import string
-            self.tracking_code = ''.join(random.choices(string.digits, k=8))
+            while True:
+                code = ''.join(random.choices(string.digits, k=5))
+                if not Registration.objects.filter(trip=self.trip, tracking_code=code).exists():
+                    self.tracking_code = code
+                    break
         self.remaining_amount = self.total_cost - self.paid_from_wallet - self.paid_directly
         if self.remaining_amount <= 0:
             self.payment_status = 'paid'

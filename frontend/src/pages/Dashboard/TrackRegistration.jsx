@@ -23,8 +23,9 @@ function TrackRegistration() {
   }
 
   const statusConfig = {
-    pending: { label: 'در انتظار بررسی', color: 'var(--status-warn)' },
+    '': { label: 'بدون وضعیت', color: 'var(--status-neutral)' },
     approved: { label: 'تایید شده', color: 'var(--status-ok)' },
+    pending: { label: 'در دست بررسی', color: 'var(--status-warn)' },
     rejected: { label: 'رد شده', color: 'var(--status-danger)' },
     cancelled: { label: 'انصراف داده', color: 'var(--status-neutral)' },
     attended: { label: 'شرکت کرد', color: 'var(--status-info)' },
