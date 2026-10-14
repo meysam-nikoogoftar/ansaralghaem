@@ -305,6 +305,13 @@ class AdminRegistrationActionView(APIView):
             registration.rejection_reason = request.data.get('rejection_reason', '')
         elif action == 'mark_pending':
             registration.status = 'pending'
+        elif action == 'reset':
+            registration.status = ''
+            registration.rejection_reason = ''
+        elif action == 'set_note':
+            registration.admin_note = request.data.get('admin_note', '')
+            registration.save()
+            return Response(RegistrationSerializer(registration).data)
         else:
             return Response({'error': 'عملیات نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
 

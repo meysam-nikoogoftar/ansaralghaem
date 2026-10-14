@@ -21,6 +21,15 @@ class RegistrationSerializer(serializers.ModelSerializer):
     companions = TravelCompanionSerializer(many=True, read_only=True)
     trip_detail = TripSerializer(source='trip', read_only=True)
     user_name = serializers.CharField(source='user.full_name', read_only=True)
+    user_image = serializers.ImageField(source='user.profile_image', read_only=True)
+    user_first_name = serializers.CharField(source='user.first_name', read_only=True)
+    user_last_name = serializers.CharField(source='user.last_name', read_only=True)
+    user_father_name = serializers.CharField(source='user.father_name', read_only=True)
+    user_national_code = serializers.CharField(source='user.national_code', read_only=True)
+    user_nationality = serializers.CharField(source='user.nationality', read_only=True)
+    user_mobile = serializers.CharField(source='user.mobile', read_only=True)
+    user_birth_date = serializers.DateField(source='user.birth_date', read_only=True)
+    user_university = serializers.CharField(source='user.university', read_only=True)
 
     class Meta:
         model = Registration
