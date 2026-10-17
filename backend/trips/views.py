@@ -236,6 +236,7 @@ class AdminRegistrationListView(generics.ListAPIView):
         student_status = self.request.query_params.get('student_status', '')
         university = self.request.query_params.get('university', '')
         group_code = self.request.query_params.get('group_code', '')
+        participation_status = self.request.query_params.get('participation_status', '')
         first_name = self.request.query_params.get('first_name', '')
         last_name = self.request.query_params.get('last_name', '')
         national_code = self.request.query_params.get('national_code', '')
@@ -273,6 +274,8 @@ class AdminRegistrationListView(generics.ListAPIView):
             queryset = queryset.filter(user__university__icontains=university)
         if group_code:
             queryset = queryset.filter(group_code__icontains=group_code)
+        if participation_status:
+            queryset = queryset.filter(status=participation_status)
         if first_name:
             queryset = queryset.filter(user__first_name__icontains=first_name)
         if last_name:
@@ -312,6 +315,10 @@ class AdminRegistrationActionView(APIView):
             registration.admin_note = request.data.get('admin_note', '')
             registration.save()
             return Response(RegistrationSerializer(registration).data)
+        elif action == 'mark_attended':
+            registration.status = 'attended'
+        elif action == 'mark_absent':
+            registration.status = 'absent'
         else:
             return Response({'error': 'عملیات نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
 

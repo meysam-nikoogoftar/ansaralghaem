@@ -44,18 +44,20 @@ const ALL_COLUMNS = [
   { id: 'admin_note', label: 'توضیحات', default: false },
 ]
 
+const emptyAdvancedFilters = {
+  status: '', first_name: '', last_name: '', national_code: '', mobile: '',
+  gender: '', education_level: '', payment_method: '', refund_status: '',
+  trip_id: '', student_status: '', university: '', group_code: '',
+  participation_status: '', nationality: '',
+}
+
 function AdminRegistrations() {
   const [registrations, setRegistrations] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [busyId, setBusyId] = useState(null)
 
-  const [advancedFilters, setAdvancedFilters] = useState({
-    status: '', first_name: '', last_name: '', national_code: '', mobile: '',
-    gender: '', education_level: '', payment_method: '', refund_status: '',
-    trip_id: '', student_status: '', university: '', group_code: '',
-    participation_status: '', nationality: '',
-  })
+  const [advancedFilters, setAdvancedFilters] = useState(emptyAdvancedFilters)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [trips, setTrips] = useState([])
 
@@ -73,6 +75,7 @@ function AdminRegistrations() {
   const [openMenuId, setOpenMenuId] = useState(null)
   const [rejectModal, setRejectModal] = useState(null)
   const [noteModal, setNoteModal] = useState(null)
+  const [participationModal, setParticipationModal] = useState(null)
 
   useEffect(() => {
     api.get('/trips/admin/trips/').then(res => setTrips(res.data)).catch(() => {})
@@ -83,7 +86,6 @@ function AdminRegistrations() {
     const params = new URLSearchParams()
     if (search) params.append('search', search)
     Object.entries(advancedFilters).forEach(([key, value]) => {
-      if (key === 'participation_status') return
       if (value) params.append(key, value)
     })
     api.get(`/trips/admin/registrations/?${params.toString()}`)
@@ -108,13 +110,8 @@ function AdminRegistrations() {
   }
 
   const handleAdvancedChange = (key, value) => setAdvancedFilters({ ...advancedFilters, [key]: value })
-  const clearAdvancedFilters = () => setAdvancedFilters({
-    status: '', first_name: '', last_name: '', national_code: '', mobile: '',
-    gender: '', education_level: '', payment_method: '', refund_status: '',
-    trip_id: '', student_status: '', university: '', group_code: '',
-    participation_status: '', nationality: '',
-  })
-  const activeAdvancedCount = Object.entries(advancedFilters).filter(([k, v]) => k !== 'participation_status' && v).length
+  const clearAdvancedFilters = () => setAdvancedFilters(emptyAdvancedFilters)
+  const activeAdvancedCount = Object.values(advancedFilters).filter(Boolean).length
 
   const toggleColumn = (id) => setVisibleColumns({ ...visibleColumns, [id]: !visibleColumns[id] })
   const toggleAllColumns = () => {
@@ -147,6 +144,8 @@ function AdminRegistrations() {
     } else if (action === 'note') {
       const r = registrations.find(x => x.id === id)
       setNoteModal({ id, text: r?.admin_note || '' })
+    } else if (action === 'mark_attended' || action === 'mark_absent') {
+      setParticipationModal({ id, action })
     } else {
       runAction(id, action)
     }
@@ -160,6 +159,11 @@ function AdminRegistrations() {
   const submitNote = async () => {
     await runAction(noteModal.id, 'set_note', { admin_note: noteModal.text })
     setNoteModal(null)
+  }
+
+  const confirmParticipation = async () => {
+    await runAction(participationModal.id, participationModal.action)
+    setParticipationModal(null)
   }
 
   // ---------- کد گروه (اتوبوس) ----------
@@ -237,114 +241,150 @@ function AdminRegistrations() {
       </div>
 
       <div className="art-toggles-row">
-        <div className="art-advanced-wrap">
-          <button onClick={() => { setShowAdvanced(!showAdvanced); setShowColumns(false) }} className="art-advanced-toggle">
-            فیلتر پیشرفته {activeAdvancedCount > 0 && <span className="art-advanced-count">{activeAdvancedCount}</span>}
-            <span className={`art-advanced-arrow${showAdvanced ? ' open' : ''}`}>▾</span>
-          </button>
+        <button onClick={() => { setShowAdvanced(!showAdvanced); setShowColumns(false) }} className="art-advanced-toggle">
+          فیلتر پیشرفته {activeAdvancedCount > 0 && <span className="art-advanced-count">{activeAdvancedCount}</span>}
+          <span className={`art-advanced-arrow${showAdvanced ? ' open' : ''}`}>▾</span>
+        </button>
 
-          {showAdvanced && (
-            <div className="art-advanced-panel">
-              <div className="art-advanced-field">
-                <label>وضعیت</label>
-                <select value={advancedFilters.status} onChange={(e) => handleAdvancedChange('status', e.target.value)}>
-                  <option value="">همه وضعیت‌ها</option>
-                  <option value="__blank__">بدون وضعیت</option>
-                  <option value="pending">در دست بررسی</option>
-                  <option value="approved">تایید</option>
-                  <option value="rejected">رد</option>
-                  <option value="cancelled">انصراف</option>
-                </select>
-              </div>
-              <div className="art-advanced-field"><label>نام</label><input type="text" value={advancedFilters.first_name} onChange={(e) => handleAdvancedChange('first_name', e.target.value)} /></div>
-              <div className="art-advanced-field"><label>نام خانوادگی</label><input type="text" value={advancedFilters.last_name} onChange={(e) => handleAdvancedChange('last_name', e.target.value)} /></div>
-              <div className="art-advanced-field"><label>کد ملی</label><input type="text" value={advancedFilters.national_code} onChange={(e) => handleAdvancedChange('national_code', e.target.value)} /></div>
-              <div className="art-advanced-field"><label>شماره موبایل</label><input type="text" value={advancedFilters.mobile} onChange={(e) => handleAdvancedChange('mobile', e.target.value)} /></div>
-              <div className="art-advanced-field">
-                <label>جنسیت</label>
-                <select value={advancedFilters.gender} onChange={(e) => handleAdvancedChange('gender', e.target.value)}>
-                  <option value="">همه</option><option value="male">برادر</option><option value="female">خواهر</option>
-                </select>
-              </div>
-              <div className="art-advanced-field">
-                <label>مقطع تحصیلی</label>
-                <select value={advancedFilters.education_level} onChange={(e) => handleAdvancedChange('education_level', e.target.value)}>
-                  <option value="">همه</option><option value="diploma">دیپلم</option><option value="associate">فوق دیپلم</option>
-                  <option value="bachelor">لیسانس</option><option value="master">فوق لیسانس</option><option value="phd">دکترا</option>
-                </select>
-              </div>
-              <div className="art-advanced-field">
-                <label>نحوه پرداخت</label>
-                <select value={advancedFilters.payment_method} onChange={(e) => handleAdvancedChange('payment_method', e.target.value)}>
-                  <option value="">همه</option><option value="online">آنلاین</option><option value="cash">نقدی</option><option value="wallet">کیف پول</option>
-                </select>
-              </div>
-              <div className="art-advanced-field">
-                <label>وضعیت عودت وجه</label>
-                <select value={advancedFilters.refund_status} onChange={(e) => handleAdvancedChange('refund_status', e.target.value)}>
-                  <option value="">همه</option><option value="__none__">بدون درخواست عودت</option>
-                  <option value="pending">در انتظار</option><option value="approved">تایید شده</option><option value="rejected">رد شده</option>
-                </select>
-              </div>
-              <div className="art-advanced-field">
-                <label>سفر زیارتی</label>
-                <select value={advancedFilters.trip_id} onChange={(e) => handleAdvancedChange('trip_id', e.target.value)}>
-                  <option value="">همه</option>
-                  {trips.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
-                </select>
-              </div>
-              <div className="art-advanced-field">
-                <label>وضعیت دانشجویی</label>
-                <select value={advancedFilters.student_status} onChange={(e) => handleAdvancedChange('student_status', e.target.value)}>
-                  <option value="">همه</option><option value="student">دانشجو</option><option value="graduate">فارغ‌التحصیل</option><option value="professor">استاد</option>
-                </select>
-              </div>
-              <div className="art-advanced-field"><label>نام دانشگاه</label><input type="text" value={advancedFilters.university} onChange={(e) => handleAdvancedChange('university', e.target.value)} /></div>
-              <div className="art-advanced-field"><label>کد گروه</label><input type="text" value={advancedFilters.group_code} onChange={(e) => handleAdvancedChange('group_code', e.target.value)} /></div>
-              <div className="art-advanced-field">
-                <label>وضعیت شرکت <span className="art-advanced-soon">(به‌زودی)</span></label>
-                <select value={advancedFilters.participation_status} onChange={(e) => handleAdvancedChange('participation_status', e.target.value)}>
-                  <option value="">همه</option><option value="attended">شرکت کرد</option><option value="absent">شرکت نکرد</option>
-                </select>
-              </div>
-              <div className="art-advanced-field"><label>ملیت</label><input type="text" value={advancedFilters.nationality} onChange={(e) => handleAdvancedChange('nationality', e.target.value)} /></div>
-
-              {activeAdvancedCount > 0 && <button onClick={clearAdvancedFilters} className="art-advanced-clear">پاک کردن فیلترها</button>}
-            </div>
-          )}
-        </div>
-
-        <div className="art-columns-wrap">
-          <button onClick={() => { setShowColumns(!showColumns); setShowAdvanced(false) }} className="art-advanced-toggle">
-            نمایش / عدم نمایش ستون‌ها
-            <span className={`art-advanced-arrow${showColumns ? ' open' : ''}`}>▾</span>
-          </button>
-
-          {showColumns && (
-            <div className="art-columns-panel">
-              <input
-                type="text"
-                value={columnSearch}
-                onChange={(e) => setColumnSearch(e.target.value)}
-                placeholder="جستجوی ستون..."
-                className="art-columns-search"
-              />
-              <label className="art-columns-check art-columns-all">
-                <input type="checkbox" checked={ALL_COLUMNS.every(c => visibleColumns[c.id])} onChange={toggleAllColumns} />
-                <span>همه موارد</span>
-              </label>
-              <div className="art-columns-list">
-                {filteredColumnList.map(c => (
-                  <label key={c.id} className="art-columns-check">
-                    <input type="checkbox" checked={!!visibleColumns[c.id]} onChange={() => toggleColumn(c.id)} />
-                    <span>{c.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <button onClick={() => { setShowColumns(!showColumns); setShowAdvanced(false) }} className="art-advanced-toggle">
+          نمایش / عدم نمایش ستون‌ها
+          <span className={`art-advanced-arrow${showColumns ? ' open' : ''}`}>▾</span>
+        </button>
       </div>
+
+      {showAdvanced && (
+        <div className="art-advanced-panel">
+          <div className="art-advanced-field">
+            <label>وضعیت</label>
+            <select value={advancedFilters.status} onChange={(e) => handleAdvancedChange('status', e.target.value)}>
+              <option value="">همه وضعیت‌ها</option>
+              <option value="__blank__">بدون وضعیت</option>
+              <option value="pending">در دست بررسی</option>
+              <option value="approved">تایید</option>
+              <option value="rejected">رد</option>
+              <option value="cancelled">انصراف</option>
+            </select>
+          </div>
+          <div className="art-advanced-field">
+            <label>نام</label>
+            <input type="text" value={advancedFilters.first_name} onChange={(e) => handleAdvancedChange('first_name', e.target.value)} />
+          </div>
+          <div className="art-advanced-field">
+            <label>نام خانوادگی</label>
+            <input type="text" value={advancedFilters.last_name} onChange={(e) => handleAdvancedChange('last_name', e.target.value)} />
+          </div>
+          <div className="art-advanced-field">
+            <label>کد ملی</label>
+            <input type="text" value={advancedFilters.national_code} onChange={(e) => handleAdvancedChange('national_code', e.target.value)} />
+          </div>
+          <div className="art-advanced-field">
+            <label>شماره موبایل</label>
+            <input type="text" value={advancedFilters.mobile} onChange={(e) => handleAdvancedChange('mobile', e.target.value)} />
+          </div>
+          <div className="art-advanced-field">
+            <label>جنسیت</label>
+            <select value={advancedFilters.gender} onChange={(e) => handleAdvancedChange('gender', e.target.value)}>
+              <option value="">همه</option>
+              <option value="male">برادر</option>
+              <option value="female">خواهر</option>
+            </select>
+          </div>
+          <div className="art-advanced-field">
+            <label>مقطع تحصیلی</label>
+            <select value={advancedFilters.education_level} onChange={(e) => handleAdvancedChange('education_level', e.target.value)}>
+              <option value="">همه</option>
+              <option value="diploma">دیپلم</option>
+              <option value="associate">فوق دیپلم</option>
+              <option value="bachelor">لیسانس</option>
+              <option value="master">فوق لیسانس</option>
+              <option value="phd">دکترا</option>
+            </select>
+          </div>
+          <div className="art-advanced-field">
+            <label>نحوه پرداخت</label>
+            <select value={advancedFilters.payment_method} onChange={(e) => handleAdvancedChange('payment_method', e.target.value)}>
+              <option value="">همه</option>
+              <option value="online">آنلاین</option>
+              <option value="cash">نقدی</option>
+              <option value="wallet">کیف پول</option>
+            </select>
+          </div>
+          <div className="art-advanced-field">
+            <label>وضعیت عودت وجه</label>
+            <select value={advancedFilters.refund_status} onChange={(e) => handleAdvancedChange('refund_status', e.target.value)}>
+              <option value="">همه</option>
+              <option value="__none__">بدون درخواست عودت</option>
+              <option value="pending">در انتظار</option>
+              <option value="approved">تایید شده</option>
+              <option value="rejected">رد شده</option>
+            </select>
+          </div>
+          <div className="art-advanced-field">
+            <label>سفر زیارتی</label>
+            <select value={advancedFilters.trip_id} onChange={(e) => handleAdvancedChange('trip_id', e.target.value)}>
+              <option value="">همه</option>
+              {trips.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+            </select>
+          </div>
+          <div className="art-advanced-field">
+            <label>وضعیت دانشجویی</label>
+            <select value={advancedFilters.student_status} onChange={(e) => handleAdvancedChange('student_status', e.target.value)}>
+              <option value="">همه</option>
+              <option value="student">دانشجو</option>
+              <option value="graduate">فارغ‌التحصیل</option>
+              <option value="professor">استاد</option>
+            </select>
+          </div>
+          <div className="art-advanced-field">
+            <label>نام دانشگاه</label>
+            <input type="text" value={advancedFilters.university} onChange={(e) => handleAdvancedChange('university', e.target.value)} placeholder="مثلاً: تهران" />
+          </div>
+          <div className="art-advanced-field">
+            <label>کد گروه</label>
+            <input type="text" value={advancedFilters.group_code} onChange={(e) => handleAdvancedChange('group_code', e.target.value)} placeholder="مثلاً: 1" />
+          </div>
+          <div className="art-advanced-field">
+            <label>وضعیت شرکت</label>
+            <select value={advancedFilters.participation_status} onChange={(e) => handleAdvancedChange('participation_status', e.target.value)}>
+              <option value="">همه</option>
+              <option value="attended">شرکت کرد</option>
+              <option value="absent">شرکت نکرد</option>
+            </select>
+          </div>
+          <div className="art-advanced-field">
+            <label>ملیت</label>
+            <input type="text" value={advancedFilters.nationality} onChange={(e) => handleAdvancedChange('nationality', e.target.value)} placeholder="مثلاً: ایران" />
+          </div>
+
+          {activeAdvancedCount > 0 && (
+            <button onClick={clearAdvancedFilters} className="art-advanced-clear">پاک کردن فیلترها</button>
+          )}
+        </div>
+      )}
+
+      {showColumns && (
+        <div className="art-columns-panel">
+          <input
+            type="text"
+            value={columnSearch}
+            onChange={(e) => setColumnSearch(e.target.value)}
+            placeholder="جستجوی ستون..."
+            className="art-columns-search"
+          />
+          <label className="art-columns-check art-columns-all">
+            <input type="checkbox" checked={ALL_COLUMNS.every(c => visibleColumns[c.id])} onChange={toggleAllColumns} />
+            <span>همه موارد</span>
+          </label>
+          <div className="art-columns-list">
+            {filteredColumnList.map(c => (
+              <label key={c.id} className="art-columns-check">
+                <input type="checkbox" checked={!!visibleColumns[c.id]} onChange={() => toggleColumn(c.id)} />
+                <span>{c.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="art-loading">در حال بارگذاری...</div>
@@ -421,6 +461,12 @@ function AdminRegistrations() {
                               <button onClick={() => handleMenuAction(r.id, 'reject')} className="art-menu-item">
                                 <span className="art-menu-icon danger">✕</span> رد
                               </button>
+                              <button onClick={() => handleMenuAction(r.id, 'mark_attended')} className="art-menu-item">
+                                <span className="art-menu-icon ok">✔</span> شرکت کرد
+                              </button>
+                              <button onClick={() => handleMenuAction(r.id, 'mark_absent')} className="art-menu-item">
+                                <span className="art-menu-icon danger">⊘</span> شرکت نکرد
+                              </button>
                               <button onClick={() => handleMenuAction(r.id, 'note')} className="art-menu-item">
                                 <span className="art-menu-icon info">ℹ</span> سایر توضیحات
                               </button>
@@ -493,6 +539,31 @@ function AdminRegistrations() {
         </div>
       )}
 
+      {/* مودال تایید شرکت/عدم شرکت */}
+      {participationModal && (
+        <div className="art-modal-backdrop" onClick={() => setParticipationModal(null)}>
+          <div className="art-modal art-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="art-confirm-icon">!</div>
+            <h3>
+              {participationModal.action === 'mark_attended'
+                ? 'تایید / عدم تایید شرکت در برنامه'
+                : 'رد / عدم رد شرکت در برنامه'}
+            </h3>
+            <p className="art-confirm-text">
+              {participationModal.action === 'mark_attended'
+                ? 'آیا مایل به تایید شرکت در برنامه می‌باشید؟'
+                : 'آیا مایل به رد شرکت در برنامه می‌باشید؟'}
+            </p>
+            <div className="art-modal-actions art-confirm-actions">
+              <button onClick={confirmParticipation} disabled={busyId === participationModal.id} className="art-confirm-ok">
+                {busyId === participationModal.id ? '...' : 'OK'}
+              </button>
+              <button onClick={() => setParticipationModal(null)} className="art-reject-cancel">انصراف</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* مودال اعمال کد گروه به همسفرها */}
       {companionModal && (
         <div className="art-modal-backdrop" onClick={() => setCompanionModal(null)}>
@@ -529,7 +600,6 @@ function AdminRegistrations() {
         .art-search-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
 
         .art-toggles-row { display: flex; gap: 10px; flex-wrap: wrap; }
-        .art-advanced-wrap, .art-columns-wrap { position: relative; }
         .art-advanced-toggle {
           display: flex; align-items: center; gap: 8px;
           padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);
@@ -541,14 +611,12 @@ function AdminRegistrations() {
         .art-advanced-arrow.open { transform: rotate(180deg); }
 
         .art-advanced-panel {
-          position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; width: 640px; max-width: 90vw;
           display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           gap: 12px; align-items: end;
           background: var(--surface); border: 1px solid var(--line);
-          border-radius: var(--radius-md); padding: 16px 18px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
+          border-radius: var(--radius-md); padding: 16px 18px;
         }
         .art-advanced-field label { display: block; color: var(--ink-faint); font-size: 11.5px; margin-bottom: 6px; }
-        .art-advanced-soon { color: var(--gold-light); font-size: 10px; }
         .art-advanced-field select, .art-advanced-field input {
           width: 100%; padding: 8px 11px; background: var(--input-bg); border: 1px solid var(--line);
           border-radius: var(--radius-sm); color: var(--ink); font-family: var(--font-body); font-size: 12.5px; outline: none;
@@ -562,9 +630,9 @@ function AdminRegistrations() {
         .art-advanced-clear:hover { background: rgba(122,35,48,0.12); }
 
         .art-columns-panel {
-          position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; width: 260px;
+          width: 260px;
           background: var(--surface); border: 1px solid var(--line);
-          border-radius: var(--radius-md); padding: 14px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
+          border-radius: var(--radius-md); padding: 14px;
           display: flex; flex-direction: column; gap: 10px;
         }
         .art-columns-search {
@@ -615,7 +683,7 @@ function AdminRegistrations() {
 
         .art-menu-backdrop { position: fixed; inset: 0; z-index: 40; }
         .art-menu-dropdown {
-          position: absolute; top: calc(100% + 6px); left: 0; z-index: 41; min-width: 180px;
+          position: absolute; top: calc(100% + 6px); left: 0; z-index: 41; min-width: 190px;
           background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-md);
           box-shadow: 0 16px 36px -10px rgba(0,0,0,0.5); overflow: hidden;
         }
@@ -657,6 +725,21 @@ function AdminRegistrations() {
           font-size: 12.5px; padding: 8px 18px; border-radius: 999px; cursor: pointer;
           background: transparent; color: var(--ink-dim); border: 1px solid var(--line);
         }
+
+        .art-confirm-modal { text-align: center; }
+        .art-confirm-icon {
+          width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--gold);
+          color: var(--gold); font-size: 22px; font-weight: 700;
+          display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;
+        }
+        .art-confirm-text { color: var(--ink-dim); font-size: 13.5px; margin-bottom: 4px; }
+        .art-confirm-actions { justify-content: center; }
+        .art-confirm-ok {
+          padding: 9px 32px; border-radius: 999px; border: none; cursor: pointer;
+          font-size: 13px; font-weight: 700; color: #eefaf5;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
+        }
+        .art-confirm-ok:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .art-companion-checklist { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
         .art-companion-check { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--ink); }
