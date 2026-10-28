@@ -30,6 +30,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('active', 'فعال'),
         ('inactive', 'غیرفعال'),
         ('blocked', 'مسدود'),
+        ('deleted', 'حذف شده'),
     )
 
     GENDER_CHOICES = (

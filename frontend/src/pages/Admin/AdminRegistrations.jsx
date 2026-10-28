@@ -68,6 +68,7 @@ function AdminRegistrations() {
   })
   const [showColumns, setShowColumns] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
 
   const [groupCodes, setGroupCodes] = useState({})
   const [savingGroupId, setSavingGroupId] = useState(null)
@@ -81,6 +82,30 @@ function AdminRegistrations() {
     api.get('/trips/admin/trips/').then(res => setTrips(res.data)).catch(() => {})
   }, [])
 
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+    try {
+      const params = new URLSearchParams()
+      if (search) params.append('search', search)
+      Object.entries(advancedFilters).forEach(([key, value]) => {
+        if (value) params.append(key, value)
+      })
+      const res = await api.get(`/trips/admin/registrations/export/?${params.toString()}`, {
+        responseType: 'blob',
+      })
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `ثبت‌نام‌ها-${new Date().toLocaleDateString('fa-IR')}.xlsx`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      alert('خطا در دریافت خروجی اکسل')
+    }
+    setIsExporting(false)
+  }
   const fetchRegistrations = () => {
     setIsLoading(true)
     const params = new URLSearchParams()
@@ -249,6 +274,10 @@ function AdminRegistrations() {
         <button onClick={() => { setShowColumns(!showColumns); setShowAdvanced(false) }} className="art-advanced-toggle">
           نمایش / عدم نمایش ستون‌ها
           <span className={`art-advanced-arrow${showColumns ? ' open' : ''}`}>▾</span>
+        </button>
+
+        <button onClick={handleExportExcel} disabled={isExporting} className="art-export-btn">
+          {isExporting ? 'در حال آماده‌سازی...' : '📥 خروجی اکسل'}
         </button>
       </div>
 
@@ -600,6 +629,14 @@ function AdminRegistrations() {
         .art-search-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
 
         .art-toggles-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .art-export-btn {
+          display: flex; align-items: center; gap: 8px;
+          padding: 8px 18px; border-radius: var(--radius-sm); border: none;
+          background: linear-gradient(135deg, var(--teal-light), var(--teal));
+          color: #eefaf5; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: var(--font-body);
+        }
+        .art-export-btn:hover:not(:disabled) { filter: brightness(1.08); }
+        .art-export-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .art-advanced-toggle {
           display: flex; align-items: center; gap: 8px;
           padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);

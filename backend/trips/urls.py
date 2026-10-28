@@ -19,6 +19,7 @@ urlpatterns = [
     path('admin/trips/', views.AdminTripListView.as_view(), name='admin_trip_list'),
     path('admin/trips/<int:pk>/', views.AdminTripDetailView.as_view(), name='admin_trip_detail'),
     path('admin/registrations/', views.AdminRegistrationListView.as_view(), name='admin_registration_list'),
+    path('admin/registrations/export/', views.AdminRegistrationExportView.as_view(), name='admin_registration_export'),
     path('admin/registrations/<int:pk>/action/', views.AdminRegistrationActionView.as_view(), name='admin_registration_action'),
     # این خط‌ها رو به urlpatterns تو backend/trips/urls.py اضافه کن (کنار بقیه‌ی روت‌های admin/):
 

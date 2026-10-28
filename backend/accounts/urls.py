@@ -17,6 +17,7 @@ urlpatterns = [
     path('admin/users/<int:pk>/', views.AdminUserDetailView.as_view(), name='admin_user_detail'),
     path('admin/users/<int:pk>/', views.AdminUserDetailView.as_view(), name='admin_user_detail'),
     path('admin/users/<int:pk>/permissions/', views.AdminUserPermissionsView.as_view(), name='admin_user_permissions'),
+    path('admin/users/<int:pk>/status/', views.AdminSetUserStatusView.as_view(), name='admin_set_user_status'),
     path('admin/users/<int:pk>/promote/', views.PromoteUserView.as_view(), name='promote_user'),
     
 ]

@@ -87,19 +87,33 @@ class CancelRegistrationView(APIView):
     def post(self, request, pk):
         try:
             registration = Registration.objects.get(pk=pk, user=request.user)
-            if registration.status in ['cancelled', 'attended']:
-                return Response(
-                    {'error': 'امکان انصراف وجود ندارد'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            registration.status = 'cancelled'
-            registration.refund_requested = True
-            registration.refund_status = 'pending'
-            registration.save()
-            return Response({'message': 'انصراف با موفقیت ثبت شد. عودت وجه پس از تایید ادمین انجام می‌شود'})
+            
         except Registration.DoesNotExist:
             return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+        if registration.status in ['cancelled', 'attended']:
+            return Response({'error': 'امکان انصراف وجود ندارد'}, status=status.HTTP_400_BAD_REQUEST)
 
+        total_paid = registration.paid_from_wallet + registration.paid_directly
+        amount = 0
+        if total_paid > 0:
+            try:
+                amount = int(request.data.get('amount'))
+            except (TypeError, ValueError):
+                return Response({'error': 'مبلغ درخواستی برای عودت وجه نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+            if amount <= 0 or amount > total_paid:
+                return Response({'error': 'مبلغ درخواستی نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        registration.status = 'cancelled'
+        if total_paid > 0:
+            registration.refund_requested = True
+            registration.refund_status = 'pending'
+            registration.requested_refund_amount = amount
+        registration.save()
+
+        message = 'انصراف با موفقیت ثبت شد'
+        if total_paid > 0:
+            message += '. درخواست عودت وجه ثبت شد و پس از تایید ادمین واریز می‌شود'
+        return Response({'message': message})
 class RequestRefundView(APIView):
     """
     درخواست عودت وجه برای یک ثبت‌نامِ رد‌شده (بدون اینکه انصراف محسوب بشه).
@@ -217,7 +231,67 @@ class AdminTripDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TripSerializer
     queryset = Trip.objects.all()
 
+def filter_admin_registrations(request, queryset):
+    status_param = request.query_params.get('status', '')
+    trip_id = request.query_params.get('trip_id', '')
+    search = request.query_params.get('search', '')
+    gender = request.query_params.get('gender', '')
+    education_level = request.query_params.get('education_level', '')
+    nationality = request.query_params.get('nationality', '')
+    payment_method = request.query_params.get('payment_method', '')
+    refund_status = request.query_params.get('refund_status', '')
+    student_status = request.query_params.get('student_status', '')
+    university = request.query_params.get('university', '')
+    group_code = request.query_params.get('group_code', '')
+    participation_status = request.query_params.get('participation_status', '')
+    first_name = request.query_params.get('first_name', '')
+    last_name = request.query_params.get('last_name', '')
+    national_code = request.query_params.get('national_code', '')
+    mobile = request.query_params.get('mobile', '')
+    if status_param == '__blank__':
+        queryset = queryset.filter(status='')
+    elif status_param:
+        queryset = queryset.filter(status=status_param)
+    if trip_id:
+        queryset = queryset.filter(trip_id=trip_id)
+    if search:
+        queryset = queryset.filter(
+            Q(user__first_name__icontains=search) |
+            Q(user__last_name__icontains=search) |
+            Q(user__mobile__icontains=search) |
+            Q(user__national_code__icontains=search) |
+            Q(tracking_code__icontains=search)
+        )
+    if gender:
+        queryset = queryset.filter(user__gender=gender)
+    if education_level:
+        queryset = queryset.filter(user__education_level=education_level)
+    if nationality:
+        queryset = queryset.filter(user__nationality__icontains=nationality)
+    if payment_method:
+        queryset = queryset.filter(payment_method=payment_method)
+    if refund_status == '__none__':
+        queryset = queryset.filter(refund_status='')
+    elif refund_status:
+        queryset = queryset.filter(refund_status=refund_status)
+    if student_status:
+        queryset = queryset.filter(user__student_status=student_status)
+    if university:
+        queryset = queryset.filter(user__university__icontains=university)
+    if group_code:
+        queryset = queryset.filter(group_code__icontains=group_code)
+    if participation_status:
+        queryset = queryset.filter(status=participation_status)
+    if first_name:
+        queryset = queryset.filter(user__first_name__icontains=first_name)
+    if last_name:
+        queryset = queryset.filter(user__last_name__icontains=last_name)
+    if national_code:
+        queryset = queryset.filter(user__national_code__icontains=national_code)
+    if mobile:
+        queryset = queryset.filter(user__mobile__icontains=mobile)
 
+    return queryset
 class AdminRegistrationListView(generics.ListAPIView):
     """لیست همه‌ی ثبت‌نام‌ها (همه‌ی کاربران) با فیلتر و جستجو."""
     permission_classes = [HasAdminPermission('perm_registrations')]
@@ -225,68 +299,7 @@ class AdminRegistrationListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Registration.objects.select_related('user', 'trip').order_by('-registered_at')
-        status_param = self.request.query_params.get('status', '')
-        trip_id = self.request.query_params.get('trip_id', '')
-        search = self.request.query_params.get('search', '')
-        gender = self.request.query_params.get('gender', '')
-        education_level = self.request.query_params.get('education_level', '')
-        nationality = self.request.query_params.get('nationality', '')
-        payment_method = self.request.query_params.get('payment_method', '')
-        refund_status = self.request.query_params.get('refund_status', '')
-        student_status = self.request.query_params.get('student_status', '')
-        university = self.request.query_params.get('university', '')
-        group_code = self.request.query_params.get('group_code', '')
-        participation_status = self.request.query_params.get('participation_status', '')
-        first_name = self.request.query_params.get('first_name', '')
-        last_name = self.request.query_params.get('last_name', '')
-        national_code = self.request.query_params.get('national_code', '')
-        mobile = self.request.query_params.get('mobile', '')
-
-        if status_param == '__blank__':
-            queryset = queryset.filter(status='')
-        elif status_param:
-            queryset = queryset.filter(status=status_param)
-        if trip_id:
-            queryset = queryset.filter(trip_id=trip_id)
-        if search:
-            queryset = queryset.filter(
-                Q(user__first_name__icontains=search) |
-                Q(user__last_name__icontains=search) |
-                Q(user__mobile__icontains=search) |
-                Q(user__national_code__icontains=search) |
-                Q(tracking_code__icontains=search)
-            )
-        if gender:
-            queryset = queryset.filter(user__gender=gender)
-        if education_level:
-            queryset = queryset.filter(user__education_level=education_level)
-        if nationality:
-            queryset = queryset.filter(user__nationality__icontains=nationality)
-        if payment_method:
-            queryset = queryset.filter(payment_method=payment_method)
-        if refund_status == '__none__':
-            queryset = queryset.filter(refund_status='')
-        elif refund_status:
-            queryset = queryset.filter(refund_status=refund_status)
-        if student_status:
-            queryset = queryset.filter(user__student_status=student_status)
-        if university:
-            queryset = queryset.filter(user__university__icontains=university)
-        if group_code:
-            queryset = queryset.filter(group_code__icontains=group_code)
-        if participation_status:
-            queryset = queryset.filter(status=participation_status)
-        if first_name:
-            queryset = queryset.filter(user__first_name__icontains=first_name)
-        if last_name:
-            queryset = queryset.filter(user__last_name__icontains=last_name)
-        if national_code:
-            queryset = queryset.filter(user__national_code__icontains=national_code)
-        if mobile:
-            queryset = queryset.filter(user__mobile__icontains=mobile)
-
-
-        return queryset
+        return filter_admin_registrations(self.request, queryset)
 
 
 class AdminRegistrationActionView(APIView):
@@ -489,3 +502,77 @@ class AdminBulkSetGroupCodeView(APIView):
 
         updated = Registration.objects.filter(pk__in=ids).update(group_code=group_code)
         return Response({'updated_count': updated})
+
+class AdminRegistrationExportView(APIView):
+    """خروجی اکسل از ثبت‌نام‌ها، دقیقاً با همون فیلترهایی که در لیست اعمال می‌شود."""
+    permission_classes = [IsAdminOrSuperAdmin]
+
+    def get(self, request):
+        import openpyxl
+        from openpyxl.utils import get_column_letter
+        from django.http import HttpResponse
+
+        queryset = filter_admin_registrations(
+            request,
+            Registration.objects.select_related('user', 'trip').order_by('-registered_at')
+        )
+
+        status_map = {
+            '': 'بدون وضعیت', 'pending': 'در دست بررسی', 'approved': 'تایید شده',
+            'rejected': 'رد شده', 'cancelled': 'انصراف داده', 'attended': 'شرکت کرد', 'absent': 'شرکت نکرد',
+        }
+        payment_map = {'online': 'آنلاین', 'cash': 'نقدی', 'wallet': 'کیف پول'}
+        refund_map = {'pending': 'در دست بررسی', 'approved': 'تایید شده', 'rejected': 'رد شده'}
+        participation_map = {'attended': 'شرکت کرد', 'absent': 'شرکت نکرد'}
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'ثبت‌نام‌ها'
+        ws.sheet_view.rightToLeft = True
+
+        headers = [
+            'سفر', 'نام', 'نام خانوادگی', 'نام پدر', 'کد ملی', 'ملیت', 'موبایل',
+            'تاریخ تولد', 'تاریخ ثبت‌نام', 'دانشگاه', 'کد پیگیری', 'نحوه پرداخت',
+            'شماره کارت', 'مبلغ کل سفر', 'مبلغ پرداخت‌شده', 'باقیمانده', 'کد گروه',
+            'درخواست عودت وجه', 'وضعیت عودت وجه', 'وضعیت', 'دلیل رد', 'وضعیت شرکت', 'توضیحات',
+        ]
+        ws.append(headers)
+        for cell in ws[1]:
+            cell.font = openpyxl.styles.Font(bold=True)
+
+        for r in queryset:
+            ws.append([
+                r.trip.title,
+                r.user.first_name,
+                r.user.last_name,
+                r.user.father_name,
+                r.user.national_code or '',
+                r.user.nationality,
+                r.user.mobile,
+                str(r.user.birth_date) if r.user.birth_date else '',
+                r.registered_at.strftime('%Y-%m-%d'),
+                r.user.university,
+                r.tracking_code,
+                payment_map.get(r.payment_method, ''),
+                r.card_number,
+                r.total_cost,
+                r.paid_from_wallet + r.paid_directly,
+                r.remaining_amount,
+                r.group_code,
+                'بله' if r.refund_requested else 'خیر',
+                refund_map.get(r.refund_status, ''),
+                status_map.get(r.status, r.status),
+                r.rejection_reason,
+                participation_map.get(r.status, ''),
+                r.admin_note,
+            ])
+
+        for i in range(1, len(headers) + 1):
+            ws.column_dimensions[get_column_letter(i)].width = 18
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="registrations_export.xlsx"'
+        wb.save(response)
+        return response

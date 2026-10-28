@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import JalaliDatePicker from '../../components/JalaliDatePicker'
 import api from '../../services/api'
 
 const emptyForm = {
@@ -136,11 +137,11 @@ function AdminTrips() {
               </div>
               <div className="atp-field">
                 <label>از تاریخ</label>
-                <input type="date" name="start_date" value={formData.start_date} onChange={handleChange} className="atp-input" required />
+                <JalaliDatePicker value={formData.start_date} onChange={(iso) => setFormData({ ...formData, start_date: iso })} />
               </div>
               <div className="atp-field">
                 <label>تا تاریخ</label>
-                <input type="date" name="end_date" value={formData.end_date} onChange={handleChange} className="atp-input" required />
+                <JalaliDatePicker value={formData.end_date} onChange={(iso) => setFormData({ ...formData, end_date: iso })} />
               </div>
               <div className="atp-field">
                 <label>هزینه ثبت‌نام (تومان)</label>

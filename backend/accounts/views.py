@@ -39,8 +39,13 @@ class LoginView(APIView):
         password = request.data.get('password')
         user = authenticate(request, username=mobile, password=password)
         if user:
-            if user.status == 'blocked':
-                return Response({'error': 'حساب شما مسدود شده است'}, status=status.HTTP_403_FORBIDDEN)
+            if user.status != 'active':
+                messages = {
+                    'inactive': 'حساب شما غیرفعال شده است',
+                    'blocked': 'حساب شما مسدود شده است',
+                    'deleted': 'این حساب حذف شده است',
+                }
+                return Response({'error': messages.get(user.status, 'امکان ورود وجود ندارد')}, status=status.HTTP_403_FORBIDDEN)
             refresh = RefreshToken.for_user(user)
             return Response({
                 'access': str(refresh.access_token),
@@ -222,7 +227,7 @@ class AdminUserDetailView(generics.RetrieveAPIView):
     serializer_class = UserProfileSerializer
     queryset = User.objects.all()
 
-class AdminUserDetailView(generics.RetrieveAPIView):
+class AdminUserDetailView(generics.RetrieveUpdateAPIView):
     """جزئیات کامل یک کاربر برای پنل ادمین (همه‌ی فیلدهای پروفایل، بدون پسورد)."""
     permission_classes = [HasAdminPermission('perm_users')]
     serializer_class = UserProfileSerializer
@@ -234,3 +239,21 @@ class AdminUserPermissionsView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsSuperAdmin]
     serializer_class = AdminUserPermissionsSerializer
     queryset = User.objects.all()
+
+class AdminSetUserStatusView(APIView):
+    """تغییر وضعیت حساب کاربر (فعال/غیرفعال/حذف). فقط سوپرادمین. body: { "status": "active"|"inactive"|"deleted" }"""
+    permission_classes = [IsSuperAdmin]
+
+    def post(self, request, pk):
+        new_status = request.data.get('status')
+        if new_status not in ('active', 'inactive', 'deleted'):
+            return Response({'error': 'وضعیت نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({'error': 'کاربر یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+        if user.user_type == 'superadmin':
+            return Response({'error': 'نمی‌توان وضعیت سوپرادمین را تغییر داد'}, status=status.HTTP_400_BAD_REQUEST)
+        user.status = new_status
+        user.save()
+        return Response(UserListSerializer(user).data)

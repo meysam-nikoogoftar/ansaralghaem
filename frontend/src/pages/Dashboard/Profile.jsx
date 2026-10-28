@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import useAuthStore from '../../store/authStore'
+import JalaliDatePicker from '../../components/JalaliDatePicker'
 
 function Profile() {
   const { user, updateProfile } = useAuthStore()
@@ -71,6 +72,8 @@ function Profile() {
         </label>
       ) : type === 'textarea' ? (
         <textarea name={name} value={formData[name]} onChange={handleChange} rows={3} className="pf-input" />
+      ) : type === 'jalali-date' ? (
+        <JalaliDatePicker value={formData[name]} onChange={(iso) => setFormData({ ...formData, [name]: iso })} />
       ) : (
         <input type={type} name={name} value={formData[name]} onChange={handleChange} className="pf-input" />
       )}
@@ -92,7 +95,7 @@ function Profile() {
         <Field label="نام خانوادگی" name="last_name" />
         <Field label="نام پدر" name="father_name" />
         <Field label="کد ملی" name="national_code" />
-        <Field label="تاریخ تولد" name="birth_date" type="date" />
+        <Field label="تاریخ تولد" name="birth_date" type="jalali-date" />
         <Field label="جنسیت" name="gender" options={[
           { value: 'male', label: 'برادر' },
           { value: 'female', label: 'خواهر' },
