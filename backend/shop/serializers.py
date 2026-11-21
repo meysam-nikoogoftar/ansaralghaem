@@ -28,6 +28,10 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class CreateOrderSerializer(serializers.ModelSerializer):
+    quantity = serializers.IntegerField(min_value=1, max_value=10000, default=1)
+    address = serializers.CharField(max_length=2000)
+    postal_code = serializers.RegexField(r'^[0-9]{10}$')
+
     class Meta:
         model = Order
         fields = ('product', 'quantity', 'address', 'postal_code')
