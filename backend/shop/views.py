@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -19,7 +20,7 @@ class ProductListView(generics.ListAPIView):
     serializer_class = ProductSerializer
 
     def get_queryset(self):
-        queryset = Product.objects.filter(is_published=True)
+        queryset = Product.objects.select_related('category').filter(is_published=True)
         category = self.request.query_params.get('category', '')
         if category:
             queryset = queryset.filter(category_id=category)
@@ -29,27 +30,24 @@ class ProductListView(generics.ListAPIView):
 class ProductDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ProductSerializer
-    queryset = Product.objects.filter(is_published=True)
+    queryset = Product.objects.select_related('category').filter(is_published=True)
 
 
 class CreateOrderView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request):
         serializer = CreateOrderSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            product = serializer.validated_data['product']
-            quantity = serializer.validated_data.get('quantity', 1)
-            if product.stock < quantity:
-                return Response(
-                    {'error': 'موجودی کافی نیست'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            order = serializer.save()
-            product.stock -= quantity
-            product.save()
-            return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        product = Product.objects.select_for_update().get(pk=serializer.validated_data['product'].pk)
+        quantity = serializer.validated_data.get('quantity', 1)
+        if not product.is_published or product.stock < quantity:
+            return Response({'error': 'موجودی کافی نیست'}, status=400)
+        order = serializer.save(product=product)
+        product.stock -= quantity
+        product.save(update_fields=['stock'])
+        return Response(OrderSerializer(order).data, status=201)
 
 
 class MyOrdersView(generics.ListAPIView):
