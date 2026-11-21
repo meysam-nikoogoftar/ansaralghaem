@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils import timezone
 from .models import Article, News, Gallery, Download, Slider, Announcement
 
 
@@ -22,6 +23,15 @@ class NewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = News
         fields = '__all__'
+
+
+class AdminNewsSerializer(NewsSerializer):
+    def validate(self, attrs):
+        published = attrs.get('is_published', getattr(self.instance, 'is_published', False))
+        published_at = attrs.get('published_at', getattr(self.instance, 'published_at', None))
+        if published and published_at is None:
+            attrs['published_at'] = timezone.now()
+        return attrs
 
 
 class GallerySerializer(serializers.ModelSerializer):
