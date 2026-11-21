@@ -1,3 +1,4 @@
+import useReducedMotion from '../hooks/useReducedMotion'
 import { useEffect, useRef } from 'react'
 
 const INTERACTIVE_SELECTOR =
@@ -6,13 +7,14 @@ const INTERACTIVE_SELECTOR =
   '.count-box, .detail-item, .gallery-tab'
 
 function CustomCursor() {
+  const reducedMotion = useReducedMotion()
   const dotRef = useRef(null)
   const ringRef = useRef(null)
   const mouseRef = useRef({ x: 0, y: 0 })
   const ringPosRef = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
-    if (window.innerWidth <= 900) return
+    if (window.innerWidth <= 900 || reducedMotion) return
     const dot = dotRef.current
     const ring = ringRef.current
     if (!dot || !ring) return
@@ -52,7 +54,7 @@ function CustomCursor() {
       document.removeEventListener('mouseout', onOut)
       cancelAnimationFrame(animId)
     }
-  }, [])
+  }, [reducedMotion])
 
   return (
     <>

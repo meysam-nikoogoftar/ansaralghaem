@@ -11,33 +11,28 @@ function Announcement() {
       .catch(() => {})
   }, [])
 
-  useEffect(() => {
-    if (announcements.length > 1) {
-      const timer = setInterval(() => {
-        setCurrent(prev => (prev + 1) % announcements.length)
-      }, 5000)
-      return () => clearInterval(timer)
-    }
-  }, [announcements])
-
   if (announcements.length === 0) return null
 
   const announcement = announcements[current]
 
   const typeConfig = {
-    info: { icon: 'ℹ️', accent: 'var(--teal-glow)' },
-    warning: { icon: '⚠️', accent: 'var(--status-warn)' },
-    welcome: { icon: '✦', accent: 'var(--teal-glow)' },
+    info: { accent: 'var(--teal-glow)' },
+    warning: { accent: 'var(--status-warn)' },
+    welcome: { accent: 'var(--teal-glow)' },
   }
   const config = typeConfig[announcement.announcement_type] || typeConfig.info
 
   return (
     <div className="an-bar" dir="rtl" style={{ borderBottomColor: config.accent }}>
       <div className="an-inner">
-        <span className="an-icon" style={{ color: config.accent }}>{config.icon}</span>
-        <p className="an-text">{announcement.text}</p>
+        <svg className="an-icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ color: config.accent }}><circle cx="12" cy="12" r="9" /><path d="M12 10v6M12 7v1" /></svg>
+        <p className="an-text" aria-live="polite">{announcement.text}</p>
         {announcements.length > 1 && (
-          <span className="an-counter">{current + 1}/{announcements.length}</span>
+          <div className="an-controls" role="group" aria-label="مرور اطلاعیه‌ها">
+            <button type="button" aria-label="اطلاعیه قبلی" onClick={() => setCurrent(value => (value - 1 + announcements.length) % announcements.length)}>‹</button>
+            <span className="an-counter">{current + 1}/{announcements.length}</span>
+            <button type="button" aria-label="اطلاعیه بعدی" onClick={() => setCurrent(value => (value + 1) % announcements.length)}>›</button>
+          </div>
         )}
       </div>
 
