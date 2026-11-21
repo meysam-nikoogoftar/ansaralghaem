@@ -1,26 +1,36 @@
-import { useEffect, useState } from 'react'
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useCallback, useEffect, useState } from 'react'
 import api from '../../services/api'
 
 const emptyForm = { title: '', amount: '', category: '', description: '', date: '' }
 
 function AdminExpenses() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [expenses, setExpenses] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [formData, setFormData] = useState(emptyForm)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
 
-  const fetchExpenses = () => {
-    setIsLoading(true)
-    api.get('/financial/admin/expenses/')
-      .then(res => setExpenses(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }
 
-  useEffect(() => { fetchExpenses() }, [])
+
+  const fetchExpenses = useCallback(() => {
+    observeLoad(() => api.get('/financial/admin/expenses/')
+      .then(res => setExpenses(res.data))
+      .catch(error => { throw error })
+      , "'/financial/admin/expenses/'")
+  }, [observeLoad])
+
+  useEffect(() => { fetchExpenses() }, [fetchExpenses])
 
   const openCreateForm = () => {
     setEditingId(null)
@@ -43,6 +53,8 @@ function AdminExpenses() {
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
 
   const handleSubmit = async (e) => {
+    setValidationErrors({})
+
     e.preventDefault()
     setIsSaving(true)
     setMessage('')
@@ -58,8 +70,10 @@ function AdminExpenses() {
         setMessage('هزینه ثبت شد')
       }
       setIsFormOpen(false)
-    } catch {
-      setMessage('خطا در ذخیره — اگه اسم فیلدها با مدل واقعی فرق داره بهم بگو تا اصلاح کنم')
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
+      setMessage('ذخیره انجام نشد. اطلاعات فرم را بررسی و دوباره تلاش کنید.')
     }
     setIsSaving(false)
   }
@@ -69,7 +83,9 @@ function AdminExpenses() {
     try {
       await api.delete(`/financial/admin/expenses/${id}/`)
       setExpenses(expenses.filter(x => x.id !== id))
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در حذف')
     }
   }
@@ -77,7 +93,7 @@ function AdminExpenses() {
   const total = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
 
   return (
-    <div className="aex-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="aex-page">
       <div className="aex-head">
         <h1>ریزهزینه‌ها</h1>
         <button onClick={openCreateForm} className="aex-new-btn">+ ثبت هزینه جدید</button>
@@ -85,10 +101,10 @@ function AdminExpenses() {
 
       <div className="aex-total-card">
         <p>مجموع هزینه‌های ثبت‌شده</p>
-        <strong>{total.toLocaleString('fa-IR')} تومان</strong>
+        <strong>{isLoading || loadState.errors.length ? '—' : total.toLocaleString('fa-IR')} تومان</strong>
       </div>
 
-      {message && <div className="aex-message">{message}</div>}
+      {message && <div role="status" aria-live="polite" aria-atomic="true" className="aex-message">{message}</div>}
 
       {isFormOpen && (
         <div className="aex-card">
@@ -96,24 +112,24 @@ function AdminExpenses() {
           <form onSubmit={handleSubmit} className="aex-form">
             <div className="aex-grid">
               <div className="aex-field">
-                <label>عنوان</label>
-                <input type="text" name="title" value={formData.title} onChange={handleChange} className="aex-input" required />
+
+                <FormControl as="input" label={<>عنوان</>} type="text" name="title" value={formData.title} onChange={handleChange} className="aex-input" required />
               </div>
               <div className="aex-field">
-                <label>مبلغ (تومان)</label>
-                <input type="number" name="amount" value={formData.amount} onChange={handleChange} className="aex-input" required />
+
+                <FormControl as="input" label={<>مبلغ (تومان)</>} type="number" name="amount" value={formData.amount} onChange={handleChange} className="aex-input" required />
               </div>
               <div className="aex-field">
-                <label>دسته‌بندی</label>
-                <input type="text" name="category" value={formData.category} onChange={handleChange} placeholder="مثلاً: اسکان، حمل‌ونقل، تغذیه" className="aex-input" />
+
+                <FormControl as="input" label={<>دسته‌بندی</>} type="text" name="category" value={formData.category} onChange={handleChange} placeholder="مثلاً: اسکان، حمل‌ونقل، تغذیه" className="aex-input" />
               </div>
               <div className="aex-field">
-                <label>تاریخ</label>
-                <input type="date" name="date" value={formData.date} onChange={handleChange} className="aex-input" />
+
+                <FormControl as="input" label={<>تاریخ</>} type="date" name="date" value={formData.date} onChange={handleChange} className="aex-input" />
               </div>
               <div className="aex-field aex-span-2">
-                <label>توضیحات</label>
-                <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="aex-input" />
+
+                <FormControl as="textarea" label={<>توضیحات</>} name="description" value={formData.description} onChange={handleChange} rows={3} className="aex-input" />
               </div>
             </div>
             <div className="aex-form-actions">
@@ -128,7 +144,7 @@ function AdminExpenses() {
 
       {isLoading ? (
         <div className="aex-loading">در حال بارگذاری...</div>
-      ) : expenses.length === 0 ? (
+      ) : (expenses.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && expenses.length === 0) ? null : expenses.length === 0 ? (
         <div className="aex-empty">هزینه‌ای ثبت نشده است</div>
       ) : (
         <div className="aex-table-wrap">
@@ -221,13 +237,13 @@ function AdminExpenses() {
         }
         .aex-table td { padding: 12px 16px; color: var(--ink); border-bottom: 1px solid var(--line); white-space: nowrap; }
         .aex-table tr:last-child td { border-bottom: none; }
-        .aex-amount { color: #ff9aa8; font-weight: 600; }
+        .aex-amount { color: var(--status-danger); font-weight: 600; }
         .aex-row-actions { display: flex; gap: 8px; }
         .aex-edit-btn, .aex-delete-btn { font-size: 11.5px; padding: 6px 13px; border-radius: 999px; cursor: pointer; border: 1px solid; }
         .aex-edit-btn { color: var(--teal-glow); border-color: rgba(15,111,92,0.4); background: transparent; }
-        .aex-delete-btn { color: #ff9aa8; border-color: rgba(255,107,125,0.4); background: transparent; }
+        .aex-delete-btn { color: var(--status-danger); border-color: rgba(255,107,125,0.4); background: transparent; }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 

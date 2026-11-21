@@ -1,5 +1,10 @@
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import useAuthStore from '../../store/authStore'
 import api from '../../services/api'
+import './admin-overview.css'
 
 const statusMeta = {
   '': { label: 'بدون وضعیت', color: 'var(--status-neutral)', bg: 'var(--status-neutral-bg)' },
@@ -12,180 +17,58 @@ const statusMeta = {
 }
 
 function AdminDashboard() {
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [stats, setStats] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { user } = useAuthStore()
+  const isLoading = !loadState.started || loadState.pending > 0
 
   useEffect(() => {
-    api.get('/accounts/admin/dashboard-stats/')
+    observeLoad(() => api.get('/accounts/admin/dashboard-stats/')
       .then(res => setStats(res.data))
-      .catch(() => setError('خطا در دریافت آمار (دسترسی ادمین لازم است)'))
-      .finally(() => setIsLoading(false))
-  }, [])
+      .catch(error => { throw error })
+      , "'/accounts/admin/dashboard-stats/'")
+  }, [observeLoad])
 
-  if (isLoading) return <div className="adb-loading">در حال بارگذاری آمار...</div>
-  if (error) return <div className="adb-error">{error}</div>
-  if (!stats) return null
+  if (isLoading && !stats) return <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="adb-loading">در حال بارگذاری آمار...</div>}</>
+  if (!stats) return <><LoadFeedback state={loadState} onRetry={retryLoad} />{null}</>
 
-  const cards = [
-    { label: 'کاربران عادی', value: stats.total_users, color: 'var(--teal-glow)' },
-    { label: 'ادمین‌ها', value: stats.total_admins, color: 'var(--teal-light)' },
-    { label: 'سفرهای فعال', value: stats.total_trips, color: '#7fb7ff' },
-    { label: 'موجودی کل کیف‌پول‌ها', value: `${stats.total_wallet_balance.toLocaleString('fa-IR')} ت`, color: 'var(--gold-light)' },
-    { label: 'تیکت در انتظار', value: stats.pending_tickets, color: '#ff9aa8' },
-    { label: 'گالری در انتظار', value: stats.pending_gallery, color: '#ff9aa8' },
-    { label: 'دلنوشته در انتظار', value: stats.pending_articles, color: '#ff9aa8' },
+  const allowed = permission => user?.user_type === 'superadmin' || user?.[permission] === true
+  const number = value => Number(value || 0).toLocaleString('fa-IR')
+  const statuses = stats.registrations_by_status || {}
+  const totalRegistrations = Object.values(statuses).reduce((sum, value) => sum + Number(value || 0), 0)
+  const recent = stats.recent_registrations || []
+  const metrics = [
+    { label: 'کاربران عادی', value: stats.total_users, detail: `${number(stats.total_admins)} حساب مدیریتی`, to: '/admin/users', permission: 'perm_users' },
+    { label: 'سفرهای فعال', value: stats.total_trips, detail: 'مدیریت برنامه‌ها و ظرفیت سفر', to: '/admin/trips', permission: 'perm_trips' },
+    { label: 'کل ثبت‌نام‌ها', value: totalRegistrations, detail: `${number(statuses.approved)} ثبت‌نام تأییدشده`, to: '/admin/registrations', permission: 'perm_registrations' },
   ]
-
-  const maxStatusCount = Math.max(1, ...Object.values(stats.registrations_by_status))
-
-  return (
-    <div className="adb-page">
-      <h1 className="adb-heading">داشبورد مدیریت</h1>
-
-      <div className="adb-cards">
-        {cards.map((c, i) => (
-          <div key={i} className="adb-card">
-            <p className="adb-card-label">{c.label}</p>
-            <strong className="adb-card-value" style={{ color: c.color }}>{c.value}</strong>
-          </div>
-        ))}
+  const tasks = [
+    { label: 'ثبت‌نام در دست بررسی', count: Number(statuses.pending || 0) + Number(statuses[''] || 0), to: '/admin/registrations', permission: 'perm_registrations' },
+    { label: 'تصویر گالری در انتظار', count: stats.pending_gallery, to: '/admin/gallery', permission: 'perm_content' },
+    { label: 'دلنوشته در انتظار', count: stats.pending_articles, to: '/admin/articles', permission: 'perm_content' },
+  ].filter(task => allowed(task.permission))
+  const accessibleMetrics = metrics.filter(metric => allowed(metric.permission))
+  return <div className="adb-page">
+    <header className="admin-page-heading"><div><h1 className="adb-heading">داشبورد مدیریت</h1><p>وضعیت هیئت و کارهایی که نیاز به پیگیری دارند.</p></div></header>
+    <LoadFeedback state={loadState} onRetry={retryLoad} />
+    {accessibleMetrics.length > 0 && <div className="adb-metrics">{accessibleMetrics.map(metric => <Link to={metric.to} key={metric.label}><span>{metric.label}</span><strong>{number(metric.value)}</strong><small>{metric.detail}</small><span className="adb-metric-action">مشاهده و مدیریت <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m14 6-6 6 6 6" /></svg></span></Link>)}</div>}
+    <div className="adb-workspace">
+      <div className="adb-main-column">
+        <div className="adb-panel adb-tasks"><div className="adb-panel-heading"><h2>نیازمند پیگیری</h2><span>کارهای در انتظار بررسی</span></div>{tasks.length ? <ul>{tasks.map(task => <li key={task.label}><Link to={task.to}><span className={`adb-task-count${Number(task.count) > 0 ? ' has-items' : ''}`}>{number(task.count)}</span><div><strong>{task.label}</strong><small>{Number(task.count) ? 'برای بررسی وارد این بخش شوید' : 'موردی در انتظار نیست'}</small></div><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m14 6-6 6 6 6" /></svg></Link></li>)}</ul> : <p className="adb-empty">بخش‌های قابل پیگیری مطابق دسترسی حساب شما نمایش داده می‌شوند.</p>}{allowed('perm_tickets') && <p className="adb-ticket-note">تیکت‌های در انتظار پاسخ: <strong>{number(stats.pending_tickets)}</strong></p>}</div>
+        {allowed('perm_registrations') && <div className="adb-panel adb-recent"><div className="adb-panel-heading"><h2>آخرین ثبت‌نام‌ها</h2><Link to="/admin/registrations">مشاهده همه</Link></div>{recent.length ? <ul>{recent.map(registration => <li key={registration.id} className="adb-registration-row">
+          <div className="adb-registration-person"><strong>{registration.user_name?.trim() || registration.user_mobile || 'کاربر بدون نام'}</strong><p>{registration.trip_detail?.title || 'عنوان سفر ثبت نشده'}</p></div>
+          <div className="adb-registration-reference"><span>کد پیگیری <bdi>{registration.tracking_code || '—'}</bdi></span>{registration.registered_at && <time dateTime={registration.registered_at}>{new Date(registration.registered_at).toLocaleDateString('fa-IR')}</time>}</div>
+          <span className="adb-status-pill" style={{ color: statusMeta[registration.status]?.color, background: statusMeta[registration.status]?.bg }}>{statusMeta[registration.status]?.label || 'نامشخص'}</span>
+          {allowed('perm_users') && registration.user && <Link className="adb-registration-link" to={`/admin/users/${registration.user}`}>پرونده کاربر<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m14 6-6 6 6 6" /></svg></Link>}
+        </li>)}</ul> : <p className="adb-empty">هنوز ثبت‌نامی انجام نشده است.</p>}</div>}
       </div>
-
-      <div className="adb-grid">
-        <div className="adb-panel">
-          <h2>وضعیت ثبت‌نام‌ها</h2>
-          <div className="adb-bars">
-            {Object.entries(stats.registrations_by_status).map(([key, count]) => (
-              <div key={key} className="adb-bar-row">
-                <span className="adb-bar-label" style={{ color: statusMeta[key]?.color }}>
-                  {statusMeta[key]?.label || key}
-                </span>
-                <div className="adb-bar-track">
-                  <div
-                    className="adb-bar-fill"
-                    style={{
-                      width: `${(count / maxStatusCount) * 100}%`,
-                      background: statusMeta[key]?.color,
-                    }}
-                  />
-                </div>
-                <span className="adb-bar-count">{count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="adb-panel">
-          <h2>آخرین ثبت‌نام‌ها</h2>
-          {stats.recent_registrations.length === 0 ? (
-            <p className="adb-empty">ثبت‌نامی وجود ندارد</p>
-          ) : (
-            <div className="adb-table">
-              <div className="adb-table-head">
-                <span>کاربر</span>
-                <span>سفر</span>
-                <span>وضعیت</span>
-              </div>
-              {stats.recent_registrations.map((r) => (
-                <div key={r.id} className="adb-table-row">
-                  <span>{r.user_name}</span>
-                  <span>{r.trip_detail?.title}</span>
-                  <span
-                    className="adb-status-pill"
-                    style={{
-                      color: statusMeta[r.status]?.color,
-                      borderColor: statusMeta[r.status]?.color,
-                      background: statusMeta[r.status]?.bg,
-                    }}
-                  >
-                    {statusMeta[r.status]?.label || r.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      <div className="adb-side-column">
+        {allowed('perm_financial') && <div className="adb-finance"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M20 8V5H6a3 3 0 0 0-3 3v11h17V8H6M20 12h-5v4h5"/></svg><h2>موجودی کل کیف پول‌ها</h2><strong>{number(stats.total_wallet_balance)} <span>تومان</span></strong><p>مجموع مانده اعتبار کاربران در کیف پول</p><Link to="/admin/expenses">مدیریت هزینه‌ها</Link></div>}
+        {allowed('perm_registrations') && <div className="adb-panel"><div className="adb-panel-heading"><h2>وضعیت ثبت‌نام‌ها</h2></div><p className="adb-chart-caption">از مجموع {number(totalRegistrations)} ثبت‌نام</p><div className="adb-bars">{Object.entries(statuses).map(([key, count]) => <div key={key} className="adb-bar-row"><div><span>{statusMeta[key]?.label || 'نامشخص'}</span><strong>{number(count)}</strong></div><div className="adb-bar-track" aria-hidden="true"><span style={{ width: `${totalRegistrations ? Number(count) / totalRegistrations * 100 : 0}%`, background: statusMeta[key]?.color || 'var(--teal-glow)' }} /></div></div>)}</div>{!totalRegistrations && <p className="adb-empty">با ثبت‌نام کاربران، نمودار تکمیل می‌شود.</p>}</div>}
       </div>
-
-      <style>{`
-        .adb-loading, .adb-error {
-          min-height: 40vh; display: flex; align-items: center; justify-content: center;
-          color: var(--ink-dim); font-size: 14px;
-        }
-        .adb-error { color: #ff9aa8; }
-
-        .adb-page { display: flex; flex-direction: column; gap: 22px; }
-        .adb-heading { font-family: var(--font-display); color: var(--teal-glow); font-size: 21px; }
-
-        .adb-cards {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-          gap: 14px;
-        }
-        .adb-card {
-          background: var(--surface);
-          border: 1px solid var(--line);
-          border-radius: var(--radius-md);
-          padding: 16px;
-        }
-        .adb-card-label { color: var(--ink-faint); font-size: 11.5px; margin-bottom: 8px; }
-        .adb-card-value { font-size: 19px; font-weight: 700; }
-
-        .adb-grid {
-          display: grid;
-          grid-template-columns: 1fr 1.2fr;
-          gap: 18px;
-        }
-        .adb-panel {
-          background: var(--surface);
-          border: 1px solid var(--line);
-          border-radius: var(--radius-lg);
-          padding: 20px 22px;
-        }
-        .adb-panel h2 {
-          font-family: var(--font-display);
-          color: var(--teal-glow);
-          font-size: 15px;
-          margin-bottom: 16px;
-        }
-
-        .adb-bars { display: flex; flex-direction: column; gap: 12px; }
-        .adb-bar-row { display: grid; grid-template-columns: 90px 1fr 26px; align-items: center; gap: 10px; }
-        .adb-bar-label { font-size: 12px; }
-        .adb-bar-track { height: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
-        .adb-bar-fill { height: 100%; border-radius: 999px; transition: width .5s ease; }
-        .adb-bar-count { font-size: 12px; color: var(--ink-dim); text-align: left; }
-
-        .adb-empty { color: var(--ink-dim); font-size: 13px; text-align: center; padding: 20px 0; }
-
-        .adb-table { display: flex; flex-direction: column; }
-        .adb-table-head, .adb-table-row {
-          display: grid; grid-template-columns: 1fr 1fr 100px;
-          gap: 8px; align-items: center;
-          padding: 9px 0;
-        }
-        .adb-table-head {
-          color: var(--ink-faint); font-size: 11px;
-          border-bottom: 1px solid var(--line);
-          padding-bottom: 10px;
-        }
-        .adb-table-row {
-          border-bottom: 1px solid var(--line);
-          color: var(--ink); font-size: 12.5px;
-        }
-        .adb-table-row:last-child { border-bottom: none; }
-        .adb-status-pill {
-          font-size: 10.5px; padding: 3px 9px; border-radius: 999px;
-          border: 1px solid; justify-self: start; white-space: nowrap;
-        }
-
-        @media (max-width: 900px) {
-          .adb-grid { grid-template-columns: 1fr; }
-        }
-      `}</style>
     </div>
-  )
+  </div>
 }
-
 export default AdminDashboard
+
