@@ -1,4 +1,9 @@
-import { useEffect, useState } from 'react'
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useCallback, useEffect, useState } from 'react'
 import JalaliDatePicker from '../../components/JalaliDatePicker'
 import api from '../../services/api'
 
@@ -24,23 +29,28 @@ const audienceOptions = [
 ]
 
 function AdminTrips() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [trips, setTrips] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [formData, setFormData] = useState(emptyForm)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
 
-  const fetchTrips = () => {
-    setIsLoading(true)
-    api.get('/trips/admin/trips/')
-      .then(res => setTrips(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }
 
-  useEffect(() => { fetchTrips() }, [])
+
+  const fetchTrips = useCallback(() => {
+    observeLoad(() => api.get('/trips/admin/trips/')
+      .then(res => setTrips(res.data))
+      .catch(error => { throw error })
+      , "'/trips/admin/trips/'")
+  }, [observeLoad])
+
+  useEffect(() => { fetchTrips() }, [fetchTrips])
 
   const openCreateForm = () => {
     setEditingId(null)
@@ -65,6 +75,8 @@ function AdminTrips() {
   }
 
   const handleSubmit = async (e) => {
+    setValidationErrors({})
+
     e.preventDefault()
     setIsSaving(true)
     setMessage('')
@@ -81,16 +93,22 @@ function AdminTrips() {
       }
       setIsFormOpen(false)
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       setMessage('خطا در ذخیره سفر — لطفاً فیلدها را بررسی کنید')
     }
     setIsSaving(false)
   }
 
   const handleToggle = async (trip, field) => {
+    setValidationErrors({})
+
     try {
       const res = await api.patch(`/trips/admin/trips/${trip.id}/`, { [field]: !trip[field] })
       setTrips(trips.map(t => t.id === trip.id ? res.data : t))
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در تغییر وضعیت')
     }
   }
@@ -100,19 +118,21 @@ function AdminTrips() {
     try {
       await api.delete(`/trips/admin/trips/${id}/`)
       setTrips(trips.filter(t => t.id !== id))
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در حذف سفر')
     }
   }
 
   return (
-    <div className="atp-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="atp-page">
       <div className="atp-head">
         <h1>مدیریت سفرها</h1>
         <button onClick={openCreateForm} className="atp-new-btn">+ سفر جدید</button>
       </div>
 
-      {message && <div className="atp-message">{message}</div>}
+      {message && <div role="status" aria-live="polite" aria-atomic="true" className="atp-message">{message}</div>}
 
       {isFormOpen && (
         <div className="atp-card">
@@ -120,54 +140,54 @@ function AdminTrips() {
           <form onSubmit={handleSubmit} className="atp-form">
             <div className="atp-grid">
               <div className="atp-field">
-                <label>عنوان سفر</label>
-                <input type="text" name="title" value={formData.title} onChange={handleChange} className="atp-input" required />
+
+                <FormControl as="input" label={<>عنوان سفر</>} type="text" name="title" value={formData.title} onChange={handleChange} className="atp-input" required />
               </div>
               <div className="atp-field">
-                <label>نوع سفر</label>
-                <select name="trip_type" value={formData.trip_type} onChange={handleChange} className="atp-input">
+
+                <FormControl as="select" label={<>نوع سفر</>} name="trip_type" value={formData.trip_type} onChange={handleChange} className="atp-input">
                   {tripTypeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
+                </FormControl>
               </div>
               <div className="atp-field">
-                <label>مخصوص</label>
-                <select name="audience" value={formData.audience} onChange={handleChange} className="atp-input">
+
+                <FormControl as="select" label={<>مخصوص</>} name="audience" value={formData.audience} onChange={handleChange} className="atp-input">
                   {audienceOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
+                </FormControl>
               </div>
               <div className="atp-field">
-                <label>از تاریخ</label>
-                <JalaliDatePicker value={formData.start_date} onChange={(iso) => setFormData({ ...formData, start_date: iso })} />
+                <label htmlFor="trip-start_date">از تاریخ</label>
+                <JalaliDatePicker id="trip-start_date" value={formData.start_date} onChange={(iso) => setFormData({ ...formData, start_date: iso })} />
               </div>
               <div className="atp-field">
-                <label>تا تاریخ</label>
-                <JalaliDatePicker value={formData.end_date} onChange={(iso) => setFormData({ ...formData, end_date: iso })} />
+                <label htmlFor="trip-end_date">تا تاریخ</label>
+                <JalaliDatePicker id="trip-end_date" value={formData.end_date} onChange={(iso) => setFormData({ ...formData, end_date: iso })} />
               </div>
               <div className="atp-field">
-                <label>هزینه ثبت‌نام (تومان)</label>
-                <input type="number" name="cost" value={formData.cost} onChange={handleChange} className="atp-input" required />
+
+                <FormControl as="input" label={<>هزینه ثبت‌نام (تومان)</>} type="number" name="cost" value={formData.cost} onChange={handleChange} className="atp-input" required />
               </div>
               <div className="atp-field">
-                <label>مبلغ عودت وجه</label>
-                <input type="number" name="refund_amount" value={formData.refund_amount} onChange={handleChange} className="atp-input" />
+
+                <FormControl as="input" label={<>مبلغ عودت وجه</>} type="number" name="refund_amount" value={formData.refund_amount} onChange={handleChange} className="atp-input" />
               </div>
               <div className="atp-field atp-span-2">
-                <label>توضیحات عودت وجه</label>
-                <input type="text" name="refund_description" value={formData.refund_description} onChange={handleChange} className="atp-input" />
+
+                <FormControl as="input" label={<>توضیحات عودت وجه</>} type="text" name="refund_description" value={formData.refund_description} onChange={handleChange} className="atp-input" />
               </div>
               <div className="atp-field atp-span-2">
-                <label>شرایط سفر</label>
-                <textarea name="conditions" value={formData.conditions} onChange={handleChange} rows={4} className="atp-input" />
+
+                <FormControl as="textarea" label={<>شرایط سفر</>} name="conditions" value={formData.conditions} onChange={handleChange} rows={4} className="atp-input" />
               </div>
               <div className="atp-field">
                 <label className="atp-checkbox-label">
-                  <input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} />
+                  <FormControl as="input" type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} />
                   <span>سفر فعال (روی سایت نمایش داده شود)</span>
                 </label>
               </div>
               <div className="atp-field">
                 <label className="atp-checkbox-label">
-                  <input type="checkbox" name="registration_open" checked={formData.registration_open} onChange={handleChange} />
+                  <FormControl as="input" type="checkbox" name="registration_open" checked={formData.registration_open} onChange={handleChange} />
                   <span>ثبت‌نام باز است</span>
                 </label>
               </div>
@@ -184,7 +204,7 @@ function AdminTrips() {
 
       {isLoading ? (
         <div className="atp-loading">در حال بارگذاری...</div>
-      ) : trips.length === 0 ? (
+      ) : (trips.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && trips.length === 0) ? null : trips.length === 0 ? (
         <div className="atp-empty">سفری ثبت نشده است</div>
       ) : (
         <div className="atp-list">
@@ -280,7 +300,7 @@ function AdminTrips() {
         }
         .atp-edit-btn { color: var(--teal-glow); border-color: rgba(15,111,92,0.4); background: transparent; }
         .atp-edit-btn:hover { background: rgba(15,111,92,0.1); }
-        .atp-delete-btn { color: #ff9aa8; border-color: rgba(255,107,125,0.4); background: transparent; }
+        .atp-delete-btn { color: var(--status-danger); border-color: rgba(255,107,125,0.4); background: transparent; }
         .atp-delete-btn:hover { background: rgba(122,35,48,0.12); }
 
         .atp-toggles { display: flex; gap: 8px; }
@@ -290,7 +310,7 @@ function AdminTrips() {
         }
         .atp-toggle-pill.on { color: var(--status-ok); border-color: var(--status-ok); background: var(--status-ok-bg); }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 

@@ -1,3 +1,9 @@
+import FormValidation from '../../components/FormValidation'
+import { errorMessage, fieldErrors } from '../../utils/validation'
+import Dialog from '../../components/Dialog'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../services/api'
@@ -52,10 +58,15 @@ const emptyAdvancedFilters = {
 }
 
 function AdminRegistrations() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [registrations, setRegistrations] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [search, setSearch] = useState('')
   const [busyId, setBusyId] = useState(null)
+  const [actionError, setActionError] = useState('')
 
   const [advancedFilters, setAdvancedFilters] = useState(emptyAdvancedFilters)
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -79,8 +90,8 @@ function AdminRegistrations() {
   const [participationModal, setParticipationModal] = useState(null)
 
   useEffect(() => {
-    api.get('/trips/admin/trips/').then(res => setTrips(res.data)).catch(() => {})
-  }, [])
+    observeLoad(() => api.get('/trips/admin/trips/').then(res => setTrips(res.data)).catch(error => { throw error }), "'/trips/admin/trips/'")
+  }, [observeLoad])
 
   const handleExportExcel = async () => {
     setIsExporting(true)
@@ -101,27 +112,28 @@ function AdminRegistrations() {
       link.click()
       link.remove()
       window.URL.revokeObjectURL(url)
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در دریافت خروجی اکسل')
     }
     setIsExporting(false)
   }
-  const fetchRegistrations = () => {
-    setIsLoading(true)
+  function fetchRegistrations() {
     const params = new URLSearchParams()
     if (search) params.append('search', search)
     Object.entries(advancedFilters).forEach(([key, value]) => {
       if (value) params.append(key, value)
     })
-    api.get(`/trips/admin/registrations/?${params.toString()}`)
+    observeLoad(() => api.get(`/trips/admin/registrations/?${params.toString()}`)
       .then(res => {
         setRegistrations(res.data)
         const codes = {}
         res.data.forEach(r => { codes[r.id] = r.group_code || '' })
         setGroupCodes(codes)
       })
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
+      .catch(error => { throw error })
+      , "`/trips/admin/registrations/?${params.toString()}`")
   }
 
   useEffect(() => {
@@ -151,14 +163,22 @@ function AdminRegistrations() {
   // ---------- اکشن‌های ثبت‌نام ----------
 
   const runAction = async (id, action, extra = {}) => {
+    setValidationErrors({})
+
     setBusyId(id)
+    setActionError('')
     try {
       const res = await api.post(`/trips/admin/registrations/${id}/action/`, { action, ...extra })
       setRegistrations(regs => regs.map(r => r.id === id ? res.data : r))
+      return true
     } catch (err) {
-      alert(err.response?.data?.error || 'خطا در ثبت عملیات')
+      setValidationErrors(fieldErrors(err))
+
+      setActionError(err.response?.data?.error || 'ذخیره انجام نشد. دوباره تلاش کنید؛ متن شما حفظ شده است.')
+      return false
+    } finally {
+      setBusyId(null)
     }
-    setBusyId(null)
   }
 
   const handleMenuAction = (id, action) => {
@@ -177,18 +197,15 @@ function AdminRegistrations() {
   }
 
   const submitReject = async () => {
-    await runAction(rejectModal.id, 'reject', { rejection_reason: rejectModal.reason })
-    setRejectModal(null)
+    if (await runAction(rejectModal.id, 'reject', { rejection_reason: rejectModal.reason })) setRejectModal(null)
   }
 
   const submitNote = async () => {
-    await runAction(noteModal.id, 'set_note', { admin_note: noteModal.text })
-    setNoteModal(null)
+    if (await runAction(noteModal.id, 'set_note', { admin_note: noteModal.text })) setNoteModal(null)
   }
 
   const confirmParticipation = async () => {
-    await runAction(participationModal.id, participationModal.action)
-    setParticipationModal(null)
+    if (await runAction(participationModal.id, participationModal.action)) setParticipationModal(null)
   }
 
   // ---------- کد گروه (اتوبوس) ----------
@@ -196,6 +213,8 @@ function AdminRegistrations() {
   const handleGroupCodeChange = (id, value) => setGroupCodes({ ...groupCodes, [id]: value })
 
   const saveGroupCode = async (id, value) => {
+    setValidationErrors({})
+
     setSavingGroupId(id)
     try {
       const res = await api.post(`/trips/admin/registrations/${id}/group-code/`, { group_code: value })
@@ -210,6 +229,8 @@ function AdminRegistrations() {
         }
       }
     } catch (err) {
+      setValidationErrors({ [`group_code-${id}`]: errorMessage(err) })
+
       alert(err.response?.data?.error || 'خطا در ثبت کد گروه')
     }
     setSavingGroupId(null)
@@ -220,6 +241,8 @@ function AdminRegistrations() {
   }
 
   const applyGroupCodeToCompanions = async () => {
+    setValidationErrors({})
+
     const selectedIds = Object.entries(companionModal.selected).filter(([, v]) => v).map(([k]) => Number(k))
     if (selectedIds.length === 0) { setCompanionModal(null); return }
 
@@ -236,7 +259,9 @@ function AdminRegistrations() {
       })
       setRegistrations(regs => regs.map(r => selectedIds.includes(r.id) ? { ...r, group_code: companionModal.code } : r))
       setCompanionModal(null)
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در اعمال کد گروه')
       setCompanionModal(m => ({ ...m, applying: false }))
     }
@@ -249,12 +274,12 @@ function AdminRegistrations() {
   }
 
   return (
-    <div className="art-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="art-page">
       <h1 className="art-heading">مدیریت ثبت‌نام‌ها</h1>
 
       <div className="art-toolbar">
         <form onSubmit={handleSearchSubmit} className="art-search-form">
-          <input
+          <FormControl as="input" hiddenLabel label="جستجو بر اساس نام، موبایل، کد ملی یا کد پیگیری..." name="search"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -266,12 +291,12 @@ function AdminRegistrations() {
       </div>
 
       <div className="art-toggles-row">
-        <button onClick={() => { setShowAdvanced(!showAdvanced); setShowColumns(false) }} className="art-advanced-toggle">
+        <button aria-expanded={showAdvanced} aria-controls="registration-advanced-filters" onClick={() => { setShowAdvanced(!showAdvanced); setShowColumns(false) }} className="art-advanced-toggle">
           فیلتر پیشرفته {activeAdvancedCount > 0 && <span className="art-advanced-count">{activeAdvancedCount}</span>}
           <span className={`art-advanced-arrow${showAdvanced ? ' open' : ''}`}>▾</span>
         </button>
 
-        <button onClick={() => { setShowColumns(!showColumns); setShowAdvanced(false) }} className="art-advanced-toggle">
+        <button aria-expanded={showColumns} aria-controls="registration-columns" onClick={() => { setShowColumns(!showColumns); setShowAdvanced(false) }} className="art-advanced-toggle">
           نمایش / عدم نمایش ستون‌ها
           <span className={`art-advanced-arrow${showColumns ? ' open' : ''}`}>▾</span>
         </button>
@@ -282,107 +307,107 @@ function AdminRegistrations() {
       </div>
 
       {showAdvanced && (
-        <div className="art-advanced-panel">
+        <div id="registration-advanced-filters" className="art-advanced-panel">
           <div className="art-advanced-field">
-            <label>وضعیت</label>
-            <select value={advancedFilters.status} onChange={(e) => handleAdvancedChange('status', e.target.value)}>
+
+            <FormControl as="select" label={<>وضعیت</>} value={advancedFilters.status} onChange={(e) => handleAdvancedChange('status', e.target.value)}>
               <option value="">همه وضعیت‌ها</option>
               <option value="__blank__">بدون وضعیت</option>
               <option value="pending">در دست بررسی</option>
               <option value="approved">تایید</option>
               <option value="rejected">رد</option>
               <option value="cancelled">انصراف</option>
-            </select>
+            </FormControl>
           </div>
           <div className="art-advanced-field">
-            <label>نام</label>
-            <input type="text" value={advancedFilters.first_name} onChange={(e) => handleAdvancedChange('first_name', e.target.value)} />
+
+            <FormControl as="input" label={<>نام</>} type="text" value={advancedFilters.first_name} onChange={(e) => handleAdvancedChange('first_name', e.target.value)} />
           </div>
           <div className="art-advanced-field">
-            <label>نام خانوادگی</label>
-            <input type="text" value={advancedFilters.last_name} onChange={(e) => handleAdvancedChange('last_name', e.target.value)} />
+
+            <FormControl as="input" label={<>نام خانوادگی</>} type="text" value={advancedFilters.last_name} onChange={(e) => handleAdvancedChange('last_name', e.target.value)} />
           </div>
           <div className="art-advanced-field">
-            <label>کد ملی</label>
-            <input type="text" value={advancedFilters.national_code} onChange={(e) => handleAdvancedChange('national_code', e.target.value)} />
+
+            <FormControl as="input" label={<>کد ملی</>} type="text" value={advancedFilters.national_code} onChange={(e) => handleAdvancedChange('national_code', e.target.value)} />
           </div>
           <div className="art-advanced-field">
-            <label>شماره موبایل</label>
-            <input type="text" value={advancedFilters.mobile} onChange={(e) => handleAdvancedChange('mobile', e.target.value)} />
+
+            <FormControl as="input" label={<>شماره موبایل</>} type="text" value={advancedFilters.mobile} onChange={(e) => handleAdvancedChange('mobile', e.target.value)} />
           </div>
           <div className="art-advanced-field">
-            <label>جنسیت</label>
-            <select value={advancedFilters.gender} onChange={(e) => handleAdvancedChange('gender', e.target.value)}>
+
+            <FormControl as="select" label={<>جنسیت</>} value={advancedFilters.gender} onChange={(e) => handleAdvancedChange('gender', e.target.value)}>
               <option value="">همه</option>
               <option value="male">برادر</option>
               <option value="female">خواهر</option>
-            </select>
+            </FormControl>
           </div>
           <div className="art-advanced-field">
-            <label>مقطع تحصیلی</label>
-            <select value={advancedFilters.education_level} onChange={(e) => handleAdvancedChange('education_level', e.target.value)}>
+
+            <FormControl as="select" label={<>مقطع تحصیلی</>} value={advancedFilters.education_level} onChange={(e) => handleAdvancedChange('education_level', e.target.value)}>
               <option value="">همه</option>
               <option value="diploma">دیپلم</option>
               <option value="associate">فوق دیپلم</option>
               <option value="bachelor">لیسانس</option>
               <option value="master">فوق لیسانس</option>
               <option value="phd">دکترا</option>
-            </select>
+            </FormControl>
           </div>
           <div className="art-advanced-field">
-            <label>نحوه پرداخت</label>
-            <select value={advancedFilters.payment_method} onChange={(e) => handleAdvancedChange('payment_method', e.target.value)}>
+
+            <FormControl as="select" label={<>نحوه پرداخت</>} value={advancedFilters.payment_method} onChange={(e) => handleAdvancedChange('payment_method', e.target.value)}>
               <option value="">همه</option>
               <option value="online">آنلاین</option>
               <option value="cash">نقدی</option>
               <option value="wallet">کیف پول</option>
-            </select>
+            </FormControl>
           </div>
           <div className="art-advanced-field">
-            <label>وضعیت عودت وجه</label>
-            <select value={advancedFilters.refund_status} onChange={(e) => handleAdvancedChange('refund_status', e.target.value)}>
+
+            <FormControl as="select" label={<>وضعیت عودت وجه</>} value={advancedFilters.refund_status} onChange={(e) => handleAdvancedChange('refund_status', e.target.value)}>
               <option value="">همه</option>
               <option value="__none__">بدون درخواست عودت</option>
               <option value="pending">در انتظار</option>
               <option value="approved">تایید شده</option>
               <option value="rejected">رد شده</option>
-            </select>
+            </FormControl>
           </div>
           <div className="art-advanced-field">
-            <label>سفر زیارتی</label>
-            <select value={advancedFilters.trip_id} onChange={(e) => handleAdvancedChange('trip_id', e.target.value)}>
+
+            <FormControl as="select" label={<>سفر زیارتی</>} value={advancedFilters.trip_id} onChange={(e) => handleAdvancedChange('trip_id', e.target.value)}>
               <option value="">همه</option>
               {trips.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
-            </select>
+            </FormControl>
           </div>
           <div className="art-advanced-field">
-            <label>وضعیت دانشجویی</label>
-            <select value={advancedFilters.student_status} onChange={(e) => handleAdvancedChange('student_status', e.target.value)}>
+
+            <FormControl as="select" label={<>وضعیت دانشجویی</>} value={advancedFilters.student_status} onChange={(e) => handleAdvancedChange('student_status', e.target.value)}>
               <option value="">همه</option>
               <option value="student">دانشجو</option>
               <option value="graduate">فارغ‌التحصیل</option>
               <option value="professor">استاد</option>
-            </select>
+            </FormControl>
           </div>
           <div className="art-advanced-field">
-            <label>نام دانشگاه</label>
-            <input type="text" value={advancedFilters.university} onChange={(e) => handleAdvancedChange('university', e.target.value)} placeholder="مثلاً: تهران" />
+
+            <FormControl as="input" label={<>نام دانشگاه</>} type="text" value={advancedFilters.university} onChange={(e) => handleAdvancedChange('university', e.target.value)} placeholder="مثلاً: تهران" />
           </div>
           <div className="art-advanced-field">
-            <label>کد گروه</label>
-            <input type="text" value={advancedFilters.group_code} onChange={(e) => handleAdvancedChange('group_code', e.target.value)} placeholder="مثلاً: 1" />
+
+            <FormControl as="input" label={<>کد گروه</>} type="text" value={advancedFilters.group_code} onChange={(e) => handleAdvancedChange('group_code', e.target.value)} placeholder="مثلاً: 1" />
           </div>
           <div className="art-advanced-field">
-            <label>وضعیت شرکت</label>
-            <select value={advancedFilters.participation_status} onChange={(e) => handleAdvancedChange('participation_status', e.target.value)}>
+
+            <FormControl as="select" label={<>وضعیت شرکت</>} value={advancedFilters.participation_status} onChange={(e) => handleAdvancedChange('participation_status', e.target.value)}>
               <option value="">همه</option>
               <option value="attended">شرکت کرد</option>
               <option value="absent">شرکت نکرد</option>
-            </select>
+            </FormControl>
           </div>
           <div className="art-advanced-field">
-            <label>ملیت</label>
-            <input type="text" value={advancedFilters.nationality} onChange={(e) => handleAdvancedChange('nationality', e.target.value)} placeholder="مثلاً: ایران" />
+
+            <FormControl as="input" label={<>ملیت</>} type="text" value={advancedFilters.nationality} onChange={(e) => handleAdvancedChange('nationality', e.target.value)} placeholder="مثلاً: ایران" />
           </div>
 
           {activeAdvancedCount > 0 && (
@@ -392,8 +417,8 @@ function AdminRegistrations() {
       )}
 
       {showColumns && (
-        <div className="art-columns-panel">
-          <input
+        <div id="registration-columns" className="art-columns-panel">
+          <FormControl as="input" hiddenLabel label="جستجوی ستون..." name="columnSearch"
             type="text"
             value={columnSearch}
             onChange={(e) => setColumnSearch(e.target.value)}
@@ -401,13 +426,13 @@ function AdminRegistrations() {
             className="art-columns-search"
           />
           <label className="art-columns-check art-columns-all">
-            <input type="checkbox" checked={ALL_COLUMNS.every(c => visibleColumns[c.id])} onChange={toggleAllColumns} />
+            <FormControl as="input" type="checkbox" checked={ALL_COLUMNS.every(c => visibleColumns[c.id])} onChange={toggleAllColumns} />
             <span>همه موارد</span>
           </label>
           <div className="art-columns-list">
             {filteredColumnList.map(c => (
               <label key={c.id} className="art-columns-check">
-                <input type="checkbox" checked={!!visibleColumns[c.id]} onChange={() => toggleColumn(c.id)} />
+                <FormControl as="input" type="checkbox" checked={!!visibleColumns[c.id]} onChange={() => toggleColumn(c.id)} />
                 <span>{c.label}</span>
               </label>
             ))}
@@ -417,7 +442,7 @@ function AdminRegistrations() {
 
       {isLoading ? (
         <div className="art-loading">در حال بارگذاری...</div>
-      ) : registrations.length === 0 ? (
+      ) : (registrations.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && registrations.length === 0) ? null : registrations.length === 0 ? (
         <div className="art-empty">ثبت‌نامی یافت نشد</div>
       ) : (
         <div className="art-table-wrap">
@@ -448,33 +473,33 @@ function AdminRegistrations() {
                   {col('tracking_code') && <td className="art-mono">{r.tracking_code}</td>}
                   {col('payment_method') && <td>{paymentMethodLabel[r.payment_method] || <span className="art-dash">—</span>}</td>}
                   {col('card_number') && <td>{r.card_number || <span className="art-dash">—</span>}</td>}
-                  {col('payment_number') && <td><span className="art-dash">—</span></td>}
-                  {col('credit') && <td><span className="art-dash">—</span></td>}
+                  {col('payment_number') && <td>{r.payment_number ?? <span className="art-dash" title="اطلاعاتی ثبت نشده است">—</span>}</td>}
+                  {col('credit') && <td>{r.credit ?? <span className="art-dash" title="اطلاعاتی ثبت نشده است">—</span>}</td>}
                   {col('paid_amount') && <td>{((r.paid_from_wallet || 0) + (r.paid_directly || 0)).toLocaleString('fa-IR')} ت</td>}
                   {col('group_code') && (
                     <td>
-                      <input
+                      <FormControl as="input" hiddenLabel label={`کد گروه ${r.user_name || r.tracking_code}`}
                         type="text"
                         value={groupCodes[r.id] ?? ''}
                         onChange={(e) => handleGroupCodeChange(r.id, e.target.value)}
                         onBlur={(e) => saveGroupCode(r.id, e.target.value)}
                         placeholder="—"
-                        className="art-group-code-input"
+                        id={`group-code-${r.id}`} name={`group_code-${r.id}`} className="art-group-code-input"
                       />
                       {savingGroupId === r.id && <span className="art-group-code-saving">...</span>}
                     </td>
                   )}
-                  {col('pilgrim_id') && <td><span className="art-dash">—</span></td>}
+                  {col('pilgrim_id') && <td>{r.pilgrim_id ?? <span className="art-dash" title="اطلاعاتی ثبت نشده است">—</span>}</td>}
                   {col('actions') && (
                     <td className="art-actions-cell">
-                      <div className="art-menu-wrap">
-                        <button onClick={() => setOpenMenuId(openMenuId === r.id ? null : r.id)} className="art-menu-btn" disabled={busyId === r.id}>
+                      <div className="art-menu-wrap" onKeyDown={event => { if (event.key === 'Escape') { setOpenMenuId(null); event.currentTarget.querySelector('button')?.focus() } }}>
+                        <button id={`registration-action-trigger-${r.id}`} aria-expanded={openMenuId === r.id} aria-controls={`registration-actions-${r.id}`} onClick={() => setOpenMenuId(openMenuId === r.id ? null : r.id)} className="art-menu-btn" disabled={busyId === r.id}>
                           {busyId === r.id ? '...' : 'عملیات'} <span className="art-menu-caret">▾</span>
                         </button>
                         {openMenuId === r.id && (
                           <>
                             <div className="art-menu-backdrop" onClick={() => setOpenMenuId(null)} />
-                            <div className="art-menu-dropdown">
+                            <div id={`registration-actions-${r.id}`} className="art-menu-dropdown">
                               <Link to={`/admin/users/${r.user}`} className="art-menu-item" onClick={() => setOpenMenuId(null)}>
                                 <span className="art-menu-icon info">👁</span> مشاهده جزئیات
                               </Link>
@@ -526,10 +551,11 @@ function AdminRegistrations() {
 
       {/* مودال رد ثبت‌نام */}
       {rejectModal && (
-        <div className="art-modal-backdrop" onClick={() => setRejectModal(null)}>
+        <Dialog label="جزئیات ثبت‌نام" returnFocus={`#registration-action-trigger-${rejectModal.id}`} className="art-modal-backdrop" onClose={() => setRejectModal(null)}>
           <div className="art-modal" onClick={(e) => e.stopPropagation()}>
+            {actionError && <p role="alert" className="field-error">{actionError}</p>}
             <h3>دلیل رد ثبت‌نام</h3>
-            <textarea
+            <FormControl as="textarea" hiddenLabel label="دلیل رد (اختیاری)..."
               value={rejectModal.reason}
               onChange={(e) => setRejectModal({ ...rejectModal, reason: e.target.value })}
               placeholder="دلیل رد (اختیاری)..."
@@ -543,15 +569,16 @@ function AdminRegistrations() {
               <button onClick={() => setRejectModal(null)} className="art-reject-cancel">انصراف</button>
             </div>
           </div>
-        </div>
+        </Dialog>
       )}
 
       {/* مودال سایر توضیحات */}
       {noteModal && (
-        <div className="art-modal-backdrop" onClick={() => setNoteModal(null)}>
+        <Dialog label="جزئیات ثبت‌نام" returnFocus={`#registration-action-trigger-${noteModal.id}`} className="art-modal-backdrop" onClose={() => setNoteModal(null)}>
           <div className="art-modal" onClick={(e) => e.stopPropagation()}>
+            {actionError && <p role="alert" className="field-error">{actionError}</p>}
             <h3>سایر توضیحات ادمین</h3>
-            <textarea
+            <FormControl as="textarea" hiddenLabel label="توضیحات داخلی درباره این ثبت‌نام..."
               value={noteModal.text}
               onChange={(e) => setNoteModal({ ...noteModal, text: e.target.value })}
               placeholder="توضیحات داخلی درباره این ثبت‌نام..."
@@ -565,12 +592,12 @@ function AdminRegistrations() {
               <button onClick={() => setNoteModal(null)} className="art-reject-cancel">انصراف</button>
             </div>
           </div>
-        </div>
+        </Dialog>
       )}
 
       {/* مودال تایید شرکت/عدم شرکت */}
       {participationModal && (
-        <div className="art-modal-backdrop" onClick={() => setParticipationModal(null)}>
+        <Dialog label="جزئیات ثبت‌نام" returnFocus={`#registration-action-trigger-${participationModal.id}`} className="art-modal-backdrop" onClose={() => setParticipationModal(null)}>
           <div className="art-modal art-confirm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="art-confirm-icon">!</div>
             <h3>
@@ -590,18 +617,19 @@ function AdminRegistrations() {
               <button onClick={() => setParticipationModal(null)} className="art-reject-cancel">انصراف</button>
             </div>
           </div>
-        </div>
+        </Dialog>
       )}
 
       {/* مودال اعمال کد گروه به همسفرها */}
       {companionModal && (
-        <div className="art-modal-backdrop" onClick={() => setCompanionModal(null)}>
+        <Dialog label="جزئیات ثبت‌نام" returnFocus={`#group-code-${companionModal.regId}`} className="art-modal-backdrop" onClose={() => setCompanionModal(null)}>
           <div className="art-modal" onClick={(e) => e.stopPropagation()}>
+            {actionError && <p role="alert" className="field-error">{actionError}</p>}
             <h3>اعمال کد گروه «{companionModal.code}» به همسفرها</h3>
             <div className="art-companion-checklist">
               {companionModal.list.map(c => (
                 <label key={c.id} className="art-companion-check">
-                  <input type="checkbox" checked={!!companionModal.selected[c.id]} onChange={() => toggleCompanionSelected(c.id)} />
+                  <FormControl as="input" type="checkbox" checked={!!companionModal.selected[c.id]} onChange={() => toggleCompanionSelected(c.id)} />
                   <span>{c.user_name}</span>
                   {c.group_code && <span className="art-companion-current-code">(فعلی: {c.group_code})</span>}
                 </label>
@@ -614,7 +642,7 @@ function AdminRegistrations() {
               <button onClick={() => setCompanionModal(null)} className="art-reject-cancel">بی‌خیال</button>
             </div>
           </div>
-        </div>
+        </Dialog>
       )}
 
       <style>{`
@@ -662,7 +690,7 @@ function AdminRegistrations() {
         .art-advanced-field select option { background: var(--surface-2); color: var(--ink); }
         .art-advanced-clear {
           align-self: center; padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,107,125,0.4);
-          background: transparent; color: #ff9aa8; font-size: 12px; cursor: pointer; white-space: nowrap;
+          background: transparent; color: var(--status-danger); font-size: 12px; cursor: pointer; white-space: nowrap;
         }
         .art-advanced-clear:hover { background: rgba(122,35,48,0.12); }
 
@@ -783,7 +811,7 @@ function AdminRegistrations() {
         .art-companion-check input { width: 15px; height: 15px; accent-color: var(--teal-glow); }
         .art-companion-current-code { color: var(--ink-faint); font-size: 11px; }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 
