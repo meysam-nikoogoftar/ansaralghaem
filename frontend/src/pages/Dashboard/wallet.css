@@ -1,0 +1,58 @@
+.wl-page { width: 100%; max-width: 1040px; margin-inline: auto; display: flex; flex-direction: column; gap: 24px; }
+.wl-page-header p { color: var(--ink-dim); margin-top: 8px; font-size: 14px; line-height: 1.8; }
+.wl-heading { font-family: var(--font-display); font-size: 26px; color: var(--teal-glow); }
+.wl-overview { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 24px; }
+.wl-balance-card { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 32px; border-radius: 16px; background: var(--teal); color: #fff; }
+.wl-balance-card h2 { margin-top: 24px; font-size: 15px; font-weight: 500; color: inherit; }
+.wl-balance-value { font-size: clamp(28px, 3vw, 40px); font-weight: 750; margin-block: 8px 20px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.wl-balance-value span { font-size: 15px; font-weight: 400; }
+.wl-balance-note { font-size: 13px; line-height: 1.9; max-width: 32ch; }
+.wl-card { min-width: 0; padding: 28px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.wl-card h2 { font-size: 18px; color: var(--ink); }
+.wl-charge-form { display: flex; flex-direction: column; gap: 16px; margin-top: 20px; }
+.wl-amount-field label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--ink); }
+.wl-input { width: 100%; min-height: 52px; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--input-bg); color: var(--ink); font: inherit; direction: ltr; text-align: right; }
+.wl-hint { margin-top: 8px; color: var(--ink-dim); font-size: 12px; }
+.wl-presets { display: flex; gap: 8px; flex-wrap: wrap; }
+.wl-presets button { flex: 1; min-height: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.wl-presets button span { font-size: 11px; }
+.wl-presets button:hover, .wl-presets button[aria-pressed="true"] { border-color: var(--teal-glow); background: var(--surface-2); color: var(--teal-glow); }
+.wl-charge-btn { min-height: 48px; padding: 12px 20px; border: 0; border-radius: 10px; background: var(--teal); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.wl-charge-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.wl-page button:disabled { cursor: wait; opacity: .65; }
+.wl-page :focus-visible { outline: 2px solid var(--teal-glow); outline-offset: 3px; }
+.wl-message { border-radius: 8px; padding: 12px; font-size: 14px; border: 1px solid currentColor; }
+.wl-message.success { color: var(--status-ok); }
+.wl-message.error { color: var(--status-danger); }
+.wl-section-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.wl-section-heading > span { color: var(--ink-dim); font-size: 12px; }
+.wl-tx-list { list-style: none; padding: 0; margin: 0; }
+.wl-tx-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-block: 20px; border-bottom: 1px solid var(--line); }
+.wl-tx-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.wl-tx-info { min-width: 0; }
+.wl-tx-type { font-size: 15px; font-weight: 600; color: var(--ink); }
+.wl-tx-desc { color: var(--ink-dim); font-size: 13px; margin-top: 4px; overflow-wrap: anywhere; }
+.wl-tx-date { display: block; color: var(--ink-dim); font-size: 12px; margin-top: 6px; }
+.wl-tx-right { text-align: end; flex-shrink: 0; }
+.wl-tx-amount { color: var(--ink); font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.wl-tx-amount span { font-size: 12px; font-weight: 400; }
+.wl-tx-status { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--ink-dim); }
+.wl-tx-status.success { color: var(--status-ok); }
+.wl-tx-status.failed { color: var(--status-danger); }
+.wl-tx-status.pending { color: var(--status-warn); }
+.wl-empty { padding: 40px 12px; text-align: center; color: var(--ink-dim); line-height: 1.9; font-size: 14px; }
+.wl-empty strong { display: block; color: var(--ink); margin-bottom: 8px; }
+@media(max-width: 700px) {
+ .wl-overview { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+ .wl-page { gap: 20px; }
+ .wl-card, .wl-balance-card { padding: 20px; }
+ .wl-balance-card h2 { margin-top: 16px; }
+ .wl-tx-row { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+ .wl-tx-right { margin-inline-start: auto; }
+ .wl-tx-amount { overflow-wrap: anywhere; }
+ .pf-page .pf-card { padding: 20px 16px; }
+}
+
+:root[data-theme] .wl-page .wl-balance-card { padding: 32px; }
+:root[data-theme] .wl-page .wl-card { padding: 28px; }
+@media (max-width: 700px) { :root[data-theme] .wl-page .wl-balance-card, :root[data-theme] .wl-page .wl-card { padding: 20px; } }
