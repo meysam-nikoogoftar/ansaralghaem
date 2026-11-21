@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator
 from accounts.models import User
 
 
@@ -29,6 +30,9 @@ class Trip(models.Model):
     refund_description = models.TextField(blank=True, verbose_name='توضیحات عودت وجه')
     conditions = models.TextField(blank=True, verbose_name='شرایط سفر')
     is_active = models.BooleanField(default=False, verbose_name='فعال')
+    capacity = models.PositiveIntegerField(
+        null=True, blank=True, validators=[MinValueValidator(1)], verbose_name='ظرفیت ثبت‌نام',
+    )
     registration_open = models.BooleanField(default=False, verbose_name='ثبت‌نام باز است')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -36,12 +40,23 @@ class Trip(models.Model):
         verbose_name = 'سفر'
         verbose_name_plural = 'سفرها'
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(capacity__isnull=True) | models.Q(capacity__gte=1),
+                                   name='trip_capacity_positive_or_unlimited'),
+        ]
 
     def __str__(self):
         return self.title
 
+    def reserved_registrations(self):
+        return self.registrations.exclude(status__in=Registration.RELEASED_STATUSES)
+
+    def has_free_place(self):
+        return self.capacity is None or self.reserved_registrations().count() < self.capacity
+
 
 class Registration(models.Model):
+    RELEASED_STATUSES = ('cancelled', 'rejected')
 
     STATUS_CHOICES = (
         ('', 'بدون وضعیت'),
