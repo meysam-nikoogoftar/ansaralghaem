@@ -1,7 +1,16 @@
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
 import { useEffect, useState } from 'react'
 import api from '../../services/api'
 
 function MyGallery() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [images, setImages] = useState([])
   const [isUploading, setIsUploading] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -9,12 +18,14 @@ function MyGallery() {
   const [selectedFile, setSelectedFile] = useState(null)
 
   useEffect(() => {
-    api.get('/content/gallery/my/')
+    observeLoad(() => api.get('/content/gallery/my/')
       .then(res => setImages(res.data))
-      .catch(() => {})
-  }, [])
+      .catch(error => { throw error }), "'/content/gallery/my/'")
+  }, [observeLoad])
 
   const handleSubmit = async (e) => {
+    setValidationErrors({})
+
     e.preventDefault()
     if (!selectedFile) {
       alert('لطفاً یک تصویر انتخاب کنید')
@@ -34,7 +45,9 @@ function MyGallery() {
       setSelectedFile(null)
       const res = await api.get('/content/gallery/my/')
       setImages(res.data)
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در آپلود تصویر')
     }
     setIsLoading(false)
@@ -47,7 +60,7 @@ function MyGallery() {
   }
 
   return (
-    <div className="mg-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="mg-page">
       <div className="mg-head">
         <h1>گالری من</h1>
         <button onClick={() => setIsUploading(true)} className="mg-new-btn">آپلود تصویر</button>
@@ -58,8 +71,8 @@ function MyGallery() {
           <h2>آپلود تصویر جدید</h2>
           <form onSubmit={handleSubmit} className="mg-form">
             <div className="mg-field">
-              <label>تصویر</label>
-              <input
+
+              <FormControl as="input" label={<>تصویر</>}
                 type="file"
                 accept="image/*"
                 onChange={(e) => setSelectedFile(e.target.files[0])}
@@ -68,8 +81,8 @@ function MyGallery() {
               />
             </div>
             <div className="mg-field">
-              <label>عنوان (اختیاری)</label>
-              <input
+
+              <FormControl as="input" label={<>عنوان (اختیاری)</>} name="title"
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -77,8 +90,8 @@ function MyGallery() {
               />
             </div>
             <div className="mg-field">
-              <label>دسته‌بندی</label>
-              <input
+
+              <FormControl as="input" label={<>دسته‌بندی</>} name="category"
                 type="text"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -96,7 +109,7 @@ function MyGallery() {
         </div>
       )}
 
-      {images.length === 0 ? (
+      {(images.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && images.length === 0) ? null : images.length === 0 ? (
         <div className="mg-empty">
           <div className="mg-empty-icon">🖼️</div>
           <h3>تصویری آپلود نشده</h3>
@@ -232,7 +245,7 @@ function MyGallery() {
           border: 1px solid; display: inline-block;
         }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 

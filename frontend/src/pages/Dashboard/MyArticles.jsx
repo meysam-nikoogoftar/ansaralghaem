@@ -1,7 +1,16 @@
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
 import { useEffect, useState } from 'react'
 import api from '../../services/api'
 
 function MyArticles() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [articles, setArticles] = useState([])
   const [isCreating, setIsCreating] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -10,12 +19,14 @@ function MyArticles() {
   })
 
   useEffect(() => {
-    api.get('/content/articles/my/')
+    observeLoad(() => api.get('/content/articles/my/')
       .then(res => setArticles(res.data))
-      .catch(() => {})
-  }, [])
+      .catch(error => { throw error }), "'/content/articles/my/'")
+  }, [observeLoad])
 
   const handleSubmit = async (e) => {
+    setValidationErrors({})
+
     e.preventDefault()
     setIsLoading(true)
     try {
@@ -24,7 +35,9 @@ function MyArticles() {
       setFormData({ title: '', content: '', category: 'article', aparat_link: '' })
       const res = await api.get('/content/articles/my/')
       setArticles(res.data)
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در ثبت دلنوشته')
     }
     setIsLoading(false)
@@ -45,7 +58,7 @@ function MyArticles() {
   ]
 
   return (
-    <div className="ma-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="ma-page">
       <div className="ma-head">
         <h1>دلنوشته‌های من</h1>
         <button onClick={() => setIsCreating(true)} className="ma-new-btn">دلنوشته جدید</button>
@@ -56,8 +69,8 @@ function MyArticles() {
           <h2>ثبت دلنوشته جدید</h2>
           <form onSubmit={handleSubmit} className="ma-form">
             <div className="ma-field">
-              <label>عنوان</label>
-              <input
+
+              <FormControl as="input" label={<>عنوان</>} name="title"
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -66,8 +79,8 @@ function MyArticles() {
               />
             </div>
             <div className="ma-field">
-              <label>دسته‌بندی</label>
-              <select
+
+              <FormControl as="select" label={<>دسته‌بندی</>} name="category"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="ma-input"
@@ -75,11 +88,11 @@ function MyArticles() {
                 {categoryOptions.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
-              </select>
+              </FormControl>
             </div>
             <div className="ma-field">
-              <label>متن</label>
-              <textarea
+
+              <FormControl as="textarea" label={<>متن</>} name="content"
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 rows={6}
@@ -88,8 +101,8 @@ function MyArticles() {
               />
             </div>
             <div className="ma-field">
-              <label>لینک آپارات (اختیاری)</label>
-              <input
+
+              <FormControl as="input" label={<>لینک آپارات (اختیاری)</>} name="aparat_link"
                 type="text"
                 value={formData.aparat_link}
                 onChange={(e) => setFormData({ ...formData, aparat_link: e.target.value })}
@@ -106,7 +119,7 @@ function MyArticles() {
         </div>
       )}
 
-      {articles.length === 0 ? (
+      {(articles.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && articles.length === 0) ? null : articles.length === 0 ? (
         <div className="ma-empty">
           <div className="ma-empty-icon">📖</div>
           <h3>دلنوشته‌ای وجود ندارد</h3>
@@ -227,7 +240,7 @@ function MyArticles() {
           border: 1px solid; white-space: nowrap; flex-shrink: 0;
         }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 
