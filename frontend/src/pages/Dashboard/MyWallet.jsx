@@ -1,40 +1,69 @@
-import { useEffect, useState } from 'react'
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useCallback, useEffect, useState } from 'react'
 import api from '../../services/api'
+import './wallet.css'
 
 function MyWallet() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [wallet, setWallet] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [amount, setAmount] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState('success')
+
+  const fetchWallet = useCallback(() => {
+    observeLoad(() => api.get('/financial/wallet/')
+      .then(res => setWallet(res.data))
+      .catch(error => { throw error }), "'/financial/wallet/'")
+  }, [observeLoad])
+
+  const fetchTransactions = useCallback(() => {
+    observeLoad(() => api.get('/financial/wallet/transactions/')
+      .then(res => setTransactions(Array.isArray(res.data) ? res.data : res.data.results || []))
+      .catch(error => { throw error }), "'/financial/wallet/transactions/'")
+  }, [observeLoad])
 
   useEffect(() => {
     fetchWallet()
     fetchTransactions()
-  }, [])
+  }, [fetchTransactions, fetchWallet])
 
-  const fetchWallet = () => {
-    api.get('/financial/wallet/')
-      .then(res => setWallet(res.data))
-      .catch(() => {})
-  }
 
-  const fetchTransactions = () => {
-    api.get('/financial/wallet/transactions/')
-      .then(res => setTransactions(res.data))
-      .catch(() => {})
-  }
+
+
 
   const handleCharge = async (e) => {
+    setValidationErrors({})
+
     e.preventDefault()
+    if (isLoading) return
+    const value = Number(amount)
+    if (!Number.isSafeInteger(value) || value < 1000) {
+      setValidationErrors({ amount: 'مبلغ باید عددی صحیح و حداقل ۱٬۰۰۰ تومان باشد.' })
+      return
+    }
+    setMessage('')
     setIsLoading(true)
     try {
-      const res = await api.post('/financial/wallet/charge/', { amount: parseInt(amount) })
-      setMessage(res.data.message)
+      const res = await api.post('/financial/wallet/charge/', { amount: value })
+      setMessageType('success')
+      setMessage(res.data.message || 'کیف پول با موفقیت شارژ شد')
+      setWallet(current => ({ ...current, balance: res.data.balance ?? current?.balance }))
       setAmount('')
       fetchWallet()
       fetchTransactions()
     } catch (err) {
+      setMessageType('error')
+      setValidationErrors(fieldErrors(err))
+
       setMessage(err.response?.data?.error || 'خطا در شارژ کیف پول')
     }
     setIsLoading(false)
@@ -47,166 +76,51 @@ function MyWallet() {
     refund: 'عودت وجه',
   }
 
-  const typeColor = {
-    charge: '#4bd6ac',
-    withdraw: '#ff6b7d',
-    trip_payment: '#7fb7ff',
-    refund: '#d8b568',
-  }
+  const statusLabels = { success: 'موفق', pending: 'در انتظار', failed: 'ناموفق' }
+  const money = value => Number(value).toLocaleString('fa-IR')
 
   return (
-    <div className="wl-page">
-      <h1 className="wl-heading">کیف پول</h1>
-
-      {/* موجودی */}
-      <div className="wl-balance-card">
-        <p>موجودی فعلی</p>
-        <h2>{wallet ? wallet.balance.toLocaleString('fa-IR') : '---'} تومان</h2>
-      </div>
-
-      {/* شارژ کیف پول */}
-      <div className="wl-card">
-        <h2>شارژ کیف پول</h2>
-        {message && (
-          <div className={`wl-message ${message.includes('موفقیت') ? 'success' : 'error'}`}>
-            {message}
-          </div>
-        )}
-        <form onSubmit={handleCharge} className="wl-charge-form">
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="مبلغ (تومان)"
-            min="1000"
-            className="wl-input"
-            required
-          />
-          <button type="submit" disabled={isLoading} className="wl-charge-btn">
-            {isLoading ? 'در حال پرداخت...' : 'پرداخت آنلاین'}
-          </button>
-        </form>
-        <p className="wl-hint">حداقل مبلغ شارژ: ۱,۰۰۰ تومان</p>
-      </div>
-
-      {/* تاریخچه تراکنش‌ها */}
-      <div className="wl-card">
-        <h2>تاریخچه تراکنش‌ها</h2>
-        {transactions.length === 0 ? (
-          <p className="wl-empty">تراکنشی وجود ندارد</p>
-        ) : (
-          <div className="wl-tx-list">
-            {transactions.map((t) => (
-              <div key={t.id} className="wl-tx-row">
-                <div>
-                  <p className="wl-tx-type">{typeLabel[t.transaction_type]}</p>
-                  <p className="wl-tx-desc">{t.description}</p>
-                </div>
-                <div className="wl-tx-right">
-                  <p className="wl-tx-amount" style={{ color: typeColor[t.transaction_type] }}>
-                    {t.amount.toLocaleString('fa-IR')} تومان
-                  </p>
-                  <p className="wl-tx-date">{new Date(t.created_at).toLocaleDateString('fa-IR')}</p>
-                </div>
+    <FormValidation errors={validationErrors}>
+      <div className="wl-page">
+        <header className="wl-page-header">
+          <h1 className="wl-heading">کیف پول</h1>
+          <p>موجودی، افزایش اعتبار و همه تراکنش‌های شما در یک‌جا.</p>
+        </header>
+        <LoadFeedback state={loadState} onRetry={retryLoad} />
+        <div className="wl-overview">
+          <section className="wl-balance-card" aria-labelledby="wallet-balance-title">
+            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M20 8V5a2 2 0 0 0-2-2H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h14V8H6a2 2 0 0 1 0-4"/><path d="M20 12h-5v5h5"/></svg>
+            <h2 id="wallet-balance-title">موجودی کیف پول</h2>
+            <p className="wl-balance-value">{wallet ? money(wallet.balance) : '—'} <span>تومان</span></p>
+            <p className="wl-balance-note">برای مشاهده جزئیات پرداخت‌ها، تاریخچه تراکنش‌ها را بررسی کنید.</p>
+          </section>
+          <section className="wl-card wl-charge-card" aria-labelledby="wallet-charge-title">
+            <h2 id="wallet-charge-title">افزایش اعتبار</h2>
+            <form onSubmit={handleCharge} className="wl-charge-form" aria-busy={isLoading}>
+              <div className="wl-amount-field">
+                <FormControl as="input" label="مبلغ شارژ (تومان)" name="amount" type="number" inputMode="numeric"
+                  value={amount} onChange={event => { setAmount(event.target.value); setValidationErrors({}); setMessage('') }}
+                  placeholder="مثلاً ۱۰۰٬۰۰۰" min="1000" step="1" className="wl-input" required aria-describedby="wallet-amount-hint" disabled={isLoading} />
+                <p id="wallet-amount-hint" className="wl-hint">حداقل مبلغ شارژ ۱٬۰۰۰ تومان است.</p>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="wl-presets" role="group" aria-label="انتخاب مبلغ شارژ">
+                {[50000, 100000, 200000].map(value => <button type="button" key={value} disabled={isLoading} aria-pressed={Number(amount) === value} onClick={() => { setAmount(String(value)); setValidationErrors({}); setMessage('') }}>{money(value)} <span>تومان</span></button>)}
+              </div>
+              <button type="submit" disabled={isLoading} className="wl-charge-btn">{isLoading ? 'در حال ثبت…' : 'افزایش اعتبار'}</button>
+              {message && <div role={messageType === 'error' ? 'alert' : 'status'} className={`wl-message ${messageType}`}>{message}</div>}
+            </form>
+          </section>
+        </div>
+        <section className="wl-card wl-history" aria-labelledby="wallet-history-title">
+          <div className="wl-section-heading"><h2 id="wallet-history-title">تاریخچه تراکنش‌ها</h2><span>مبالغ به تومان</span></div>
+          {transactions.length === 0 && (!loadState.started || loadState.pending > 0) ? <p className="wl-empty" role="status">در حال دریافت تراکنش‌ها…</p> : loadState.errors.length > 0 && transactions.length === 0 ? null : transactions.length === 0 ? <div className="wl-empty"><strong>هنوز تراکنشی ثبت نشده</strong><p>پس از افزایش اعتبار یا پرداخت، جزئیات آن را اینجا می‌بینید.</p></div> :
+            <ul className="wl-tx-list">{transactions.map(t => <li key={t.id} className="wl-tx-row">
+              <div className="wl-tx-info"><p className="wl-tx-type">{typeLabel[t.transaction_type] || 'تراکنش'}</p>{t.description && <p className="wl-tx-desc">{t.description}</p>}<time className="wl-tx-date" dateTime={t.created_at}>{new Date(t.created_at).toLocaleDateString('fa-IR')}</time></div>
+              <div className="wl-tx-right"><p className="wl-tx-amount">{money(t.amount)} <span>تومان</span></p><span className={`wl-tx-status ${['success', 'failed', 'pending'].includes(t.status) ? t.status : ''}`}>{statusLabels[t.status] || 'وضعیت نامشخص'}</span></div>
+            </li>)}</ul>}
+        </section>
       </div>
-
-      <style>{`
-        .wl-page { display: flex; flex-direction: column; gap: 20px; max-width: 640px; }
-        .wl-heading { font-family: var(--font-display); color: var(--teal-glow); font-size: 22px; }
-
-        .wl-balance-card {
-          background: linear-gradient(135deg, var(--teal), var(--teal-light));
-          border-radius: var(--radius-lg);
-          padding: 26px 28px;
-          border: 1px solid var(--line);
-          box-shadow: 0 20px 40px -20px rgba(15,111,92,0.5);
-        }
-        .wl-balance-card p { color: rgba(238,230,214,0.8); font-size: 13px; margin-bottom: 8px; }
-        .wl-balance-card h2 {
-          font-family: var(--font-display);
-          color: #eefaf5;
-          font-size: 30px;
-        }
-
-        .wl-card {
-          background: var(--surface);
-          border: 1px solid var(--line);
-          border-radius: var(--radius-lg);
-          padding: 20px 22px;
-        }
-        .wl-card h2 {
-          font-family: var(--font-display);
-          color: var(--teal-glow);
-          font-size: 15px;
-          margin-bottom: 14px;
-        }
-
-        .wl-message {
-          padding: 11px 14px;
-          border-radius: var(--radius-sm);
-          font-size: 13px;
-          margin-bottom: 14px;
-        }
-        .wl-message.success {
-          background: rgba(31,163,130,0.15);
-          border: 1px solid rgba(31,163,130,0.3);
-          color: var(--teal-glow);
-        }
-        .wl-message.error {
-          background: rgba(122,35,48,0.2);
-          border: 1px solid rgba(122,35,48,0.4);
-          color: #ff9aa8;
-        }
-
-        .wl-charge-form { display: flex; gap: 10px; }
-        .wl-input {
-          flex: 1;
-          padding: 12px 16px;
-          background: var(--input-bg);
-          border: 1px solid var(--line);
-          border-radius: var(--radius-sm);
-          color: var(--ink);
-          font-size: 13px;
-          outline: none;
-        }
-        .wl-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.15); }
-        .wl-charge-btn {
-          padding: 0 22px;
-          border-radius: var(--radius-sm);
-          border: none;
-          cursor: pointer;
-          font-size: 13px; font-weight: 700;
-          color: #eefaf5;
-          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
-          white-space: nowrap;
-        }
-        .wl-charge-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .wl-hint { color: var(--ink-faint); font-size: 11px; margin-top: 8px; }
-
-        .wl-empty { color: var(--ink-dim); font-size: 13px; text-align: center; padding: 24px 0; }
-
-        .wl-tx-list { display: flex; flex-direction: column; }
-        .wl-tx-row {
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 12px 0;
-          border-bottom: 1px solid var(--line);
-        }
-        .wl-tx-row:last-child { border-bottom: none; }
-        .wl-tx-type { color: var(--ink); font-size: 13px; font-weight: 600; }
-        .wl-tx-desc { color: var(--ink-faint); font-size: 11px; margin-top: 3px; }
-        .wl-tx-right { text-align: left; }
-        .wl-tx-amount { font-size: 13px; font-weight: 700; }
-        .wl-tx-date { color: var(--ink-faint); font-size: 11px; margin-top: 3px; }
-
-        @media (max-width: 480px) {
-          .wl-charge-form { flex-direction: column; }
-        }
-      `}</style>
-    </div>
+    </FormValidation>
   )
 }
 
