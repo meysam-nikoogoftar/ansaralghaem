@@ -1,15 +1,25 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import FormValidation from '../../components/FormValidation'
+import Dialog from '../../components/Dialog'
+import TripTimeline from '../../components/TripTimeline'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useCallback, useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import './travel-finance.css'
 
 function RefundRequestBox({ trip, onDone }) {
+  const [validationErrors, setValidationErrors] = useState({})
+
   const [open, setOpen] = useState(false)
   const [amount, setAmount] = useState('')
   const [fullAmount, setFullAmount] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState('')
 
-  const totalPaid = trip.paid_from_wallet + trip.paid_directly
+  const totalPaid = Number(trip.paid_from_wallet || 0) + Number(trip.paid_directly || 0)
 
   const handleFullToggle = () => {
     const next = !fullAmount
@@ -18,9 +28,12 @@ function RefundRequestBox({ trip, onDone }) {
   }
 
   const handleSubmit = async () => {
+    setValidationErrors({})
+
+    if (isSubmitting) return
     setMessage('')
     const value = Number(amount)
-    if (!value || value <= 0 || value > totalPaid) {
+    if (!Number.isSafeInteger(value) || value <= 0 || value > totalPaid) {
       setMessage('مبلغ نامعتبر است')
       return
     }
@@ -29,6 +42,8 @@ function RefundRequestBox({ trip, onDone }) {
       await api.post(`/trips/registration/${trip.id}/request-refund/`, { amount: value })
       onDone()
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       setMessage(err.response?.data?.error || 'خطا در ثبت درخواست')
     }
     setIsSubmitting(false)
@@ -36,20 +51,20 @@ function RefundRequestBox({ trip, onDone }) {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="mt-action-btn outline" style={{ marginTop: 14 }}>
+      <FormValidation errors={validationErrors}><button onClick={() => setOpen(true)} className="mt-action-btn outline" style={{ marginTop: 14 }}>
         درخواست عودت وجه
-      </button>
+      </button></FormValidation>
     )
   }
 
   return (
-    <div className="mt-refund-box">
+    <FormValidation errors={validationErrors}><div className="mt-refund-box">
       <p>مبلغ پرداخت‌شده: <strong>{totalPaid.toLocaleString('fa-IR')} تومان</strong></p>
       <label className="mt-refund-checkbox">
-        <input type="checkbox" checked={fullAmount} onChange={handleFullToggle} />
+        <FormControl as="input" type="checkbox" checked={fullAmount} onChange={handleFullToggle} />
         <span>کل مبلغ پرداخت‌شده</span>
       </label>
-      <input
+      <FormControl as="input" hiddenLabel label="مبلغ درخواستی برای عودت" name="amount"
         type="number"
         min="1"
         max={totalPaid}
@@ -65,19 +80,21 @@ function RefundRequestBox({ trip, onDone }) {
         </button>
         <button onClick={() => setOpen(false)} className="mt-action-btn outline">انصراف</button>
       </div>
-      {message && <div className="mt-pay-feedback error"><span>{message}</span></div>}
-    </div>
+      {message && <div role="status" aria-live="polite" aria-atomic="true" className="mt-pay-feedback error"><span>{message}</span></div>}
+    </div></FormValidation>
   )
 }
 
 function CancelBox({ trip, onDone }) {
+  const [validationErrors, setValidationErrors] = useState({})
+
   const [open, setOpen] = useState(false)
   const [amount, setAmount] = useState('')
   const [fullAmount, setFullAmount] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState('')
 
-  const totalPaid = trip.paid_from_wallet + trip.paid_directly
+  const totalPaid = Number(trip.paid_from_wallet || 0) + Number(trip.paid_directly || 0)
 
   const handleFullToggle = () => {
     const next = !fullAmount
@@ -86,11 +103,14 @@ function CancelBox({ trip, onDone }) {
   }
 
   const handleConfirm = async () => {
+    setValidationErrors({})
+
+    if (isSubmitting) return
     setMessage('')
     let payload = {}
     if (totalPaid > 0) {
       const value = Number(amount)
-      if (!value || value <= 0 || value > totalPaid) {
+      if (!Number.isSafeInteger(value) || value <= 0 || value > totalPaid) {
         setMessage('مبلغ نامعتبر است')
         return
       }
@@ -101,28 +121,28 @@ function CancelBox({ trip, onDone }) {
       await api.post(`/trips/registration/${trip.id}/cancel/`, payload)
       onDone()
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       setMessage(err.response?.data?.error || 'خطا در انصراف')
     }
     setIsSubmitting(false)
   }
 
-  if (!open) {
-    return (
-      <button onClick={() => setOpen(true)} className="mt-action-btn danger">انصراف</button>
-    )
-  }
-
   return (
-    <div className="mt-refund-box">
-      <p>آیا از انصراف این ثبت‌نام مطمئن هستید؟</p>
+    <><button onClick={() => setOpen(true)} className="mt-action-btn danger">انصراف از سفر</button>
+    {open && <Dialog className="mt-cancel-overlay" label="تأیید انصراف از سفر" onClose={() => { if (!isSubmitting) setOpen(false) }}>
+    <FormValidation errors={validationErrors}><div className="mt-refund-box">
+      <h2>از انصراف سفر مطمئن هستید؟</h2>
+      <p>{trip.trip_detail?.title}</p>
+      <p>با تأیید، درخواست انصراف این ثبت‌نام ارسال می‌شود. اگر قصد ادامه سفر را دارید، «ادامه سفر» را انتخاب کنید.</p>
       {totalPaid > 0 && (
         <>
           <p>مبلغ پرداخت‌شده: <strong>{totalPaid.toLocaleString('fa-IR')} تومان</strong></p>
           <label className="mt-refund-checkbox">
-            <input type="checkbox" checked={fullAmount} onChange={handleFullToggle} />
+            <FormControl as="input" type="checkbox" checked={fullAmount} onChange={handleFullToggle} />
             <span>کل مبلغ پرداخت‌شده</span>
           </label>
-          <input
+          <FormControl as="input" hiddenLabel label="مبلغ درخواستی برای عودت وجه" name="amount"
             type="number"
             min="1"
             max={totalPaid}
@@ -135,36 +155,54 @@ function CancelBox({ trip, onDone }) {
         </>
       )}
       <div className="mt-pay-btns">
+        <button disabled={isSubmitting} onClick={() => setOpen(false)} className="mt-action-btn outline">ادامه سفر</button>
         <button onClick={handleConfirm} disabled={isSubmitting} className="mt-action-btn danger">
           {isSubmitting ? '...' : 'تایید انصراف'}
         </button>
-        <button onClick={() => setOpen(false)} className="mt-action-btn outline">بی‌خیال</button>
       </div>
-      {message && <div className="mt-pay-feedback error"><span>{message}</span></div>}
-    </div>
+      {message && <div role="status" aria-live="polite" aria-atomic="true" className="mt-pay-feedback error"><span>{message}</span></div>}
+    </div></FormValidation></Dialog>}</>
   )
 }
 
 function MyTrips() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const navigate = useNavigate()
+  const location = useLocation()
   const [trips, setTrips] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [wallet, setWallet] = useState(null)
   const [payAmounts, setPayAmounts] = useState({})
   const [busyId, setBusyId] = useState(null)
   const [payFeedback, setPayFeedback] = useState({})
+  const [filter, setFilter] = useState('all')
+
+  useEffect(() => {
+    if (!/^#registration-\d+$/.test(location.hash) || !trips.length) return
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById(location.hash.slice(1))
+      target?.scrollIntoView({ block: 'start', behavior: 'instant' })
+      target?.focus({ preventScroll: true })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [location.hash, trips])
+
+  const fetchTrips = useCallback(() => {
+    observeLoad(() => api.get('/trips/my-registrations/')
+      .then(res => setTrips(Array.isArray(res.data) ? res.data : res.data.results || []))
+      .catch(error => { throw error })
+      .finally(() => setIsLoading(false)), "'/trips/my-registrations/'")
+  }, [observeLoad])
 
   useEffect(() => {
     fetchTrips()
-    api.get('/financial/wallet/').then(res => setWallet(res.data)).catch(() => {})
-  }, [])
+    observeLoad(() => api.get('/financial/wallet/').then(res => setWallet(res.data)).catch(error => { throw error }), "'/financial/wallet/'")
+  }, [fetchTrips, observeLoad])
 
-  const fetchTrips = () => {
-    api.get('/trips/my-registrations/')
-      .then(res => setTrips(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }
+
 
   const statusConfig = {
     '': { label: 'در دست بررسی', color: 'var(--status-warn)', bg: 'var(--status-warn-bg)' },
@@ -187,10 +225,13 @@ function MyTrips() {
   }
 
   const handlePayWallet = async (trip) => {
+    if (busyId !== null) return
+    setValidationErrors({})
+
     const amount = Number(payAmounts[trip.id] ?? trip.remaining_amount)
     setFeedback(trip.id, null)
 
-    if (!amount || amount <= 0) {
+    if (!Number.isSafeInteger(amount) || amount <= 0 || amount > Number(trip.remaining_amount)) {
       setFeedback(trip.id, { type: 'error', text: 'مبلغ نامعتبر است' })
       return
     }
@@ -210,16 +251,21 @@ function MyTrips() {
       setPayAmounts({ ...payAmounts, [trip.id]: '' })
       fetchTrips()
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       setFeedback(trip.id, { type: 'error', text: err.response?.data?.error || 'خطا در پرداخت' })
     }
     setBusyId(null)
   }
 
   const handlePayDirect = async (trip) => {
+    if (busyId !== null) return
+    setValidationErrors({})
+
     const amount = Number(payAmounts[trip.id] ?? trip.remaining_amount)
     setFeedback(trip.id, null)
 
-    if (!amount || amount <= 0) {
+    if (!Number.isSafeInteger(amount) || amount <= 0 || amount > Number(trip.remaining_amount)) {
       setFeedback(trip.id, { type: 'error', text: 'مبلغ نامعتبر است' })
       return
     }
@@ -231,17 +277,19 @@ function MyTrips() {
       setPayAmounts({ ...payAmounts, [trip.id]: '' })
       fetchTrips()
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       setFeedback(trip.id, { type: 'error', text: err.response?.data?.error || 'خطا در پرداخت مستقیم' })
     }
     setBusyId(null)
   }
 
-  if (isLoading) return <div className="mt-loading">در حال بارگذاری...</div>
+  if (isLoading) return <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="mt-loading">در حال بارگذاری...</div>}</></FormValidation>
 
   return (
-    <div className="mt-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="mt-page">
       <div className="mt-head">
-        <h1>سفرهای من</h1>
+        <div><h1>سفرهای من</h1><p className="mt-description">ثبت‌نام‌ها، وضعیت پرداخت و همسفران خود را مدیریت کنید.</p></div>
         <Link to="/dashboard/trips/register" className="mt-new-btn">ثبت‌نام سفر جدید</Link>
       </div>
 
@@ -252,24 +300,28 @@ function MyTrips() {
           <Link to="/dashboard/wallet">شارژ کیف پول ←</Link>
         </div>
       )}
+      <div className="mt-filters" role="group" aria-label="فیلتر سفرها">{[['all', 'همه سفرها'], ['active', 'ثبت‌نام‌های جاری'], ['past', 'سایر ثبت‌نام‌ها']].map(([value, label]) => <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
 
-      {trips.length === 0 ? (
+      {(trips.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && trips.length === 0) ? null : trips.length === 0 ? (
         <div className="mt-empty">
-          <div className="mt-empty-icon">✈️</div>
           <h3>هنوز سفری ثبت نکرده‌اید</h3>
           <p>برای شرکت در سفرهای هیئت ثبت‌نام کنید</p>
           <Link to="/dashboard/trips/register" className="mt-new-btn">ثبت‌نام در سفر</Link>
         </div>
       ) : (
         <div className="mt-list">
-          {trips.map((trip) => {
+          {trips.filter(trip => filter === 'all' || (filter === 'active' ? ['', 'pending', 'approved'].includes(trip.status) : !['', 'pending', 'approved'].includes(trip.status))).map((trip) => {
             const feedback = payFeedback[trip.id]
             return (
-              <div key={trip.id} className="mt-card">
+              <div key={trip.id} id={`registration-${trip.id}`} tabIndex={-1} className="mt-card" style={{ scrollMarginTop: 150 }}>
                 <div className="mt-card-head">
-                  <div>
-                    <h3>{trip.trip_detail?.title}</h3>
+                  <div className="mt-travel-title">
+                    <span className="mt-travel-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3m8-3v3M8 7h8M8 15h.01M16 15h.01"/></svg></span>
+                    <div>
+                    <h2>{trip.trip_detail?.title}</h2>
+                    {trip.trip_detail?.start_date && <p className="mt-dates">{new Date(trip.trip_detail.start_date).toLocaleDateString('fa-IR')}{trip.trip_detail.end_date && <> تا {new Date(trip.trip_detail.end_date).toLocaleDateString('fa-IR')}</>}</p>}
                     <p>کد پیگیری: <span className="mt-mono">{trip.tracking_code}</span></p>
+                    </div>
                   </div>
                   <span
                     className="mt-badge"
@@ -283,6 +335,8 @@ function MyTrips() {
                   </span>
                 </div>
 
+                {trip.trip_detail?.start_date && <div className="mt-itinerary"><div><span>آغاز سفر</span><strong>{new Date(trip.trip_detail.start_date).toLocaleDateString('fa-IR', { day: 'numeric', month: 'long' })}</strong><small>{new Date(trip.trip_detail.start_date).toLocaleDateString('fa-IR', { year: 'numeric' })}</small></div><TripTimeline start={trip.trip_detail.start_date} end={trip.trip_detail.end_date} /><div><span>پایان سفر</span><strong>{trip.trip_detail.end_date ? new Date(trip.trip_detail.end_date).toLocaleDateString('fa-IR', { day: 'numeric', month: 'long' }) : 'اعلام نشده'}</strong><small>{trip.trip_detail.end_date ? new Date(trip.trip_detail.end_date).toLocaleDateString('fa-IR', { year: 'numeric' }) : ''}</small></div></div>}
+
                 <div className="mt-financials">
                   <div>
                     <p>هزینه کل</p>
@@ -290,13 +344,15 @@ function MyTrips() {
                   </div>
                   <div>
                     <p>پرداخت شده</p>
-                    <strong className="mt-paid">{(trip.paid_from_wallet + trip.paid_directly)?.toLocaleString('fa-IR')} تومان</strong>
+                    <strong className="mt-paid">{(Number(trip.paid_from_wallet || 0) + Number(trip.paid_directly || 0))?.toLocaleString('fa-IR')} تومان</strong>
                   </div>
                   <div>
                     <p>باقیمانده</p>
                     <strong className="mt-remaining">{trip.remaining_amount?.toLocaleString('fa-IR')} تومان</strong>
                   </div>
                 </div>
+
+                {Number(trip.total_cost) > 0 && <div className="mt-payment-progress"><div><span>تکمیل پرداخت</span><strong>{Math.min(100, Math.round((Number(trip.paid_from_wallet || 0) + Number(trip.paid_directly || 0)) / Number(trip.total_cost) * 100)).toLocaleString('fa-IR')}٪</strong></div><progress max={Number(trip.total_cost)} value={Math.min(Number(trip.total_cost), Number(trip.paid_from_wallet || 0) + Number(trip.paid_directly || 0))} aria-label="میزان تکمیل پرداخت سفر" /></div>}
 
                 <div className="mt-row-actions">
                   <p style={{ color: paymentConfig[trip.payment_status]?.color }}>
@@ -309,26 +365,29 @@ function MyTrips() {
 
                 {['', 'pending'].includes(trip.status) && trip.remaining_amount > 0 && (
                   <div className="mt-pay-box">
-                    <input
+                    <h3>پرداخت هزینه سفر</h3>
+                    <FormControl as="input" label="مبلغ پرداخت (تومان)" name="amount"
+                      inputMode="numeric" step="1"
                       type="number"
                       min="1"
                       max={trip.remaining_amount}
                       placeholder={`حداکثر ${trip.remaining_amount.toLocaleString('fa-IR')} تومان`}
-                      value={payAmounts[trip.id] ?? ''}
+                      value={payAmounts[trip.id] ?? trip.remaining_amount}
                       onChange={(e) => setPayAmounts({ ...payAmounts, [trip.id]: e.target.value })}
                       className="mt-pay-input"
                     />
+                    <p className="mt-description">حداکثر {Number(trip.remaining_amount).toLocaleString('fa-IR')} تومان؛ مبلغ موردنظر را وارد و روش پرداخت را انتخاب کنید.</p>
                     <div className="mt-pay-btns">
                       <button
                         onClick={() => handlePayWallet(trip)}
-                        disabled={busyId === trip.id}
+                        disabled={busyId !== null}
                         className="mt-action-btn primary"
                       >
                         {busyId === trip.id ? '...' : 'پرداخت از کیف پول'}
                       </button>
                       <button
                         onClick={() => handlePayDirect(trip)}
-                        disabled={busyId === trip.id}
+                        disabled={busyId !== null}
                         className="mt-action-btn outline"
                       >
                         {busyId === trip.id ? '...' : 'پرداخت مستقیم (آنلاین)'}
@@ -336,7 +395,7 @@ function MyTrips() {
                     </div>
 
                     {feedback && (
-                      <div className={`mt-pay-feedback ${feedback.type}`}>
+                      <div role="status" aria-live="polite" aria-atomic="true" className={`mt-pay-feedback ${feedback.type}`}>
                         <span>{feedback.text}</span>
                         {feedback.type === 'low-balance' && (
                           <button onClick={() => navigate('/dashboard/wallet')} className="mt-charge-link">
@@ -348,7 +407,8 @@ function MyTrips() {
                   </div>
                 )}
 
-                {trip.status === 'rejected' && (trip.paid_from_wallet + trip.paid_directly) > 0 && !trip.refund_requested && (
+                {feedback && !( ['', 'pending'].includes(trip.status) && trip.remaining_amount > 0) && <p className={`mt-pay-feedback ${feedback.type}`} role="status">{feedback.text}</p>}
+                {trip.status === 'rejected' && (Number(trip.paid_from_wallet || 0) + Number(trip.paid_directly || 0)) > 0 && !trip.refund_requested && (
                   <RefundRequestBox trip={trip} onDone={fetchTrips} />
                 )}
 
@@ -382,110 +442,10 @@ function MyTrips() {
           })}
         </div>
       )}
+      {trips.length > 0 && !trips.some(trip => filter === 'all' || (filter === 'active' ? ['', 'pending', 'approved'].includes(trip.status) : !['', 'pending', 'approved'].includes(trip.status))) && <p className="mt-empty" role="status">ثبت‌نامی در این دسته وجود ندارد.</p>}
 
-      <style>{`
-        .mt-loading { text-align: center; padding: 60px 0; color: var(--ink-dim); }
 
-        .mt-page { display: flex; flex-direction: column; gap: 22px; }
-        .mt-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-        .mt-head h1 { font-family: var(--font-display); color: var(--teal-glow); font-size: 22px; }
-
-        .mt-new-btn {
-          display: inline-flex; align-items: center;
-          padding: 10px 20px; border-radius: 999px;
-          font-size: 13px; font-weight: 700; color: #eefaf5;
-          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
-          box-shadow: 0 6px 18px -6px rgba(15,111,92,0.45);
-          transition: transform .25s ease;
-        }
-        .mt-new-btn:hover { transform: translateY(-2px); }
-
-        .mt-wallet-strip {
-          display: flex; align-items: center; gap: 10px;
-          background: var(--panel-inset-bg); border: 1px solid var(--line);
-          border-radius: var(--radius-md); padding: 12px 18px; font-size: 13px;
-        }
-        .mt-wallet-strip span { color: var(--ink-dim); }
-        .mt-wallet-strip strong { color: var(--teal-glow); }
-        .mt-wallet-strip a { margin-right: auto; color: var(--teal-glow); font-size: 12.5px; }
-        .mt-wallet-strip a:hover { color: var(--teal-light); }
-
-        .mt-empty {
-          background: var(--surface); border: 1px solid var(--line);
-          border-radius: var(--radius-lg); padding: 48px 24px; text-align: center;
-        }
-        .mt-empty-icon { font-size: 40px; margin-bottom: 14px; }
-        .mt-empty h3 { color: var(--ink); font-size: 16px; margin-bottom: 8px; }
-        .mt-empty p { color: var(--ink-dim); font-size: 13px; margin-bottom: 20px; }
-
-        .mt-list { display: flex; flex-direction: column; gap: 16px; }
-        .mt-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px 22px; }
-        .mt-card-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
-        .mt-card-head h3 { color: var(--ink); font-size: 15px; font-weight: 700; }
-        .mt-card-head p { color: var(--ink-faint); font-size: 12px; margin-top: 4px; }
-        .mt-mono { font-family: monospace; color: var(--ink-dim); }
-
-        .mt-badge { font-size: 12px; padding: 5px 12px; border-radius: 999px; border: 1px solid; white-space: nowrap; flex-shrink: 0; }
-
-        .mt-financials {
-          display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-          background: var(--panel-inset-bg); border: 1px solid var(--line);
-          border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px; text-align: center;
-        }
-        .mt-financials p { color: var(--ink-faint); font-size: 11px; margin-bottom: 4px; }
-        .mt-financials strong { color: var(--ink); font-size: 13px; }
-        .mt-paid { color: var(--teal-glow) !important; }
-        .mt-remaining { color: #ff9aa8 !important; }
-
-        .mt-row-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-        .mt-row-actions p { font-size: 13px; font-weight: 500; }
-        .mt-action-btn {
-          font-size: 12px; padding: 8px 16px; border-radius: 999px;
-          border: 1px solid; cursor: pointer; font-family: var(--font-body); white-space: nowrap;
-        }
-        .mt-action-btn.primary { color: #eefaf5; background: var(--teal); border-color: var(--teal); }
-        .mt-action-btn.primary:hover:not(:disabled) { background: var(--teal-light); }
-        .mt-action-btn.outline { color: var(--teal-glow); background: transparent; border-color: rgba(15,111,92,0.4); }
-        .mt-action-btn.outline:hover:not(:disabled) { background: rgba(15,111,92,0.1); }
-        .mt-action-btn.danger { color: #ff9aa8; background: transparent; border-color: rgba(255,107,125,0.4); }
-        .mt-action-btn.danger:hover { background: rgba(122,35,48,0.15); }
-        .mt-action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        .mt-pay-box { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
-        .mt-pay-input {
-          padding: 9px 12px; background: var(--input-bg); border: 1px solid var(--line);
-          border-radius: var(--radius-sm); color: var(--ink); font-size: 12.5px; outline: none;
-        }
-        .mt-pay-input:focus { border-color: var(--teal-glow); }
-        .mt-pay-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-
-        .mt-pay-feedback { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12.5px; padding: 8px 12px; border-radius: var(--radius-sm); }
-        .mt-pay-feedback.error, .mt-pay-feedback.low-balance { color: #ff9aa8; background: rgba(122,35,48,0.12); border: 1px solid rgba(255,107,125,0.3); }
-        .mt-pay-feedback.success { color: var(--status-ok); background: var(--status-ok-bg); border: 1px solid var(--status-ok); }
-        .mt-charge-link { border: none; background: var(--teal); color: #eefaf5; padding: 5px 14px; border-radius: 999px; font-size: 11.5px; cursor: pointer; }
-        .mt-charge-link:hover { background: var(--teal-light); }
-
-        .mt-refund-box {
-          display: flex; flex-direction: column; gap: 10px;
-          margin-top: 14px; padding: 14px; background: var(--panel-inset-bg);
-          border: 1px dashed var(--line); border-radius: var(--radius-md);
-        }
-        .mt-refund-box p { font-size: 13px; color: var(--ink-dim); }
-        .mt-refund-box p strong { color: var(--ink); }
-        .mt-refund-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; color: var(--ink-dim); }
-        .mt-refund-checkbox input { width: 15px; height: 15px; accent-color: var(--teal-glow); }
-        .mt-refund-status { margin-top: 12px; font-size: 13px; color: var(--ink-dim); }
-
-        .mt-companions { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
-        .mt-companions p { color: var(--ink-faint); font-size: 12px; margin-bottom: 8px; }
-        .mt-companion-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-        .mt-companion-chips span { background: rgba(216,181,104,0.1); color: var(--gold-light); font-size: 12px; padding: 5px 12px; border-radius: 999px; }
-
-        @media (max-width: 600px) {
-          .mt-financials { grid-template-columns: 1fr 1fr 1fr; }
-        }
-      `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 

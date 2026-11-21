@@ -1,47 +1,93 @@
-import { useEffect, useState } from 'react'
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import api from '../../services/api'
+import './registration-support.css'
 
 function MyTickets() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [tickets, setTickets] = useState([])
   const [isCreating, setIsCreating] = useState(false)
   const [selectedTicket, setSelectedTicket] = useState(null)
   const [replyText, setReplyText] = useState('')
+  const [isReplying, setIsReplying] = useState(false)
+  const replyPending = useRef(false)
   const [formData, setFormData] = useState({ title: '', priority: 'low', first_message: '' })
   const [isLoading, setIsLoading] = useState(false)
+  const [filter, setFilter] = useState('all')
+  const [notice, setNotice] = useState(null)
+  const headingRef = useRef(null)
+  const newTitleRef = useRef(null)
+
+  useEffect(() => {
+    if (isCreating) newTitleRef.current?.focus()
+    else headingRef.current?.focus()
+  }, [isCreating, selectedTicket?.id])
+
+  const fetchTickets = useCallback(() => {
+    observeLoad(() => api.get('/tickets/my/')
+      .then(res => setTickets(Array.isArray(res.data) ? res.data : res.data.results || []))
+      .catch(error => { throw error }), "'/tickets/my/'")
+  }, [observeLoad])
 
   useEffect(() => {
     fetchTickets()
-  }, [])
+  }, [fetchTickets])
 
-  const fetchTickets = () => {
-    api.get('/tickets/my/')
-      .then(res => setTickets(res.data))
-      .catch(() => {})
-  }
+
 
   const handleCreate = async (e) => {
+    setValidationErrors({})
+
     e.preventDefault()
+    if (isLoading) return
+    setNotice(null)
+    if (!formData.title.trim() || !formData.first_message.trim()) {
+      setValidationErrors({ ...(!formData.title.trim() ? { title: 'عنوان درخواست را وارد کنید.' } : {}), ...(!formData.first_message.trim() ? { first_message: 'متن پیام را وارد کنید.' } : {}) })
+      return
+    }
     setIsLoading(true)
     try {
       await api.post('/tickets/create/', formData)
       setIsCreating(false)
       setFormData({ title: '', priority: 'low', first_message: '' })
+      setNotice({ text: 'تیکت با موفقیت ثبت شد.', error: false })
+      setFilter('all')
       fetchTickets()
     } catch (err) {
-      alert(err.response?.data?.error || 'خطا در ثبت تیکت')
+      setValidationErrors(fieldErrors(err))
+
+      setNotice({ text: err.response?.data?.error || 'ثبت تیکت انجام نشد. متن شما حفظ شده؛ دوباره تلاش کنید.', error: true })
     }
     setIsLoading(false)
   }
 
   const handleReply = async (ticketId) => {
-    if (!replyText.trim()) return
+    setValidationErrors({})
+
+    if (!replyText.trim() || replyPending.current) return
+    setNotice(null)
+    replyPending.current = true
+    setIsReplying(true)
     try {
-      await api.post(`/tickets/${ticketId}/reply/`, { text: replyText })
+      const response = await api.post(`/tickets/${ticketId}/reply/`, { text: replyText })
+      setSelectedTicket(current => ({ ...current, status: 'pending', messages: [...(current.messages || []), { ...response.data, text: response.data.text || replyText, sender: current.user, created_at: response.data.created_at || new Date().toISOString() }] }))
       setReplyText('')
-      const res = await api.get(`/tickets/${ticketId}/`)
-      setSelectedTicket(res.data)
+      fetchTickets()
+      setNotice({ text: 'پیام شما ارسال شد.', error: false })
     } catch (err) {
-      alert(err.response?.data?.error || 'خطا در ارسال پیام')
+      setValidationErrors(fieldErrors(err))
+
+      setNotice({ text: err.response?.data?.error || 'پیام ارسال نشد. دوباره تلاش کنید.', error: true })
+    } finally {
+      replyPending.current = false
+      setIsReplying(false)
     }
   }
 
@@ -59,57 +105,63 @@ function MyTickets() {
 
   if (selectedTicket) {
     return (
-      <div className="tk-page tk-thread">
+      <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="tk-page tk-thread">
         <div className="tk-thread-head">
-          <button onClick={() => setSelectedTicket(null)} className="tk-back-btn">← برگشت</button>
-          <h1>{selectedTicket.title}</h1>
+          <button onClick={() => { setSelectedTicket(null); setNotice(null); setValidationErrors({}); setReplyText('') }} className="tk-back-btn">بازگشت به تیکت‌ها</button>
+          <h1 ref={headingRef} tabIndex={-1}>{selectedTicket.title}</h1>
+          <span className="tk-badge">{statusConfig[selectedTicket.status]?.label}</span>
         </div>
 
         <div className="tk-card tk-messages">
           {selectedTicket.messages?.map((msg) => (
             <div key={msg.id} className={`tk-msg-row ${msg.sender === selectedTicket.user ? 'mine' : ''}`}>
               <div className="tk-msg-bubble">
+                <strong className="tk-sender">{msg.sender === selectedTicket.user ? 'شما' : 'پشتیبانی'}</strong>
                 <p>{msg.text}</p>
-                <span>{new Date(msg.created_at).toLocaleDateString('fa-IR')}</span>
+                <span>{new Date(msg.created_at).toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
               </div>
             </div>
           ))}
         </div>
+        {notice && <p className={notice.error ? 'service-error' : 'service-success'} role={notice.error ? 'alert' : 'status'}>{notice.text}</p>}
+        {selectedTicket.status === 'closed' && <p className="tk-card service-description">این تیکت بسته شده است. برای موضوع جدید، تیکت تازه ثبت کنید.</p>}
 
         {selectedTicket.status !== 'closed' && (
           <div className="tk-card">
-            <div className="tk-reply-row">
-              <input
-                type="text"
+            <form className="tk-reply-row" onSubmit={event => { event.preventDefault(); handleReply(selectedTicket.id) }}>
+              <div className="tk-field"><FormControl as="textarea" label="پاسخ شما" name="text"
+                rows={3} disabled={isReplying}
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="پیام خود را بنویسید..."
                 className="tk-input"
-              />
-              <button onClick={() => handleReply(selectedTicket.id)} className="tk-send-btn">ارسال</button>
-            </div>
+              /></div>
+              <button type="submit" disabled={isReplying || !replyText.trim()} className="tk-send-btn">{isReplying ? 'در حال ارسال…' : 'ارسال پیام'}</button>
+            </form>
           </div>
         )}
 
-        <style>{ticketStyles}</style>
-      </div>
+
+      </div>}</></FormValidation>
     )
   }
 
   return (
-    <div className="tk-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="tk-page">
       <div className="tk-head">
-        <h1>تیکت‌ها</h1>
-        <button onClick={() => setIsCreating(true)} className="tk-new-btn">تیکت جدید</button>
+        <div className="service-page-heading"><h1 ref={headingRef} tabIndex={-1}>تیکت‌ها</h1><p>پرسش‌ها و درخواست‌های خود را با پشتیبانی مطرح و پیگیری کنید.</p></div>
+        {!isCreating && <button onClick={() => { setIsCreating(true); setNotice(null); setValidationErrors({}) }} className="tk-new-btn">تیکت جدید</button>}
       </div>
+      {notice && <p className={notice.error ? 'service-error' : 'service-success'} role={notice.error ? 'alert' : 'status'}>{notice.text}</p>}
 
       {isCreating && (
         <div className="tk-card">
           <h2>ثبت تیکت جدید</h2>
           <form onSubmit={handleCreate} className="tk-form">
             <div className="tk-field">
-              <label>عنوان</label>
-              <input
+
+              <FormControl as="input" label={<>عنوان</>} name="title" ref={newTitleRef}
+                placeholder="موضوع درخواست را کوتاه و روشن بنویسید"
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -118,8 +170,8 @@ function MyTickets() {
               />
             </div>
             <div className="tk-field">
-              <label>اولویت</label>
-              <select
+
+              <FormControl as="select" label={<>اولویت</>} name="priority"
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                 className="tk-input"
@@ -127,11 +179,11 @@ function MyTickets() {
                 <option value="low">کم</option>
                 <option value="medium">متوسط</option>
                 <option value="high">زیاد</option>
-              </select>
+              </FormControl>
             </div>
             <div className="tk-field">
-              <label>پیام</label>
-              <textarea
+
+              <FormControl as="textarea" label={<>پیام</>} name="first_message"
                 value={formData.first_message}
                 onChange={(e) => setFormData({ ...formData, first_message: e.target.value })}
                 rows={4}
@@ -143,24 +195,25 @@ function MyTickets() {
               <button type="submit" disabled={isLoading} className="tk-submit-btn">
                 {isLoading ? 'در حال ثبت...' : 'ثبت تیکت'}
               </button>
-              <button type="button" onClick={() => setIsCreating(false)} className="tk-cancel-btn">انصراف</button>
+              <button type="button" disabled={isLoading} onClick={() => { setIsCreating(false); setValidationErrors({}); setNotice(null) }} className="tk-cancel-btn">بستن فرم</button>
             </div>
           </form>
         </div>
       )}
+      <div className="tk-filters" role="group" aria-label="فیلتر وضعیت تیکت‌ها">{[['all', 'همه'], ['pending', 'در انتظار پاسخ'], ['answered', 'پاسخ داده شده'], ['closed', 'بسته شده']].map(([value, label]) => <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label} <span>{(value === 'all' ? tickets.length : tickets.filter(ticket => ticket.status === value).length).toLocaleString('fa-IR')}</span></button>)}</div>
 
-      {tickets.length === 0 ? (
+      {(tickets.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && tickets.length === 0) ? null : tickets.length === 0 ? (
         <div className="tk-empty">
-          <div className="tk-empty-icon">🎫</div>
           <h3>تیکتی وجود ندارد</h3>
           <p>برای ارتباط با پشتیبانی تیکت ثبت کنید</p>
         </div>
       ) : (
         <div className="tk-list">
-          {tickets.map((ticket) => (
-            <div key={ticket.id} onClick={() => setSelectedTicket(ticket)} className="tk-row">
+          {tickets.filter(ticket => filter === 'all' || ticket.status === filter).map((ticket) => (
+            <button type="button" key={ticket.id} onClick={() => { setSelectedTicket(ticket); setNotice(null); setValidationErrors({}) }} className="tk-row">
               <div>
                 <h3>{ticket.title}</h3>
+                <span className="tk-ticket-id">تیکت #{ticket.id.toLocaleString('fa-IR')}</span>
                 <p style={{ color: priorityConfig[ticket.priority]?.color }}>
                   اولویت: {priorityConfig[ticket.priority]?.label}
                 </p>
@@ -175,147 +228,15 @@ function MyTickets() {
               >
                 {statusConfig[ticket.status]?.label}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       )}
+      {tickets.length > 0 && !tickets.some(ticket => filter === 'all' || ticket.status === filter) && <p className="tk-empty" role="status">تیکتی با این وضعیت وجود ندارد.</p>}
 
-      <style>{ticketStyles}</style>
-    </div>
+
+    </div>}</></FormValidation>
   )
 }
-
-const ticketStyles = `
-  .tk-page { display: flex; flex-direction: column; gap: 20px; max-width: 680px; }
-  .tk-head { display: flex; align-items: center; justify-content: space-between; }
-  .tk-head h1 { font-family: var(--font-display); color: var(--teal-glow); font-size: 22px; }
-
-  .tk-new-btn {
-    padding: 10px 20px;
-    border-radius: 999px;
-    border: none;
-    cursor: pointer;
-    font-size: 13px; font-weight: 700;
-    color: #eefaf5;
-    background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
-    box-shadow: 0 6px 18px -6px rgba(15,111,92,0.45);
-  }
-
-  .tk-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    padding: 20px 22px;
-  }
-  .tk-card h2 {
-    font-family: var(--font-display);
-    color: var(--teal-glow);
-    font-size: 15px;
-    margin-bottom: 14px;
-  }
-
-  .tk-form { display: flex; flex-direction: column; gap: 14px; }
-  .tk-field label { display: block; color: var(--ink-dim); font-size: 13px; margin-bottom: 6px; }
-  .tk-input {
-    width: 100%;
-    padding: 11px 14px;
-    background: var(--input-bg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    color: var(--ink);
-    font-family: var(--font-body);
-    font-size: 13px;
-    outline: none;
-  }
-  .tk-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.15); }
-  select.tk-input option { background: var(--surface-2); color: var(--ink); }
-
-  .tk-form-actions { display: flex; gap: 10px; }
-  .tk-submit-btn {
-    padding: 11px 22px;
-    border-radius: var(--radius-sm);
-    border: none;
-    cursor: pointer;
-    font-size: 13px; font-weight: 700;
-    color: #eefaf5;
-    background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
-  }
-  .tk-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  .tk-cancel-btn {
-    padding: 11px 22px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--line);
-    background: transparent;
-    color: var(--ink-dim);
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .tk-cancel-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
-
-  .tk-empty {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    padding: 48px 24px;
-    text-align: center;
-  }
-  .tk-empty-icon { font-size: 40px; margin-bottom: 14px; }
-  .tk-empty h3 { color: var(--ink); font-size: 16px; margin-bottom: 8px; }
-  .tk-empty p { color: var(--ink-dim); font-size: 13px; }
-
-  .tk-list { display: flex; flex-direction: column; gap: 12px; }
-  .tk-row {
-    display: flex; align-items: center; justify-content: space-between;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    padding: 16px 18px;
-    cursor: pointer;
-    transition: all .25s ease;
-  }
-  .tk-row:hover { border-color: var(--teal-glow); }
-  .tk-row h3 { color: var(--ink); font-size: 14px; font-weight: 600; }
-  .tk-row p { font-size: 12px; margin-top: 4px; }
-  .tk-badge {
-    font-size: 12px; padding: 5px 12px; border-radius: 999px;
-    border: 1px solid; white-space: nowrap;
-  }
-
-  .tk-thread-head { display: flex; align-items: center; gap: 16px; }
-  .tk-back-btn { background: none; border: none; color: var(--ink-dim); font-size: 13px; cursor: pointer; }
-  .tk-back-btn:hover { color: var(--teal-glow); }
-  .tk-thread-head h1 { font-family: var(--font-display); color: var(--teal-glow); font-size: 19px; }
-
-  .tk-messages { display: flex; flex-direction: column; gap: 12px; }
-  .tk-msg-row { display: flex; justify-content: flex-start; }
-  .tk-msg-row.mine { justify-content: flex-end; }
-  .tk-msg-bubble {
-    max-width: 75%;
-    border-radius: var(--radius-md);
-    padding: 12px 16px;
-    background: var(--input-bg);
-    border: 1px solid var(--line);
-  }
-  .tk-msg-row.mine .tk-msg-bubble {
-    background: linear-gradient(135deg, var(--teal), var(--teal-light));
-    border-color: transparent;
-  }
-  .tk-msg-bubble p { color: var(--ink); font-size: 13px; line-height: 1.7; }
-  .tk-msg-row.mine .tk-msg-bubble p { color: #eefaf5; }
-  .tk-msg-bubble span { display: block; color: var(--ink-faint); font-size: 10px; margin-top: 6px; }
-  .tk-msg-row.mine .tk-msg-bubble span { color: rgba(238,250,245,0.65); }
-
-  .tk-reply-row { display: flex; gap: 10px; }
-  .tk-send-btn {
-    padding: 0 22px;
-    border-radius: var(--radius-sm);
-    border: none;
-    cursor: pointer;
-    font-size: 13px; font-weight: 700;
-    color: #eefaf5;
-    background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
-    white-space: nowrap;
-  }
-`
 
 export default MyTickets
