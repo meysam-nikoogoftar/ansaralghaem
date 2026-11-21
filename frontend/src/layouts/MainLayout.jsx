@@ -1,73 +1,28 @@
 import { Outlet, useLocation } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import Announcement from '../components/Announcement'
 import useAuthStore from '../store/authStore'
 
-// Particles data
-const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
-  id: i,
-  left: Math.random() * 100,
-  duration: 8 + Math.random() * 12,
-  delay: Math.random() * 15,
-  size: 1 + Math.random() * 3,
-}))
-
 function MainLayout() {
+  useEffect(() => {
+    const elements = [...document.querySelectorAll('.navbar, .public-shell')]
+    const measure = () => document.documentElement.style.setProperty('--public-header-height', `${[...document.querySelectorAll('.navbar, .an-bar')].reduce((sum, element) => sum + element.getBoundingClientRect().height, 0)}px`)
+    const observer = new ResizeObserver(measure)
+    elements.forEach(element => observer.observe(element))
+    measure()
+    return () => { observer.disconnect(); document.documentElement.style.removeProperty('--public-header-height') }
+  }, [])
   const location = useLocation()
   const { isAuthenticated } = useAuthStore()
-
-  // Cursor
-  const cursorDotRef = useRef(null)
-  const cursorRingRef = useRef(null)
-  const mouseRef = useRef({ x: 0, y: 0 })
-  const ringRef = useRef({ x: 0, y: 0 })
 
   // Scroll progress
   const [scrollProgress, setScrollProgress] = useState(0)
 
   // Bottom nav active
-  const [activeNav, setActiveNav] = useState('home')
-
-  // Custom cursor
-  useEffect(() => {
-    if (window.innerWidth <= 900) return
-    const dot = cursorDotRef.current
-    const ring = cursorRingRef.current
-    if (!dot || !ring) return
-
-    const onMove = (e) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY }
-      dot.style.left = e.clientX + 'px'
-      dot.style.top = e.clientY + 'px'
-    }
-    document.addEventListener('mousemove', onMove)
-
-    let animId
-    const animateRing = () => {
-      ringRef.current.x += (mouseRef.current.x - ringRef.current.x) * 0.35
-      ringRef.current.y += (mouseRef.current.y - ringRef.current.y) * 0.35
-      ring.style.left = ringRef.current.x + 'px'
-      ring.style.top = ringRef.current.y + 'px'
-      animId = requestAnimationFrame(animateRing)
-    }
-    animateRing()
-
-    const addHover = () => {
-      document.querySelectorAll('a, button, .gallery-item, .promo-card, .news-card, .stat-card, .feature, .count-box, .detail-item, .gallery-tab').forEach(el => {
-        el.addEventListener('mouseenter', () => ring.classList.add('hover'))
-        el.addEventListener('mouseleave', () => ring.classList.remove('hover'))
-      })
-    }
-    addHover()
-
-    return () => {
-      document.removeEventListener('mousemove', onMove)
-      cancelAnimationFrame(animId)
-    }
-  }, [location.pathname])
+  const activeNav = location.pathname === '/' ? 'home' : location.pathname.startsWith('/dashboard') ? 'panel' : ['news', 'gallery', 'shop'].find(key => location.pathname.startsWith('/' + key)) || ''
 
   // Scroll progress
   useEffect(() => {
@@ -122,17 +77,6 @@ function MainLayout() {
     return () => document.removeEventListener('click', handleClick)
   }, [])
 
-  // Bottom nav active state
-  useEffect(() => {
-    const path = location.pathname
-    if (path === '/') setActiveNav('home')
-    else if (path.includes('dashboard')) setActiveNav('panel')
-    else if (path.includes('news')) setActiveNav('news')
-    else if (path.includes('gallery')) setActiveNav('gallery')
-    else if (path.includes('shop')) setActiveNav('shop')
-    else setActiveNav('home')
-  }, [location.pathname])
-
   const bottomNavItems = [
     {
       key: 'home', label: 'خانه', to: '/',
@@ -157,36 +101,10 @@ function MainLayout() {
   ]
 
   return (
-    <div dir="rtl">
-      {/* Custom Cursor */}
-      <div className="cursor-dot" ref={cursorDotRef} />
-      <div className="cursor-ring" ref={cursorRingRef} />
-
+    <div className="public-shell" dir="rtl">
       {/* Scroll Progress */}
       <div className="scroll-progress">
         <div className="scroll-progress-bar" style={{ width: `${scrollProgress}%` }} />
-      </div>
-
-      {/* Background Orbs */}
-      <div className="orb orb-1" />
-      <div className="orb orb-2" />
-      <div className="orb orb-3" />
-
-      {/* Particles */}
-      <div className="particles">
-        {PARTICLES.map(p => (
-          <div
-            key={p.id}
-            className="particle"
-            style={{
-              left: `${p.left}%`,
-              animationDuration: `${p.duration}s`,
-              animationDelay: `${p.delay}s`,
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-            }}
-          />
-        ))}
       </div>
 
       {/* Announcement */}
@@ -209,6 +127,7 @@ function MainLayout() {
           {bottomNavItems.map(item => (
             <Link
               key={item.key}
+              aria-current={activeNav === item.key ? 'location' : undefined}
               to={item.to}
               className={`bottom-nav-item${activeNav === item.key ? ' active' : ''}`}
             >
