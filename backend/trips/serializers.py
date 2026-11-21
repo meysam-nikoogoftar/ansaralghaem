@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Trip, Registration, TravelCompanion, AttendancePeriod, AttendanceRecord
 from accounts.serializers import SearchUserSerializer
+from django.db.models import Count, Q
 
 
 class TripSerializer(serializers.ModelSerializer):
@@ -15,6 +16,49 @@ class TravelCompanionSerializer(serializers.ModelSerializer):
     class Meta:
         model = TravelCompanion
         fields = ('id', 'companion', 'companion_detail', 'added_at')
+
+
+def with_reserved_count(trips):
+    return trips.annotate(reserved_count=Count(
+        'registrations', filter=~Q(registrations__status__in=Registration.RELEASED_STATUSES),
+    ))
+
+
+class TripAvailabilitySerializer(TripSerializer):
+    remaining_capacity = serializers.SerializerMethodField()
+
+    def get_remaining_capacity(self, trip):
+        if trip.capacity is None:
+            return None
+        reserved = getattr(trip, 'reserved_count', None)
+        if reserved is None:
+            reserved = trip.reserved_registrations().count()
+        return max(0, trip.capacity - reserved)
+
+    def validate(self, data):
+        instance = self.instance
+        if 'start_date' in data or 'end_date' in data:
+            start = data.get('start_date', getattr(instance, 'start_date', None))
+            end = data.get('end_date', getattr(instance, 'end_date', None))
+            if start and end and end < start:
+                raise serializers.ValidationError({'end_date': 'تاریخ پایان باید برابر یا بعد از تاریخ شروع باشد.'})
+
+        capacity = data.get('capacity')
+        if instance and capacity is not None and capacity != instance.capacity:
+            if capacity < instance.reserved_registrations().count():
+                raise serializers.ValidationError({'capacity': 'ظرفیت از تعداد ثبت‌نام‌های موجود کمتر است.'})
+        return data
+
+
+class GroupCodeSerializer(serializers.Serializer):
+    group_code = serializers.CharField(allow_blank=True, max_length=20, default='')
+
+
+class BulkGroupCodeSerializer(GroupCodeSerializer):
+    registration_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1, max_value=2**63 - 1),
+        allow_empty=False,
+    )
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
