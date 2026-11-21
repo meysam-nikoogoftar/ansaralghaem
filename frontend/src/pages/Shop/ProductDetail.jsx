@@ -1,57 +1,78 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import usePageTitle from '../../hooks/usePageTitle'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
+import { loginDestination } from '../../utils/navigation'
+import { errorMessage, fieldErrors } from '../../utils/validation'
+import ErrorSummary from '../../components/ErrorSummary'
 
 function ProductDetail() {
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const draft = location.state?.orderDraft || {}
+  const submitting = useRef(false)
+  const [receipt, setReceipt] = useState(null)
+  const [errors, setErrors] = useState({})
   const { isAuthenticated } = useAuthStore()
   const [product, setProduct] = useState(null)
+  usePageTitle(product?.title)
   const [isLoading, setIsLoading] = useState(true)
-  const [quantity, setQuantity] = useState(1)
-  const [address, setAddress] = useState('')
-  const [postalCode, setPostalCode] = useState('')
+  const [quantity, setQuantity] = useState(draft.quantity || 1)
+  const [address, setAddress] = useState(draft.address || '')
+  const [postalCode, setPostalCode] = useState(draft.postalCode || '')
   const [isOrdering, setIsOrdering] = useState(false)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    api.get(`/shop/products/${id}/`)
+    observeLoad(() => api.get(`/shop/products/${id}/`)
       .then(res => setProduct(res.data))
-      .catch(() => navigate('/shop'))
-      .finally(() => setIsLoading(false))
-  }, [id])
+      .catch(error => { throw error })
+      .finally(() => setIsLoading(false)), "`/shop/products/${id}/`")
+  }, [id, observeLoad])
 
   const handleOrder = async () => {
+    if (submitting.current || receipt) return
+    setErrors({})
     if (!isAuthenticated) {
-      navigate('/login')
+      navigate('/login', { state: { ...loginDestination(), resumeState: { orderDraft: { quantity, address, postalCode } } } })
       return
     }
     if (!address || !postalCode) {
       alert('لطفاً آدرس و کد پستی را وارد کنید')
       return
     }
+    submitting.current = true
     setIsOrdering(true)
     try {
-      await api.post('/shop/orders/create/', {
+      const res = await api.post('/shop/orders/create/', {
         product: id,
         quantity,
         address,
         postal_code: postalCode
       })
+      setReceipt(res.data)
       setMessage('سفارش با موفقیت ثبت شد')
     } catch (err) {
-      setMessage(err.response?.data?.error || 'خطا در ثبت سفارش')
+      setErrors(fieldErrors(err))
+      setMessage(errorMessage(err))
     }
+    submitting.current = false
     setIsOrdering(false)
   }
 
-  if (isLoading) return <div className="pd-loading">در حال بارگذاری...</div>
+  if (isLoading) return <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="pd-loading">در حال بارگذاری...</div>}</>
 
-  if (!product) return null
+  if (!product) return <><LoadFeedback state={loadState} onRetry={retryLoad} />{null}</>
 
   return (
-    <div className="pd-page" dir="rtl">
+    <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="pd-page" dir="rtl">
       <div className="pd-container">
         <button onClick={() => navigate('/shop')} className="pd-back">← برگشت به فروشگاه</button>
 
@@ -97,22 +118,24 @@ function ProductDetail() {
                   </div>
 
                   <div className="pd-field">
-                    <label>آدرس تحویل</label>
-                    <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} className="pd-input" />
+
+                    <FormControl as="textarea" label={<>آدرس تحویل</>} name="address" error={errors.address} autoComplete="street-address" value={address} onChange={(e) => setAddress(e.target.value)} rows={2} className="pd-input" />
                   </div>
 
                   <div className="pd-field">
-                    <label>کد پستی</label>
-                    <input type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} className="pd-input" />
+
+                    <FormControl as="input" label={<>کد پستی</>} name="postal_code" error={errors.postal_code} autoComplete="postal-code" type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} className="pd-input" />
                   </div>
 
                   {message && (
-                    <div className={`pd-message ${message.includes('موفقیت') ? 'success' : 'error'}`}>
+                    <div role="status" aria-live="polite" aria-atomic="true" className={`pd-message ${message.includes('موفقیت') ? 'success' : 'error'}`}>
                       {message}
                     </div>
                   )}
 
-                  <button onClick={handleOrder} disabled={isOrdering} className="pd-submit">
+                  <ErrorSummary errors={errors} />
+                  {receipt && <div role="status" className="request-feedback"><strong>شماره سفارش: {receipt.order_number || receipt.id}</strong><span>وضعیت: {({ registered: 'ثبت شده', paid: 'پرداخت شده', shipped: 'ارسال شده', delivered: 'تحویل داده شده' })[receipt.status] || receipt.status}</span><span>مبلغ: {Number(receipt.final_price || 0).toLocaleString('fa-IR')} تومان</span><Link to="/dashboard/orders">مشاهده سفارش‌های من</Link><button type="button" onClick={() => { setReceipt(null); setMessage('') }}>سفارش جدید</button></div>}
+                  <button onClick={handleOrder} disabled={isOrdering || Boolean(receipt)} className="pd-submit">
                     {isOrdering ? 'در حال ثبت...' : 'ثبت سفارش'}
                   </button>
                 </div>
@@ -220,7 +243,7 @@ function ProductDetail() {
         .pd-message.error {
           background: rgba(122,35,48,0.2);
           border: 1px solid rgba(122,35,48,0.4);
-          color: #ff9aa8;
+          color: var(--status-danger);
         }
 
         .pd-submit {
@@ -244,7 +267,7 @@ function ProductDetail() {
           .pd-image { min-height: 240px; }
         }
       `}</style>
-    </div>
+    </div>}</>
   )
 }
 
