@@ -35,42 +35,16 @@ const options = [
 function ThemeToggle() {
   const { preference, setPreference } = useThemeStore()
 
+  const cycle = ['light', 'dark', 'auto']
+  const current = options.find(option => option.key === preference) || options[1]
+  const next = options.find(option => option.key === cycle[(cycle.indexOf(current.key) + 1) % cycle.length])
   return (
-    <div className="theme-toggle" role="group" aria-label="انتخاب تم روز/شب">
-      {options.map(o => (
-        <button
-          key={o.key}
-          type="button"
-          onClick={() => setPreference(o.key)}
-          className={`theme-toggle-btn${preference === o.key ? ' active' : ''}`}
-          title={o.label}
-          aria-pressed={preference === o.key}
-        >
-          {o.icon}
-        </button>
-      ))}
-
-      <style>{`
-        .theme-toggle {
-          display: inline-flex; align-items: center; gap: 2px;
-          padding: 3px; border-radius: 999px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid var(--line);
-        }
-        .theme-toggle-btn {
-          display: grid; place-items: center;
-          width: 26px; height: 26px; border-radius: 50%;
-          background: none; border: none; cursor: pointer;
-          color: var(--ink-faint);
-          transition: all .2s ease;
-        }
-        .theme-toggle-btn:hover { color: var(--ink); }
-        .theme-toggle-btn.active {
-          background: linear-gradient(135deg, var(--gold-light), var(--gold));
-          color: #1a1206;
-        }
-      `}</style>
-    </div>
+    <button type="button" className="theme-cycle" data-preference={current.key}
+      title={`${current.label} / ${next.label}`}
+      aria-label={`${current.label}؛ تغییر به ${next.label}`}
+      onClick={() => setPreference(next.key)}>
+      <span aria-hidden="true">{current.icon}</span>
+    </button>
   )
 }
 
