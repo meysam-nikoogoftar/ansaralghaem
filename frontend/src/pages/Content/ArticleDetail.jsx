@@ -1,5 +1,12 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import usePageTitle from '../../hooks/usePageTitle'
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import { loginDestination } from '../../utils/navigation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useEffect, useRef, useState } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
 
@@ -10,84 +17,122 @@ const categoryLabel = {
 const reactionIcons = { heart: '❤️', pray: '🤲', cry: '😢', rose: '🌹' }
 
 function ArticleDetail() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { isAuthenticated } = useAuthStore()
 
   const [article, setArticle] = useState(null)
+  usePageTitle(article?.title)
   const [isLoading, setIsLoading] = useState(true)
   const [reactions, setReactions] = useState({})
   const [myReaction, setMyReaction] = useState(null)
   const [comments, setComments] = useState([])
-  const [commentText, setCommentText] = useState('')
+  const [commentText, setCommentText] = useState(location.state?.articleDraft?.commentText || '')
   const [replyingTo, setReplyingTo] = useState(null)
   const [replyText, setReplyText] = useState('')
+  const [pendingAction, setPendingAction] = useState(null)
+  const pendingRef = useRef(false)
 
   useEffect(() => {
-    api.get(`/content/articles/${id}/`)
+    observeLoad(() => api.get(`/content/articles/${id}/`)
       .then(res => setArticle(res.data))
-      .catch(() => navigate('/articles'))
-      .finally(() => setIsLoading(false))
+      .catch(error => { throw error })
+      .finally(() => setIsLoading(false)), "`/content/articles/${id}/`")
 
-    api.get(`/interactive/reactions/article/${id}/`)
+    observeLoad(() => api.get(`/interactive/reactions/article/${id}/`)
       .then(res => setReactions(res.data))
-      .catch(() => {})
+      .catch(error => { throw error }), "`/interactive/reactions/article/${id}/`")
 
     fetchComments()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
-  const fetchComments = () => {
-    api.get(`/interactive/comments/?content_type=article&content_id=${id}`)
+  function fetchComments() {
+    observeLoad(() => api.get(`/interactive/comments/?content_type=article&content_id=${id}`)
       .then(res => setComments(res.data))
-      .catch(() => {})
+      .catch(error => { throw error }), "`/interactive/comments/?content_type=article&content_id=${id}`")
   }
 
   const handleReact = async (reactionType) => {
-    if (!isAuthenticated) { navigate('/login'); return }
+    setValidationErrors({})
+
+    if (pendingRef.current) return
+    if (!isAuthenticated) { navigate('/login', { state: { ...loginDestination(), resumeState: { articleDraft: { commentText } } } }); return }
+    pendingRef.current = true
+    setPendingAction('sending')
     try {
       await api.post('/interactive/react/', { content_type: 'article', content_id: id, reaction_type: reactionType })
       const res = await api.get(`/interactive/reactions/article/${id}/`)
       setReactions(res.data)
       setMyReaction(myReaction === reactionType ? null : reactionType)
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در ثبت ریکشن')
+    } finally {
+      pendingRef.current = false
+      setPendingAction(null)
     }
   }
 
   const handleAddComment = async (e) => {
+    setValidationErrors({})
+
     e.preventDefault()
-    if (!isAuthenticated) { navigate('/login'); return }
+    if (pendingRef.current) return
+    if (!isAuthenticated) { navigate('/login', { state: { ...loginDestination(), resumeState: { articleDraft: { commentText } } } }); return }
     if (!commentText.trim()) return
+    pendingRef.current = true
+    setPendingAction('sending')
     try {
       await api.post('/interactive/comments/create/', { content_type: 'article', content_id: id, text: commentText })
       setCommentText('')
       fetchComments()
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در ثبت نظر')
+    } finally {
+      pendingRef.current = false
+      setPendingAction(null)
     }
   }
 
   const handleAddReply = async (parentId) => {
-    if (!isAuthenticated) { navigate('/login'); return }
+    setValidationErrors({})
+
+    if (pendingRef.current) return
+    if (!isAuthenticated) { navigate('/login', { state: { ...loginDestination(), resumeState: { articleDraft: { commentText } } } }); return }
     if (!replyText.trim()) return
+    pendingRef.current = true
+    setPendingAction('sending')
     try {
       await api.post('/interactive/comments/create/', { content_type: 'article', content_id: id, text: replyText, parent: parentId })
       setReplyText('')
       setReplyingTo(null)
       fetchComments()
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در ثبت پاسخ')
+    } finally {
+      pendingRef.current = false
+      setPendingAction(null)
     }
   }
 
-  if (isLoading) return <div className="ad-loading">در حال بارگذاری...</div>
-  if (!article) return null
+  if (isLoading) return <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="ad-loading">در حال بارگذاری...</div>}</></FormValidation>
+  if (!article) return <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{null}</></FormValidation>
 
   const extraImages = [article.extra_image1, article.extra_image2, article.extra_image3].filter(Boolean)
 
   return (
-    <div className="ad-page" dir="rtl">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="ad-page" dir="rtl">
       <div className="ad-container">
         <button onClick={() => navigate('/articles')} className="ad-back">← برگشت به دلنوشته‌ها</button>
 
@@ -117,10 +162,11 @@ function ArticleDetail() {
         )}
 
         {/* ریکشن‌ها */}
-        <div className="ad-reactions">
+        <div className="ad-reactions" aria-busy={Boolean(pendingAction)}>
           {Object.entries(reactionIcons).map(([key, icon]) => (
-            <button
+            <button aria-pressed={myReaction === key}
               key={key}
+              disabled={Boolean(pendingAction)} aria-pressed={myReaction === key} aria-label={`واکنش ${({ heart: 'قلب', pray: 'دعا', cry: 'اشک', rose: 'گل' })[key]}`}
               onClick={() => handleReact(key)}
               className={`ad-reaction-btn${myReaction === key ? ' active' : ''}`}
             >
@@ -130,19 +176,20 @@ function ArticleDetail() {
           ))}
         </div>
 
+        <p role="status" className="field-hint">{pendingAction ? 'در حال ارسال…' : ''}</p>
         {/* کامنت‌ها */}
         <div className="ad-comments">
           <h2>نظرات ({comments.length})</h2>
 
           <form onSubmit={handleAddComment} className="ad-comment-form">
-            <textarea
+            <FormControl as="textarea" hiddenLabel label={isAuthenticated ? 'نظر خود را بنویسید...' : 'برای ثبت نظر وارد شوید'} name="commentText"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder={isAuthenticated ? 'نظر خود را بنویسید...' : 'برای ثبت نظر وارد شوید'}
               rows={3}
               className="ad-comment-input"
             />
-            <button type="submit" className="ad-comment-submit">ارسال نظر</button>
+            <button type="submit" disabled={Boolean(pendingAction)} className="ad-comment-submit">ارسال نظر</button>
           </form>
 
           <div className="ad-comment-list">
@@ -166,14 +213,14 @@ function ArticleDetail() {
 
                 {replyingTo === comment.id && (
                   <div className="ad-reply-form">
-                    <input
+                    <FormControl as="input" hiddenLabel label="پاسخ خود را بنویسید..." name="replyText"
                       type="text"
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       placeholder="پاسخ خود را بنویسید..."
                       className="ad-reply-input"
                     />
-                    <button onClick={() => handleAddReply(comment.id)} className="ad-reply-submit">ارسال</button>
+                    <button disabled={Boolean(pendingAction)} onClick={() => handleAddReply(comment.id)} className="ad-reply-submit">ارسال</button>
                   </div>
                 )}
 
@@ -279,7 +326,7 @@ function ArticleDetail() {
           font-size: 12px; font-weight: 700; color: #eefaf5; background: var(--teal);
         }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 

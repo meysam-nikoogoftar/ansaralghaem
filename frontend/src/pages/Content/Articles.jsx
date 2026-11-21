@@ -1,3 +1,5 @@
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../services/api'
@@ -14,21 +16,22 @@ const categoryOptions = [
 const categoryLabel = Object.fromEntries(categoryOptions.map(c => [c.value, c.label]))
 
 function Articles() {
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [articles, setArticles] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [category, setCategory] = useState('')
 
   useEffect(() => {
-    setIsLoading(true)
     const url = category ? `/content/articles/?category=${category}` : '/content/articles/'
-    api.get(url)
+    observeLoad(() => api.get(url)
       .then(res => setArticles(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }, [category])
+      .catch(error => { throw error })
+      , "url")
+  }, [category, observeLoad])
 
   return (
-    <div className="pa-page" dir="rtl">
+    <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="pa-page" dir="rtl">
       <div className="container">
         <div className="pa-head">
           <div className="section-kicker">✦ دلنوشته‌ها ✦</div>
@@ -38,7 +41,7 @@ function Articles() {
 
         <div className="pa-tabs">
           {categoryOptions.map(c => (
-            <button
+            <button aria-pressed={category === c.value}
               key={c.value}
               onClick={() => setCategory(c.value)}
               className={`pa-tab${category === c.value ? ' active' : ''}`}
@@ -50,7 +53,7 @@ function Articles() {
 
         {isLoading ? (
           <div className="pa-loading">در حال بارگذاری...</div>
-        ) : articles.length === 0 ? (
+        ) : (articles.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && articles.length === 0) ? null : articles.length === 0 ? (
           <div className="pa-empty">دلنوشته‌ای یافت نشد</div>
         ) : (
           <div className="pa-grid">
@@ -113,7 +116,7 @@ function Articles() {
           color: var(--ink-faint); font-size: 11px;
         }
       `}</style>
-    </div>
+    </div>}</>
   )
 }
 
