@@ -49,7 +49,7 @@ export default function AccountMenu({ mobileEnabled = false }) {
             <span>{role}{user?.mobile && <> · <bdi dir="ltr">{user.mobile}</bdi></>}</span>
           </span>
         </Link>
-        <button type="button" className="account-menu-logout" onClick={() => { setOpen(false); logout(); navigate('/') }}>
+        <button type="button" className="account-menu-logout" onClick={async () => { if (await logout()) { setOpen(false); navigate('/') } }}>
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
           خروج امن از حساب
         </button>
