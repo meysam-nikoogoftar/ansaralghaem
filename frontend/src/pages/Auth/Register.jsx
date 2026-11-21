@@ -1,8 +1,12 @@
+import './auth.css'
+import FormControl from '../../components/FormControl'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
 import logo from '../../assets/logo.png'
-import CustomCursor from '../../components/CustomCursor'
+import { safeReturnTo } from '../../utils/navigation'
+import { fieldErrors } from '../../utils/validation'
+import ErrorSummary from '../../components/ErrorSummary'
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -15,6 +19,8 @@ function Register() {
   const [localError, setLocalError] = useState('')
   const { register, isLoading, error } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
+  const returnTo = safeReturnTo(location.state?.returnTo)
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -27,9 +33,9 @@ function Register() {
       setLocalError('رمز عبور و تکرار آن یکسان نیستند')
       return
     }
-    const { password2, ...data } = formData
+    const data = { mobile: formData.mobile, password: formData.password, first_name: formData.first_name, last_name: formData.last_name }
     const success = await register(data)
-    if (success) navigate('/dashboard')
+    if (success) navigate(returnTo, { replace: true, state: location.state?.resumeState })
   }
 
   // authStore.register can set `error` as a string or as the backend's
@@ -45,8 +51,7 @@ function Register() {
   const displayError = localError || serverErrorMessage
 
   return (
-    <div className="auth-page" dir="rtl">
-      <CustomCursor />
+    <div className="auth-page auth-register" dir="rtl">
       <div className="auth-orb auth-orb-1" />
       <div className="auth-orb auth-orb-2" />
 
@@ -60,16 +65,17 @@ function Register() {
         </Link>
 
         {displayError && (
-          <div className="auth-message error">{displayError}</div>
+          <div role="status" aria-live="polite" aria-atomic="true" className="auth-message error">{displayError}</div>
         )}
 
         <form onSubmit={handleSubmit} className="auth-form-block">
+          <ErrorSummary errors={typeof error === 'object' ? fieldErrors(error) : {}} />
           <div className="auth-field-row">
             <div className="auth-field">
-              <label>نام</label>
-              <input
+
+              <FormControl as="input" label={<>نام</>}
                 type="text"
-                name="first_name"
+                name="first_name" autoComplete="given-name" error={typeof error === 'object' ? fieldErrors(error)?.['first_name'] : undefined}
                 value={formData.first_name}
                 onChange={handleChange}
                 placeholder="نام"
@@ -78,10 +84,10 @@ function Register() {
               />
             </div>
             <div className="auth-field">
-              <label>نام خانوادگی</label>
-              <input
+
+              <FormControl as="input" label={<>نام خانوادگی</>}
                 type="text"
-                name="last_name"
+                name="last_name" autoComplete="family-name" error={typeof error === 'object' ? fieldErrors(error)?.['last_name'] : undefined}
                 value={formData.last_name}
                 onChange={handleChange}
                 placeholder="نام خانوادگی"
@@ -91,12 +97,12 @@ function Register() {
             </div>
           </div>
 
-          <div className="auth-field">
-            <label>شماره موبایل</label>
-            <input
+          <div className="auth-field auth-mobile">
+
+            <FormControl as="input" label={<>شماره موبایل</>}
               type="tel"
               inputMode="numeric"
-              name="mobile"
+              name="mobile" autoComplete="username" error={typeof error === 'object' ? fieldErrors(error)?.['mobile'] : undefined}
               value={formData.mobile}
               onChange={handleChange}
               placeholder="09120000000"
@@ -106,10 +112,10 @@ function Register() {
           </div>
 
           <div className="auth-field">
-            <label>رمز عبور</label>
-            <input
+
+            <FormControl as="input" label={<>رمز عبور</>}
               type="password"
-              name="password"
+              name="password" autoComplete="new-password" error={typeof error === 'object' ? fieldErrors(error)?.['password'] : undefined}
               value={formData.password}
               onChange={handleChange}
               placeholder="حداقل ۶ کاراکتر"
@@ -119,10 +125,10 @@ function Register() {
           </div>
 
           <div className="auth-field">
-            <label>تکرار رمز عبور</label>
-            <input
+
+            <FormControl as="input" label={<>تکرار رمز عبور</>}
               type="password"
-              name="password2"
+              name="password2" autoComplete="new-password" error={typeof error === 'object' ? fieldErrors(error)?.['password2'] : undefined}
               value={formData.password2}
               onChange={handleChange}
               placeholder="تکرار رمز عبور"
@@ -137,7 +143,7 @@ function Register() {
         </form>
 
         <div className="auth-footer-link">
-          حساب کاربری دارید؟ <Link to="/login">وارد شوید</Link>
+          حساب کاربری دارید؟ <Link to="/login" state={{ returnTo, resumeState: location.state?.resumeState }}>وارد شوید</Link>
         </div>
 
         <div className="auth-quote">
@@ -145,164 +151,7 @@ function Register() {
         </div>
       </div>
 
-      <style>{`
-        .auth-page {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 24px;
-          position: relative;
-          overflow: hidden;
-          background: var(--bg);
-        }
-        .auth-orb {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(90px);
-          pointer-events: none;
-        }
-        .auth-orb-1 {
-          width: 420px; height: 420px;
-          background: radial-gradient(circle, var(--teal-glow), transparent 70%);
-          top: -80px; right: -100px; opacity: 0.25;
-        }
-        .auth-orb-2 {
-          width: 380px; height: 380px;
-          background: radial-gradient(circle, var(--gold), transparent 70%);
-          bottom: -100px; left: -100px; opacity: 0.18;
-        }
 
-        .auth-card {
-          position: relative;
-          z-index: 2;
-          width: 100%;
-          max-width: 460px;
-          background: linear-gradient(160deg, var(--surface-2), var(--surface));
-          border: 1px solid var(--line);
-          border-radius: var(--radius-lg);
-          padding: 36px 32px 28px;
-          box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
-        }
-
-        .auth-brand {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          gap: 6px;
-          margin-bottom: 28px;
-        }
-        .auth-logo {
-          width: 72px; height: 72px;
-          border-radius: 50%;
-          border: 2px solid var(--gold);
-          overflow: hidden;
-          box-shadow: 0 0 24px rgba(216,181,104,0.25);
-          margin-bottom: 10px;
-        }
-        .auth-logo img { width: 100%; height: 100%; object-fit: cover; }
-        .auth-brand h1 {
-          font-family: var(--font-display);
-          color: var(--gold-light);
-          font-size: 19px;
-        }
-        .auth-brand span {
-          color: var(--ink-dim);
-          font-size: 12px;
-        }
-
-        .auth-message {
-          padding: 12px 14px;
-          border-radius: var(--radius-sm);
-          font-size: 13px;
-          margin-bottom: 18px;
-        }
-        .auth-message.error {
-          background: rgba(122,35,48,0.2);
-          border: 1px solid rgba(122,35,48,0.4);
-          color: #ff9aa8;
-        }
-
-        .auth-form-block { display: flex; flex-direction: column; gap: 16px; }
-        .auth-field-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-        .auth-field label {
-          display: block;
-          color: var(--ink-dim);
-          font-size: 13px;
-          margin-bottom: 6px;
-        }
-        .auth-input {
-          width: 100%;
-          padding: 12px 16px;
-          background: var(--input-bg);
-          border: 1px solid var(--line);
-          border-radius: var(--radius-md);
-          color: var(--ink);
-          font-family: var(--font-body);
-          font-size: 14px;
-          outline: none;
-          transition: all .25s ease;
-        }
-        .auth-input::placeholder { color: var(--ink-faint); }
-        .auth-input:focus {
-          border-color: var(--teal-glow);
-          box-shadow: 0 0 0 3px rgba(15,111,92,0.15);
-          background: var(--input-bg-focus);
-        }
-
-        .auth-submit {
-          margin-top: 4px;
-          width: 100%;
-          padding: 13px;
-          border-radius: 999px;
-          border: none;
-          cursor: pointer;
-          font-family: var(--font-body);
-          font-size: 15px;
-          font-weight: 700;
-          color: #eefaf5;
-          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
-          box-shadow: 0 6px 20px -6px rgba(15,111,92,0.45);
-          transition: transform .25s ease, box-shadow .25s ease, opacity .25s ease;
-        }
-        .auth-submit:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 28px -8px rgba(15,111,92,0.6);
-        }
-        .auth-submit:disabled { opacity: 0.65; cursor: not-allowed; }
-
-        .auth-footer-link {
-          text-align: center;
-          margin-top: 20px;
-          font-size: 13px;
-          color: var(--ink-dim);
-        }
-        .auth-footer-link a {
-          color: var(--teal-glow);
-          font-weight: 600;
-        }
-        .auth-footer-link a:hover { color: var(--teal-light); }
-
-        .auth-quote {
-          margin-top: 22px;
-          padding-top: 18px;
-          border-top: 1px solid var(--line);
-          text-align: center;
-          font-family: var(--font-display);
-          color: var(--ink-faint);
-          font-size: 13px;
-          line-height: 2;
-        }
-
-        @media (max-width: 460px) {
-          .auth-field-row { grid-template-columns: 1fr; }
-        }
-      `}</style>
     </div>
   )
 }
