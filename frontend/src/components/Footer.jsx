@@ -21,7 +21,7 @@ const footerLinks = {
 
 function Footer() {
   return (
-    <footer dir="rtl">
+    <footer className="site-footer" dir="rtl">
       <div className="container">
         <div className="footer-grid">
 
@@ -36,7 +36,7 @@ function Footer() {
                 />
               </div>
               <div className="brand-text">
-                <h1>هیئت انصار القائم</h1>
+                <strong>هیئت انصار القائم</strong>
                 <span>(عج) · هیئت دانشجویی</span>
               </div>
             </Link>
@@ -92,49 +92,24 @@ function Footer() {
           {/* Contact */}
           <div className="footer-col">
             <h4>ارتباط با ما</h4>
-            <ul>
-              <li style={{ color: 'var(--ink-dim)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: 'var(--gold)' }}>📞</span>
-                برادران: ۰۹۳۰۱۰۶۶۲۸۸
-              </li>
-              <li style={{ color: 'var(--ink-dim)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: 'var(--gold)' }}>📞</span>
-                خواهران: ۰۹۳۸۴۷۷۶۷۷۵
-              </li>
+            <ul className="footer-contacts">
+              <li><span>برادران</span><a href="tel:09301066288" dir="ltr">۰۹۳۰۱۰۶۶۲۸۸</a></li>
+              <li><span>خواهران</span><a href="tel:09384776775" dir="ltr">۰۹۳۸۴۷۷۶۷۷۵</a></li>
             </ul>
-            <div style={{
-              marginTop: 16, padding: '14px 16px',
-              borderRadius: 14,
-              background: 'var(--surface)',
-              border: '1px solid var(--line)',
-            }}>
-              <p style={{
-                fontFamily: 'Aref Ruqaa, serif',
-                color: 'var(--gold-light)',
-                fontSize: 14,
-                lineHeight: 2,
-                textAlign: 'center',
-              }}>
-                فَإِنِّی لَا أَرَى الْمَوْتَ إِلَّا الشَّهَادَةَ
-              </p>
-              <p style={{ color: 'var(--ink-faint)', fontSize: 11, textAlign: 'center', marginTop: 6 }}>
-                امام حسین علیه السلام
-              </p>
-            </div>
+            <blockquote className="footer-quote">
+              <p lang="ar">فَإِنِّی لَا أَرَى الْمَوْتَ إِلَّا الشَّهَادَةَ</p>
+              <cite>امام حسین علیه السلام</cite>
+            </blockquote>
           </div>
         </div>
 
         {/* Footer Bottom */}
         <div className="footer-bottom">
           <span>Copyright 2026 — هیئت انصار القائم (عج)</span>
-          <span style={{ color: 'var(--ink-faint)', fontSize: 11 }}>
+          <span>
             طراحی و توسعه با ❤️ برای زائرین حسینی
           </span>
-          <img
-            src={logo}
-            alt="logo"
-            style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', opacity: 0.4 }}
-          />
+
         </div>
       </div>
     </footer>
