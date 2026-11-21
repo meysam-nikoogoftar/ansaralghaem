@@ -1,26 +1,36 @@
-import { useEffect, useState } from 'react'
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useCallback, useEffect, useState } from 'react'
 import api from '../../services/api'
 
-const emptyForm = { title: '', description: '', total_amount: '', is_active: true, is_public: true }
+const emptyForm = { title: '', description: '', total_amount: '', share_count: '', share_amount: '', start_date: '', end_date: '', is_active: true, is_public: true }
 
 function AdminContributions() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [items, setItems] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [formData, setFormData] = useState(emptyForm)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
 
-  const fetchItems = () => {
-    setIsLoading(true)
-    api.get('/financial/admin/contributions/')
-      .then(res => setItems(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }
 
-  useEffect(() => { fetchItems() }, [])
+
+  const fetchItems = useCallback(() => {
+    observeLoad(() => api.get('/financial/admin/contributions/')
+      .then(res => setItems(res.data))
+      .catch(error => { throw error })
+      , "'/financial/admin/contributions/'")
+  }, [observeLoad])
+
+  useEffect(() => { fetchItems() }, [fetchItems])
 
   const openCreateForm = () => {
     setEditingId(null)
@@ -34,6 +44,7 @@ function AdminContributions() {
       title: item.title || '',
       description: item.description || '',
       total_amount: item.total_amount || '',
+      share_count: item.share_count ?? '', share_amount: item.share_amount ?? '', start_date: item.start_date || '', end_date: item.end_date || '',
       is_active: item.is_active ?? true,
       is_public: item.is_public ?? true,
     })
@@ -46,11 +57,13 @@ function AdminContributions() {
   }
 
   const handleSubmit = async (e) => {
+    setValidationErrors({})
+
     e.preventDefault()
     setIsSaving(true)
     setMessage('')
     try {
-      const payload = { ...formData, total_amount: Number(formData.total_amount) || 0 }
+      const payload = { ...formData, total_amount: Number(formData.total_amount) || 0, share_count: Number(formData.share_count), share_amount: Number(formData.share_amount) }
       if (editingId) {
         const res = await api.put(`/financial/admin/contributions/${editingId}/`, payload)
         setItems(items.map(x => x.id === editingId ? res.data : x))
@@ -61,8 +74,10 @@ function AdminContributions() {
         setMessage('کمپین جدید ایجاد شد')
       }
       setIsFormOpen(false)
-    } catch {
-      setMessage('خطا در ذخیره — اگه اسم فیلدها با مدل واقعی فرق داره بهم بگو')
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
+      setMessage('ذخیره انجام نشد. اطلاعات فرم را بررسی و دوباره تلاش کنید.')
     }
     setIsSaving(false)
   }
@@ -72,52 +87,62 @@ function AdminContributions() {
     try {
       await api.delete(`/financial/admin/contributions/${id}/`)
       setItems(items.filter(x => x.id !== id))
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در حذف')
     }
   }
 
   const handleToggle = async (item, field) => {
+    setValidationErrors({})
+
     try {
       const res = await api.patch(`/financial/admin/contributions/${item.id}/`, { [field]: !item[field] })
       setItems(items.map(x => x.id === item.id ? res.data : x))
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در تغییر وضعیت')
     }
   }
 
   return (
-    <div className="acn-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="acn-page">
       <div className="acn-head">
         <h1>مشارکت‌های مالی</h1>
         <button onClick={openCreateForm} className="acn-new-btn">+ کمپین جدید</button>
       </div>
 
-      {message && <div className="acn-message">{message}</div>}
+      {message && <div role="status" aria-live="polite" aria-atomic="true" className="acn-message">{message}</div>}
 
       {isFormOpen && (
         <div className="acn-card">
           <h2>{editingId ? 'ویرایش کمپین' : 'ایجاد کمپین جدید'}</h2>
           <form onSubmit={handleSubmit} className="acn-form">
             <div className="acn-field">
-              <label>عنوان کمپین</label>
-              <input type="text" name="title" value={formData.title} onChange={handleChange} className="acn-input" required />
+
+              <FormControl as="input" label={<>عنوان کمپین</>} type="text" name="title" value={formData.title} onChange={handleChange} className="acn-input" required />
             </div>
             <div className="acn-field">
-              <label>توضیحات</label>
-              <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="acn-input" />
+
+              <FormControl as="textarea" label={<>توضیحات</>} name="description" value={formData.description} onChange={handleChange} rows={3} className="acn-input" />
             </div>
             <div className="acn-field">
-              <label>مبلغ هدف (تومان)</label>
-              <input type="number" name="total_amount" value={formData.total_amount} onChange={handleChange} className="acn-input" required />
+
+              <FormControl as="input" label={<>مبلغ هدف (تومان)</>} type="number" name="total_amount" value={formData.total_amount} onChange={handleChange} className="acn-input" required />
             </div>
+            <div className="acn-field"><FormControl label="تعداد سهم" name="share_count" type="number" min="1" required value={formData.share_count} onChange={handleChange} className="acn-input" /></div>
+            <div className="acn-field"><FormControl label="مبلغ هر سهم (تومان)" name="share_amount" type="number" min="1" required value={formData.share_amount} onChange={handleChange} className="acn-input" /></div>
+            <div className="acn-field"><FormControl label="تاریخ شروع" name="start_date" type="date" required value={formData.start_date} onChange={handleChange} className="acn-input" /></div>
+            <div className="acn-field"><FormControl label="تاریخ پایان" name="end_date" type="date" min={formData.start_date || undefined} required value={formData.end_date} onChange={handleChange} className="acn-input" /></div>
             <div className="acn-checks">
               <label className="acn-checkbox-label">
-                <input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} />
+                <FormControl as="input" type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} />
                 <span>فعال</span>
               </label>
               <label className="acn-checkbox-label">
-                <input type="checkbox" name="is_public" checked={formData.is_public} onChange={handleChange} />
+                <FormControl as="input" type="checkbox" name="is_public" checked={formData.is_public} onChange={handleChange} />
                 <span>نمایش در صفحه اصلی</span>
               </label>
             </div>
@@ -133,12 +158,13 @@ function AdminContributions() {
 
       {isLoading ? (
         <div className="acn-loading">در حال بارگذاری...</div>
-      ) : items.length === 0 ? (
+      ) : (items.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && items.length === 0) ? null : items.length === 0 ? (
         <div className="acn-empty">کمپینی ثبت نشده است</div>
       ) : (
         <div className="acn-list">
           {items.map(item => {
-            const raised = item.current_amount ?? item.raised_amount ?? 0
+            const raised = item.collected_amount ?? item.current_amount ?? item.raised_amount ?? 0
+            const progressKnown = item.progress_percent != null || item.collected_amount != null || item.current_amount != null || item.raised_amount != null
             const percent = item.progress_percent ?? (item.total_amount ? Math.min(100, Math.round((raised / item.total_amount) * 100)) : 0)
             return (
               <div key={item.id} className="acn-item-card">
@@ -154,7 +180,7 @@ function AdminContributions() {
                 </div>
                 <div className="acn-progress-wrap">
                   <div className="acn-progress-info">
-                    <span>{percent}٪ محقق‌شده</span>
+                    <span>{progressKnown ? `${percent}٪ محقق‌شده` : 'اطلاعات پیشرفت هنوز دریافت نشده است'}</span>
                     <span>هدف: {Number(item.total_amount).toLocaleString('fa-IR')} ت</span>
                   </div>
                   <div className="acn-progress-track">
@@ -228,7 +254,7 @@ function AdminContributions() {
         .acn-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
         .acn-edit-btn, .acn-delete-btn { font-size: 11.5px; padding: 6px 13px; border-radius: 999px; cursor: pointer; border: 1px solid; }
         .acn-edit-btn { color: var(--teal-glow); border-color: rgba(15,111,92,0.4); background: transparent; }
-        .acn-delete-btn { color: #ff9aa8; border-color: rgba(255,107,125,0.4); background: transparent; }
+        .acn-delete-btn { color: var(--status-danger); border-color: rgba(255,107,125,0.4); background: transparent; }
 
         .acn-progress-wrap { margin-bottom: 14px; }
         .acn-progress-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-dim); margin-bottom: 6px; }
@@ -239,7 +265,7 @@ function AdminContributions() {
         .acn-toggle-pill { font-size: 11.5px; padding: 5px 12px; border-radius: 999px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--ink-faint); }
         .acn-toggle-pill.on { color: var(--teal-glow); border-color: rgba(75,214,172,0.4); background: rgba(75,214,172,0.1); }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 

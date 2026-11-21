@@ -1,3 +1,7 @@
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
 import { useEffect, useState } from 'react'
 import api from '../../services/api'
 
@@ -16,20 +20,23 @@ const categoryLabel = {
 }
 
 function AdminArticles() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [articles, setArticles] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [statusFilter, setStatusFilter] = useState('')
   const [busyId, setBusyId] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
 
-  const fetchArticles = () => {
-    setIsLoading(true)
+  function fetchArticles() {
     const params = new URLSearchParams()
     if (statusFilter) params.append('status', statusFilter)
-    api.get(`/content/admin/articles/?${params.toString()}`)
+    observeLoad(() => api.get(`/content/admin/articles/?${params.toString()}`)
       .then(res => setArticles(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
+      .catch(error => { throw error })
+      , "`/content/admin/articles/?${params.toString()}`")
   }
 
   useEffect(() => {
@@ -38,11 +45,15 @@ function AdminArticles() {
   }, [statusFilter])
 
   const handleAction = async (id, action) => {
+    setValidationErrors({})
+
     setBusyId(id)
     try {
       const res = await api.post(`/content/admin/articles/${id}/action/`, { action })
       setArticles(articles.map(a => a.id === id ? res.data : a))
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       alert(err.response?.data?.error || 'خطا در ثبت عملیات')
     }
     setBusyId(null)
@@ -51,7 +62,7 @@ function AdminArticles() {
   const pendingCount = articles.filter(a => a.status === 'pending').length
 
   return (
-    <div className="aar-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="aar-page">
       <div className="aar-head">
         <h1>تایید دلنوشته‌ها</h1>
         {pendingCount > 0 && <span className="aar-pending-badge">{pendingCount} در انتظار بررسی</span>}
@@ -64,7 +75,7 @@ function AdminArticles() {
           { key: 'approved', label: 'تایید شده' },
           { key: 'rejected', label: 'رد شده' },
         ].map(t => (
-          <button
+          <button aria-pressed={statusFilter === t.key}
             key={t.key}
             onClick={() => setStatusFilter(t.key)}
             className={`aar-status-tab${statusFilter === t.key ? ' active' : ''}`}
@@ -76,7 +87,7 @@ function AdminArticles() {
 
       {isLoading ? (
         <div className="aar-loading">در حال بارگذاری...</div>
-      ) : articles.length === 0 ? (
+      ) : (articles.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && articles.length === 0) ? null : articles.length === 0 ? (
         <div className="aar-empty">دلنوشته‌ای یافت نشد</div>
       ) : (
         <div className="aar-list">
@@ -112,11 +123,11 @@ function AdminArticles() {
                       </span>
                     </div>
 
-                    <p className="aar-preview">
+                    <p id={`article-preview-${article.id}`} className="aar-preview">
                       {isExpanded ? article.content : `${article.content?.substring(0, 180)}${article.content?.length > 180 ? '...' : ''}`}
                     </p>
                     {article.content?.length > 180 && (
-                      <button onClick={() => setExpandedId(isExpanded ? null : article.id)} className="aar-toggle-btn">
+                      <button aria-expanded={isExpanded} aria-controls={`article-preview-${article.id}`} onClick={() => setExpandedId(isExpanded ? null : article.id)} className="aar-toggle-btn">
                         {isExpanded ? 'کمتر نشان بده' : 'ادامه متن'}
                       </button>
                     )}
@@ -235,7 +246,7 @@ function AdminArticles() {
           .aar-thumb { width: 100%; height: 160px; }
         }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 
