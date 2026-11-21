@@ -1,7 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import useAuthStore from './store/authStore'
 import useThemeStore from './store/themeStore'
+import RouteTitle from './components/RouteTitle'
+import NotFound from './pages/NotFound'
+import MyOrders from './pages/Dashboard/MyOrders'
 
 // Layouts
 import MainLayout from './layouts/MainLayout'
@@ -44,14 +47,16 @@ import AdminRefunds from './pages/Admin/AdminRefunds'
 // Protected Route (کاربر عادی لاگین‌کرده)
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuthStore()
-  if (!isAuthenticated) return <Navigate to="/login" replace />
+  const location = useLocation()
+  if (!isAuthenticated) return <Navigate to="/login" state={{ returnTo: location.pathname + location.search + location.hash }} replace />
   return children
 }
 
 // Protected Route (فقط ادمین یا سوپرادمین)
 const ProtectedAdminRoute = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore()
-  if (!isAuthenticated) return <Navigate to="/login" replace />
+  const location = useLocation()
+  if (!isAuthenticated) return <Navigate to="/login" state={{ returnTo: location.pathname + location.search + location.hash }} replace />
   if (!['admin', 'superadmin'].includes(user?.user_type)) {
     return <Navigate to="/dashboard" replace />
   }
@@ -63,6 +68,8 @@ const ProtectedAdminRoute = ({ children }) => {
 // این از ریدایرکت زودهنگام و اشتباه (قبل از لود شدن اطلاعات کاربر) جلوگیری می‌کند.
 function AuthGate({ children }) {
   const authChecked = useAuthStore((s) => s.authChecked)
+  const authError = useAuthStore((s) => s.authError)
+  const initAuth = useAuthStore((s) => s.initAuth)
   if (!authChecked) {
     return (
       <div style={{
@@ -73,7 +80,7 @@ function AuthGate({ children }) {
       </div>
     )
   }
-  return children
+  return <>{authError && <div role="alert" className="request-feedback">{authError}<button type="button" onClick={initAuth}>تلاش مجدد</button></div>}{children}</>
 }
 
 function App() {
@@ -83,11 +90,12 @@ function App() {
   useEffect(() => {
     initAuth()
     initTheme()
-  }, [])
+  }, [initAuth, initTheme])
 
   return (
     <AuthGate>
       <BrowserRouter>
+        <RouteTitle />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<MainLayout />}>
@@ -117,6 +125,7 @@ function App() {
             <Route path="trips" element={<MyTrips />} />
             <Route path="trips/register" element={<TripRegister />} />
             <Route path="wallet" element={<MyWallet />} />
+            <Route path="orders" element={<MyOrders />} />
             <Route path="tickets" element={<MyTickets />} />
             <Route path="gallery" element={<MyGallery />} />
             <Route path="articles" element={<MyArticles />} />
@@ -141,6 +150,7 @@ function App() {
             <Route path="contributions" element={<AdminContributions />} />
             <Route path="refunds" element={<AdminRefunds />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </AuthGate>
