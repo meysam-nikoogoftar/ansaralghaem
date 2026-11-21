@@ -1,29 +1,33 @@
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../services/api'
 
 function News() {
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [news, setNews] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/content/news/')
+    observeLoad(() => api.get('/content/news/')
       .then(res => setNews(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }, [])
+      .catch(error => { throw error })
+      .finally(() => setIsLoading(false)), "'/content/news/'")
+  }, [observeLoad])
 
-  if (isLoading) return <div className="nw-loading">در حال بارگذاری...</div>
+  if (isLoading) return <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="nw-loading">در حال بارگذاری...</div>}</>
 
   return (
-    <div className="nw-page" dir="rtl">
+    <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="nw-page" dir="rtl">
       <div className="container">
         <div className="nw-head">
           <div className="section-kicker">✦ اخبار و اطلاعیه‌ها ✦</div>
           <h1 className="section-title">اخبار و اطلاعیه‌ها</h1>
         </div>
 
-        {news.length === 0 ? (
+        {(news.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && news.length === 0) ? null : news.length === 0 ? (
           <div className="nw-empty">خبری وجود ندارد</div>
         ) : (
           <div className="nw-grid">
@@ -100,7 +104,7 @@ function News() {
           color: var(--ink-faint); font-size: 11px;
         }
       `}</style>
-    </div>
+    </div>}</>
   )
 }
 

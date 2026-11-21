@@ -1,26 +1,32 @@
+import usePageTitle from '../../hooks/usePageTitle'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 
 function NewsDetail() {
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const { id } = useParams()
   const navigate = useNavigate()
   const [news, setNews] = useState(null)
+  usePageTitle(news?.title)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    api.get(`/content/news/${id}/`)
+    observeLoad(() => api.get(`/content/news/${id}/`)
       .then(res => setNews(res.data))
-      .catch(() => navigate('/news'))
-      .finally(() => setIsLoading(false))
-  }, [id])
+      .catch(error => { throw error })
+      .finally(() => setIsLoading(false)), "`/content/news/${id}/`")
+  }, [id, observeLoad])
 
-  if (isLoading) return <div className="nd-loading">در حال بارگذاری...</div>
+  if (isLoading) return <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="nd-loading">در حال بارگذاری...</div>}</>
 
-  if (!news) return null
+  if (!news) return <><LoadFeedback state={loadState} onRetry={retryLoad} />{null}</>
 
   return (
-    <div className="nd-page" dir="rtl">
+    <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="nd-page" dir="rtl">
       <div className="nd-container">
         <button onClick={() => navigate('/news')} className="nd-back">← برگشت به اخبار</button>
 
@@ -83,7 +89,7 @@ function NewsDetail() {
           white-space: pre-wrap;
         }
       `}</style>
-    </div>
+    </div>}</>
   )
 }
 
