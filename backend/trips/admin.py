@@ -4,7 +4,7 @@ from .models import Trip, Registration, TravelCompanion, AttendancePeriod, Atten
 
 @admin.register(Trip)
 class TripAdmin(admin.ModelAdmin):
-    list_display = ('title', 'trip_type', 'audience', 'start_date', 'end_date', 'cost', 'is_active', 'registration_open')
+    list_display = ('title', 'trip_type', 'audience', 'start_date', 'end_date', 'cost', 'capacity', 'is_active', 'registration_open')
     list_filter = ('trip_type', 'audience', 'is_active', 'registration_open')
     search_fields = ('title',)
     list_editable = ('is_active', 'registration_open')
