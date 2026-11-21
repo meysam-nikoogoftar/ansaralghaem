@@ -1,3 +1,4 @@
+import FormControl from '../../components/FormControl'
 import { useState } from 'react'
 import api from '../../services/api'
 
@@ -43,8 +44,8 @@ function TrackRegistration() {
         <div className="tg-card">
           <form onSubmit={handleSubmit} className="tg-form">
             <div className="tg-field">
-              <label>کد پیگیری</label>
-              <input
+
+              <FormControl as="input" label={<>کد پیگیری</>} name="trackingCode"
                 type="text"
                 value={trackingCode}
                 onChange={(e) => setTrackingCode(e.target.value)}
@@ -54,8 +55,8 @@ function TrackRegistration() {
               />
             </div>
             <div className="tg-field">
-              <label>کد ملی</label>
-              <input
+
+              <FormControl as="input" label={<>کد ملی</>} name="nationalCode"
                 type="text"
                 value={nationalCode}
                 onChange={(e) => setNationalCode(e.target.value)}
@@ -69,7 +70,7 @@ function TrackRegistration() {
             </button>
           </form>
 
-          {error && <div className="tg-error">{error}</div>}
+          {error && <div role="status" aria-live="polite" aria-atomic="true" className="tg-error">{error}</div>}
 
           {result && (
             <div className="tg-result">
@@ -156,7 +157,7 @@ function TrackRegistration() {
           border-radius: var(--radius-sm);
           background: rgba(122,35,48,0.2);
           border: 1px solid rgba(122,35,48,0.4);
-          color: #ff9aa8;
+          color: var(--status-danger);
           font-size: 13px;
         }
 

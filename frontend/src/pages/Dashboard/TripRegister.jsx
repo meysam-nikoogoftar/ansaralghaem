@@ -1,8 +1,19 @@
+import FormValidation from '../../components/FormValidation'
+import ErrorSummary from '../../components/ErrorSummary'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import './registration-support.css'
 
 function TripRegister() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [trips, setTrips] = useState([])
   const [selectedTrip, setSelectedTrip] = useState(null)
   const [companions, setCompanions] = useState([])
@@ -10,18 +21,26 @@ function TripRegister() {
   const [searchResult, setSearchResult] = useState(null)
   const [searchError, setSearchError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const [agreed, setAgreed] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
-    api.get('/trips/?registration_open=true')
-      .then(res => setTrips(res.data.filter(t => t.registration_open)))
-      .catch(() => {})
-  }, [])
+    observeLoad(() => api.get('/trips/?registration_open=true')
+      .then(res => setTrips((Array.isArray(res.data) ? res.data : res.data.results || []).filter(t => t.registration_open)))
+      .catch(error => { throw error }), "'/trips/?registration_open=true'")
+  }, [observeLoad])
 
   const searchCompanion = async () => {
+    if (isSearching) return
     setSearchError('')
     setSearchResult(null)
+    if (!/^\d{10}$/.test(searchCode)) {
+      setSearchError('کد ملی همسفر را با ۱۰ رقم وارد کنید.')
+      return
+    }
+    setIsSearching(true)
     try {
       const res = await api.get(`/accounts/search-user/?national_code=${searchCode}`)
       if (companions.find(c => c.id === res.data.id)) {
@@ -30,7 +49,11 @@ function TripRegister() {
       }
       setSearchResult(res.data)
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       setSearchError(err.response?.data?.error || 'کاربر یافت نشد')
+    } finally {
+      setIsSearching(false)
     }
   }
 
@@ -47,12 +70,16 @@ function TripRegister() {
   }
 
   const handleSubmit = async () => {
+    if (isLoading) return
+    setValidationErrors({})
+    setSubmitError('')
+
     if (!selectedTrip) {
-      alert('لطفاً یک سفر انتخاب کنید')
+      setSubmitError('لطفاً یک سفر انتخاب کنید')
       return
     }
     if (!agreed) {
-      alert('لطفاً شرایط سفر را بپذیرید')
+      setSubmitError('برای ثبت‌نام، شرایط سفر را بخوانید و بپذیرید.')
       return
     }
     setIsLoading(true)
@@ -63,34 +90,44 @@ function TripRegister() {
       })
       navigate('/dashboard/trips')
     } catch (err) {
-      alert(err.response?.data?.error || 'خطا در ثبت‌نام')
+      setValidationErrors(fieldErrors(err))
+
+      setSubmitError(err.response?.data?.error || 'ثبت‌نام انجام نشد. اطلاعات را بررسی و دوباره تلاش کنید.')
     }
     setIsLoading(false)
   }
 
   return (
-    <div className="tr-page">
-      <h1 className="tr-heading">ثبت‌نام سفر</h1>
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="tr-page">
+      <header className="service-page-heading"><h1 className="tr-heading">ثبت‌نام سفر</h1><p>سفر را انتخاب کنید، شرایط را بخوانید و در صورت نیاز همسفر اضافه کنید.</p></header>
 
       {/* انتخاب سفر */}
       <div className="tr-card">
         <h2>انتخاب سفر</h2>
-        {trips.length === 0 ? (
+        {(trips.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && trips.length === 0) ? null : trips.length === 0 ? (
           <p className="tr-empty-text">در حال حاضر سفری برای ثبت‌نام وجود ندارد</p>
         ) : (
-          <div className="tr-trip-options">
+          <div className="tr-trip-options" role="radiogroup" aria-label="انتخاب سفر" onKeyDown={event => {
+            if (!['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'].includes(event.key)) return
+            event.preventDefault()
+            const controls = [...event.currentTarget.querySelectorAll('[role="radio"]')]
+            const index = controls.indexOf(document.activeElement)
+            const delta = ['ArrowLeft', 'ArrowDown'].includes(event.key) ? 1 : -1
+            const next = controls[(index + delta + controls.length) % controls.length]
+            next?.focus(); next?.click()
+          }}>
             {trips.map((trip) => (
-              <div
+              <button type="button" role="radio" tabIndex={selectedTrip?.id === trip.id || (!selectedTrip && trips[0]?.id === trip.id) ? 0 : -1} aria-checked={selectedTrip?.id === trip.id}
                 key={trip.id}
-                onClick={() => setSelectedTrip(trip)}
+                onClick={() => { if (selectedTrip?.id !== trip.id) setAgreed(false); setSubmitError(''); setSelectedTrip(trip) }}
                 className={`tr-trip-option${selectedTrip?.id === trip.id ? ' selected' : ''}`}
               >
                 <div>
                   <h3>{trip.title}</h3>
-                  <p>{trip.start_date} تا {trip.end_date}</p>
+                  <p>{new Date(trip.start_date).toLocaleDateString('fa-IR')} تا {new Date(trip.end_date).toLocaleDateString('fa-IR')}</p>
                 </div>
                 <strong>{trip.cost?.toLocaleString('fa-IR')} تومان</strong>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -100,11 +137,11 @@ function TripRegister() {
       {selectedTrip && (
         <div className="tr-card">
           <h2>شرایط سفر</h2>
-          <div className="tr-conditions">
+          <div className="tr-conditions" tabIndex={0} role="region" aria-label="متن شرایط سفر">
             {selectedTrip.conditions || 'شرایطی تعریف نشده'}
           </div>
           <label className="tr-agree">
-            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+            <FormControl as="input" type="checkbox" checked={agreed} onChange={(e) => { setAgreed(e.target.checked); setSubmitError('') }} />
             <span>شرایط فوق را خوانده و قبول دارم</span>
           </label>
         </div>
@@ -113,18 +150,20 @@ function TripRegister() {
       {/* همسفران */}
       <div className="tr-card">
         <h2>همسفران (اختیاری)</h2>
-        <div className="tr-search-row">
-          <input
+        <p className="service-description" id="companion-hint">اگر تنها سفر می‌کنید، این بخش را خالی بگذارید. همسفر باید در سایت حساب کاربری داشته باشد.</p>
+        <form className="tr-search-row" onSubmit={event => { event.preventDefault(); searchCompanion() }}>
+          <div className="tr-search-field"><FormControl as="input" label="کد ملی همسفر" name="searchCode"
             type="text"
+            inputMode="numeric" maxLength={10} dir="ltr" aria-describedby="companion-hint" disabled={isSearching}
             value={searchCode}
-            onChange={(e) => setSearchCode(e.target.value)}
+            onChange={(e) => { setSearchCode(e.target.value.replace(/[۰-۹]/g, digit => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))).replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))); setSearchResult(null); setSearchError('') }}
             placeholder="کد ملی همسفر"
             className="tr-input"
-          />
-          <button onClick={searchCompanion} className="tr-search-btn">جستجو</button>
-        </div>
+          /></div>
+          <button type="submit" disabled={isSearching} className="tr-search-btn">{isSearching ? 'در حال جستجو…' : 'جستجوی همسفر'}</button>
+        </form>
 
-        {searchError && <p className="tr-search-error">{searchError}</p>}
+        {searchError && <p role="status" aria-live="polite" aria-atomic="true" className="tr-search-error">{searchError}</p>}
 
         {searchResult && (
           <div className="tr-search-result">
@@ -156,149 +195,17 @@ function TripRegister() {
       </div>
 
       {/* دکمه ثبت‌نام */}
-      <button onClick={handleSubmit} disabled={isLoading || !selectedTrip} className="tr-submit">
+      <div className="tr-review"><div><h2>خلاصه ثبت‌نام</h2><p>{selectedTrip?.title || 'هنوز سفری انتخاب نکرده‌اید'}</p><span>{companions.length ? `شما و ${companions.length.toLocaleString('fa-IR')} همسفر` : 'بدون همسفر'}</span>{selectedTrip && <p>هزینه اعلام‌شده سفر: <strong>{Number(selectedTrip.cost).toLocaleString('fa-IR')} تومان</strong></p>}</div>
+      <button onClick={handleSubmit} disabled={isLoading || !selectedTrip || !agreed} className="tr-submit">
         {isLoading ? 'در حال ثبت‌نام...' : 'ثبت‌نام در سفر'}
       </button>
+      {!agreed && selectedTrip && <p className="service-description">برای فعال‌شدن ثبت‌نام، شرایط سفر را بپذیرید.</p>}
+      {submitError && <p className="service-error" role="alert">{submitError}</p>}
+      <ErrorSummary errors={validationErrors} />
+      </div>
 
-      <style>{`
-        .tr-page { display: flex; flex-direction: column; gap: 18px; max-width: 680px; }
-        .tr-heading { font-family: var(--font-display); color: var(--teal-glow); font-size: 22px; }
 
-        .tr-card {
-          background: var(--surface);
-          border: 1px solid var(--line);
-          border-radius: var(--radius-lg);
-          padding: 20px 22px;
-        }
-        .tr-card h2 {
-          font-family: var(--font-display);
-          color: var(--teal-glow);
-          font-size: 15px;
-          margin-bottom: 14px;
-        }
-        .tr-empty-text { color: var(--ink-dim); font-size: 13px; }
-
-        .tr-trip-options { display: flex; flex-direction: column; gap: 10px; }
-        .tr-trip-option {
-          display: flex; align-items: center; justify-content: space-between;
-          border: 1.5px solid var(--line);
-          border-radius: var(--radius-md);
-          padding: 14px 16px;
-          cursor: pointer;
-          transition: all .25s ease;
-        }
-        .tr-trip-option:hover { border-color: rgba(15,111,92,0.4); }
-        .tr-trip-option.selected {
-          border-color: var(--teal-glow);
-          background: rgba(15,111,92,0.08);
-        }
-        .tr-trip-option h3 { color: var(--ink); font-size: 14px; font-weight: 600; }
-        .tr-trip-option p { color: var(--ink-faint); font-size: 12px; margin-top: 4px; }
-        .tr-trip-option strong { color: var(--teal-glow); font-size: 14px; }
-
-        .tr-conditions {
-          background: var(--panel-inset-bg);
-          border: 1px solid var(--line);
-          border-radius: var(--radius-md);
-          padding: 14px;
-          color: var(--ink-dim);
-          font-size: 13px;
-          line-height: 1.9;
-          max-height: 180px;
-          overflow-y: auto;
-        }
-        .tr-agree {
-          display: flex; align-items: center; gap: 10px;
-          margin-top: 14px; cursor: pointer;
-        }
-        .tr-agree input { width: 16px; height: 16px; accent-color: var(--teal-glow); }
-        .tr-agree span { color: var(--ink-dim); font-size: 13px; }
-
-        .tr-search-row { display: flex; gap: 10px; margin-bottom: 14px; }
-        .tr-input {
-          flex: 1;
-          padding: 11px 14px;
-          background: var(--input-bg);
-          border: 1px solid var(--line);
-          border-radius: var(--radius-sm);
-          color: var(--ink);
-          font-size: 13px;
-          outline: none;
-        }
-        .tr-input:focus { border-color: var(--teal-glow); box-shadow: 0 0 0 3px rgba(15,111,92,0.15); }
-        .tr-search-btn {
-          padding: 0 20px;
-          border-radius: var(--radius-sm);
-          border: 1px solid var(--line);
-          background: transparent;
-          color: var(--ink-dim);
-          font-size: 13px;
-          cursor: pointer;
-        }
-        .tr-search-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
-
-        .tr-search-error { color: #ff9aa8; font-size: 13px; margin-bottom: 12px; }
-
-        .tr-search-result {
-          display: flex; align-items: center; justify-content: space-between;
-          border: 1px solid rgba(31,163,130,0.3);
-          background: rgba(31,163,130,0.08);
-          border-radius: var(--radius-md);
-          padding: 12px 14px;
-          margin-bottom: 14px;
-        }
-        .tr-search-result-info { display: flex; align-items: center; gap: 10px; }
-        .tr-search-result-info img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
-        .tr-avatar-fallback {
-          width: 38px; height: 38px; border-radius: 50%;
-          background: var(--teal);
-          color: var(--gold-light);
-          display: grid; place-items: center;
-          font-weight: 700; font-size: 14px;
-        }
-        .tr-search-result-info p { color: var(--ink); font-size: 13px; font-weight: 600; }
-        .tr-search-result-info span { color: var(--ink-faint); font-size: 11px; }
-        .tr-add-btn {
-          padding: 8px 16px;
-          border-radius: 999px;
-          border: none;
-          background: var(--teal-glow);
-          color: #06130f;
-          font-size: 12px; font-weight: 700;
-          cursor: pointer;
-        }
-
-        .tr-companion-list { display: flex; flex-direction: column; gap: 8px; }
-        .tr-companion-row {
-          display: flex; align-items: center; justify-content: space-between;
-          background: var(--panel-inset-bg);
-          border: 1px solid var(--line);
-          border-radius: var(--radius-sm);
-          padding: 10px 14px;
-        }
-        .tr-companion-row p { color: var(--ink); font-size: 13px; font-weight: 500; }
-        .tr-companion-row button {
-          background: none; border: none;
-          color: #ff9aa8; font-size: 12px; cursor: pointer;
-        }
-
-        .tr-submit {
-          width: 100%;
-          padding: 15px;
-          border-radius: 999px;
-          border: none;
-          cursor: pointer;
-          font-family: var(--font-body);
-          font-size: 15px; font-weight: 700;
-          color: #eefaf5;
-          background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
-          box-shadow: 0 6px 20px -6px rgba(15,111,92,0.45);
-          transition: transform .25s ease, opacity .25s ease;
-        }
-        .tr-submit:hover:not(:disabled) { transform: translateY(-2px); }
-        .tr-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-      `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 
