@@ -1,9 +1,9 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import useAuthStore from '../store/authStore'
+import useMediaQuery from '../hooks/useMediaQuery'
+import { Outlet, Link, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import logo from '../assets/logo.png'
-import CustomCursor from '../components/CustomCursor'
 import ThemeToggle from '../components/ThemeToggle'
+import AccountMenu from '../components/AccountMenu'
 
 const menuItems = [
   { path: '/dashboard', label: 'داشبورد', icon: 'home' },
@@ -11,6 +11,7 @@ const menuItems = [
   { path: '/dashboard/trips', label: 'سفرهای من', icon: 'plane' },
   { path: '/dashboard/trips/register', label: 'ثبت‌نام سفر', icon: 'edit' },
   { path: '/dashboard/wallet', label: 'کیف پول', icon: 'wallet' },
+  { path: '/dashboard/orders', label: 'سفارش‌های من', icon: 'book' },
   { path: '/dashboard/financial-report', label: 'گزارش مالی', icon: 'report' },
   { path: '/dashboard/tickets', label: 'تیکت‌ها', icon: 'ticket' },
   { path: '/dashboard/gallery', label: 'گالری من', icon: 'image' },
@@ -39,22 +40,31 @@ function SvgIcon({ name }) {
 
 function DashboardLayout() {
   const location = useLocation()
-  const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const headerRef = useRef(null)
+  useEffect(() => {
+    const header = headerRef.current
+    const observer = new ResizeObserver(() => header.closest('[dir="rtl"]').style.setProperty('--member-header-height', `${header.offsetHeight}px`))
+    observer.observe(header)
+    return () => observer.disconnect()
+  }, [])
+  const mobile = useMediaQuery('(max-width: 900px)')
+  const toggleRef = useRef(null)
+  useEffect(() => {
+    if (!mobile || !sidebarOpen) return
+    const close = event => { if (event.key === 'Escape') { setSidebarOpen(false); toggleRef.current?.focus() } }
+    document.addEventListener('keydown', close)
+    return () => document.removeEventListener('keydown', close)
+  }, [mobile, sidebarOpen])
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
+
 
   return (
     <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--ink)', display: 'flex', flexDirection: 'column' }}>
 
-      <CustomCursor />
 
       {/* Top Header */}
-      <header style={{
+      <header ref={headerRef} className="member-header" style={{
         position: 'sticky', top: 0, zIndex: 50,
         background: 'var(--surface-2)',
         backdropFilter: 'blur(14px)',
@@ -64,52 +74,17 @@ function DashboardLayout() {
       }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img src={logo} alt="logo" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--gold)' }} />
-          <span style={{ fontFamily: 'Aref Ruqaa, serif', color: 'var(--gold-light)', fontSize: 16 }}>
+          <span className="member-brand-title" style={{ fontFamily: 'var(--font-body)', color: 'var(--gold-light)', fontSize: 16 }}>
             هیئت انصار القائم (عج)
           </span>
         </Link>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="member-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <ThemeToggle />
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '8px 14px', borderRadius: 12,
-            background: 'var(--surface)', border: '1px solid var(--line)',
-          }}>
-            {user?.profile_image ? (
-              <img src={user.profile_image} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--gold)' }} />
-            ) : (
-              <div style={{
-                width: 32, height: 32, borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--teal), var(--teal-light))',
-                display: 'grid', placeItems: 'center',
-                color: 'var(--gold-light)', fontWeight: 700, fontSize: 14,
-              }}>
-                {user?.first_name?.[0] || '؟'}
-              </div>
-            )}
-            <div>
-              <p style={{ color: 'var(--ink)', fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
-                {user?.first_name} {user?.last_name}
-              </p>
-              <p style={{ color: 'var(--ink-faint)', fontSize: 11 }}>{user?.mobile}</p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            style={{
-              background: 'none', border: '1px solid var(--line)',
-              color: 'var(--ink-dim)', borderRadius: 10,
-              padding: '8px 14px', fontSize: 13, fontFamily: 'var(--font-body)',
-            }}
-          >
-            خروج
-          </button>
-
+          <AccountMenu mobileEnabled />
           {/* Mobile sidebar toggle */}
           <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+            ref={toggleRef} aria-label="منوی پنل" aria-expanded={sidebarOpen} aria-controls="member-navigation" onClick={() => setSidebarOpen(!sidebarOpen)}
             style={{
               display: 'none', background: 'none',
               border: '1px solid var(--line)', color: 'var(--ink-dim)',
@@ -129,13 +104,15 @@ function DashboardLayout() {
       <div style={{ display: 'flex', flex: 1 }}>
 
         {/* Sidebar */}
-        <aside style={{
+        <aside id="member-navigation" inert={mobile && !sidebarOpen} aria-hidden={mobile && !sidebarOpen} style={{
           width: 240, flexShrink: 0,
           background: 'var(--bg-deep)',
           borderLeft: '1px solid var(--line)',
           padding: '20px 12px',
-          position: 'sticky', top: 62,
-          height: 'calc(100vh - 62px)',
+          position: 'sticky', top: 'var(--member-header-height, 74px)',
+          alignSelf: 'flex-start',
+          overscrollBehavior: 'contain',
+          height: 'calc(100dvh - var(--member-header-height, 74px))',
           overflowY: 'auto',
           display: 'flex', flexDirection: 'column',
         }}
@@ -147,6 +124,7 @@ function DashboardLayout() {
               return (
                 <Link
                   key={item.path}
+                  aria-current={isActive ? 'page' : undefined}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   style={{
@@ -155,7 +133,7 @@ function DashboardLayout() {
                     color: isActive ? 'var(--teal-glow)' : 'var(--ink)',
                     background: isActive ? 'rgba(15,111,92,0.12)' : 'transparent',
                     border: `1px solid ${isActive ? 'rgba(15,111,92,0.25)' : 'transparent'}`,
-                    fontSize: 13, fontWeight: isActive ? 700 : 500,
+                    fontSize: 14, fontWeight: isActive ? 700 : 500,
                     transition: 'all 0.25s ease',
                     textDecoration: 'none',
                     position: 'relative',
@@ -196,7 +174,7 @@ function DashboardLayout() {
             textAlign: 'center',
           }}>
             <p style={{
-              fontFamily: 'Aref Ruqaa, serif',
+              fontFamily: 'var(--font-body)',
               color: 'var(--gold-light)', fontSize: 13,
               lineHeight: 2, marginBottom: 6,
             }}>
@@ -207,7 +185,7 @@ function DashboardLayout() {
         </aside>
 
         {/* Main Content */}
-        <main style={{
+        <main className="member-main" style={{
           flex: 1, padding: '28px 32px',
           minWidth: 0,
           background: 'var(--bg)',

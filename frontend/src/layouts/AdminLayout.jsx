@@ -1,9 +1,10 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import useMediaQuery from '../hooks/useMediaQuery'
+import { Outlet, Link, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import useAuthStore from '../store/authStore'
 import logo from '../assets/logo.png'
-import CustomCursor from '../components/CustomCursor'
 import ThemeToggle from '../components/ThemeToggle'
+import AccountMenu from '../components/AccountMenu'
 
 const menuItems = [
   { path: '/admin', label: 'داشبورد', icon: 'grid' },
@@ -42,25 +43,32 @@ function SvgIcon({ name }) {
 
 function AdminLayout() {
   const location = useLocation()
-  const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
+  const { user } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const mobile = useMediaQuery('(max-width: 900px)')
+  const toggleRef = useRef(null)
+  useEffect(() => {
+    if (!mobile || !sidebarOpen) return
+    const close = event => { if (event.key === 'Escape') { setSidebarOpen(false); toggleRef.current?.focus() } }
+    document.addEventListener('keydown', close)
+    return () => document.removeEventListener('keydown', close)
+  }, [mobile, sidebarOpen])
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
+
 
   const isSuperAdmin = user?.user_type === 'superadmin'
+  const permissions = { '/admin/users': 'perm_users', '/admin/trips': 'perm_trips', '/admin/registrations': 'perm_registrations', '/admin/articles': 'perm_content', '/admin/gallery': 'perm_content', '/admin/news': 'perm_content', '/admin/expenses': 'perm_financial', '/admin/contributions': 'perm_financial', '/admin/refunds': 'perm_financial' }
+  const allowed = path => isSuperAdmin || user?.[permissions[path]] !== false
+  const currentSection = Object.keys(permissions).find(path => location.pathname === path || location.pathname.startsWith(path + '/'))
+  const denied = currentSection && !allowed(currentSection)
 
   return (
     <div dir="rtl" className="adm-shell">
-      <CustomCursor />
 
       {/* Top bar */}
       <header className="adm-topbar">
         <div className="adm-topbar-right">
-          <button className="adm-sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <button className="adm-sidebar-toggle" ref={toggleRef} aria-label="منوی پنل" aria-expanded={sidebarOpen} aria-controls="admin-navigation" onClick={() => setSidebarOpen(!sidebarOpen)}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
             </svg>
@@ -70,37 +78,26 @@ function AdminLayout() {
 
         <div className="adm-topbar-left">
           <ThemeToggle />
-          <span className={`adm-role-badge${isSuperAdmin ? ' super' : ''}`}>
-            {isSuperAdmin ? 'سوپرادمین' : 'ادمین'}
-          </span>
-          <div className="adm-user-chip">
-            <div className="adm-avatar">
-              {user?.profile_image ? <img src={user.profile_image} alt="" /> : (user?.first_name?.[0] || '؟')}
-            </div>
-            <div>
-              <p>{user?.first_name} {user?.last_name}</p>
-              <span>{user?.mobile}</span>
-            </div>
-          </div>
+          <AccountMenu mobileEnabled />
           <Link to="/" className="adm-site-link" title="بازگشت به سایت">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10" /></svg>
           </Link>
-          <button onClick={handleLogout} className="adm-logout-btn">خروج</button>
         </div>
       </header>
 
       <div className="adm-body">
-        <aside className={`adm-sidebar${sidebarOpen ? ' open' : ''}`}>
+        <aside id="admin-navigation" inert={mobile && !sidebarOpen} aria-hidden={mobile && !sidebarOpen} className={`adm-sidebar${sidebarOpen ? ' open' : ''}`}>
           <div className="adm-brand">
             <img src={logo} alt="logo" />
             <span>هیئت انصار القائم</span>
           </div>
           <nav>
-            {menuItems.map(item => {
+            {menuItems.filter(item => allowed(item.path)).map(item => {
               const isActive = location.pathname === item.path
               return (
                 <Link
                   key={item.path}
+                  aria-current={isActive ? 'page' : undefined}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={`adm-nav-item${isActive ? ' active' : ''}`}
@@ -112,12 +109,13 @@ function AdminLayout() {
             })}
           </nav>
           <div className="adm-sidebar-note">
-            بخش‌های کاربران، ثبت‌نام‌ها، محصولات و محتوا در مراحل بعد اضافه می‌شوند.
+            از منوی بالا بخش موردنظر را انتخاب کنید. گزینه‌ها مطابق دسترسی حساب شما نمایش داده می‌شوند.
           </div>
         </aside>
 
+        {mobile && sidebarOpen && <button type="button" className="adm-navigation-backdrop" aria-label="بستن منوی مدیریت" tabIndex={-1} onClick={() => setSidebarOpen(false)} />}
         <main className="adm-main">
-          <Outlet />
+          {denied ? <div className="request-feedback" role="alert">دسترسی به این بخش برای حساب شما مجاز نیست.</div> : <Outlet />}
         </main>
       </div>
 
@@ -146,7 +144,7 @@ function AdminLayout() {
           border: 1px solid rgba(216,181,104,0.3);
         }
         .adm-role-badge.super {
-          background: rgba(122,35,48,0.2); color: #ff9aa8;
+          background: rgba(122,35,48,0.2); color: var(--status-danger);
           border-color: rgba(122,35,48,0.4);
         }
 
@@ -174,11 +172,14 @@ function AdminLayout() {
           color: var(--ink-dim); padding: 7px 14px; font-size: 12.5px;
           font-family: var(--font-body); cursor: pointer;
         }
-        .adm-logout-btn:hover { border-color: rgba(255,107,125,0.5); color: #ff9aa8; }
+        .adm-logout-btn:hover { border-color: rgba(255,107,125,0.5); color: var(--status-danger); }
 
         .adm-body { display: flex; min-height: calc(100vh - 60px); }
 
         .adm-sidebar {
+          position: sticky; top: 60px; align-self: flex-start;
+          height: calc(100dvh - 60px); overflow-y: auto;
+          overscroll-behavior: contain;
           width: 220px; flex-shrink: 0;
           background: var(--surface-2);
           border-left: 1px solid var(--line);
@@ -218,6 +219,7 @@ function AdminLayout() {
         }
 
         .adm-main { flex: 1; min-width: 0; padding: 26px 28px; background: var(--bg); }
+        .adm-navigation-backdrop { position: fixed; inset: 60px 0 0; z-index: 44; border: 0; background: rgba(0,0,0,.38); cursor: pointer; }
 
         @media (max-width: 900px) {
           .adm-sidebar-toggle { display: block; }
