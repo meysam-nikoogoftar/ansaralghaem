@@ -1,12 +1,16 @@
 from pathlib import Path
+import os
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-change-this-in-production'
-
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
+DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-local-development-only')
+BFF_SHARED_SECRET = os.environ.get('BFF_SHARED_SECRET', '')
+APP_ORIGIN = os.environ.get('APP_ORIGIN', 'http://127.0.0.1:3000')
+if not DEBUG and (len(SECRET_KEY) < 50 or len(BFF_SHARED_SECRET) < 32 or not APP_ORIGIN.startswith('https://')):
+    raise ImproperlyConfigured('Production requires strong DJANGO_SECRET_KEY/BFF_SHARED_SECRET and HTTPS APP_ORIGIN')
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,testserver').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -30,6 +34,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'accounts.middleware.BffBoundaryMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -63,11 +68,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ansaralghaem_db',
-        'USER': 'postgres',
-        'PASSWORD': '1234',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('POSTGRES_DB', 'ansaralghaem_db'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', '1234' if DEBUG else ''),
+        'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }
 }
 
@@ -75,11 +80,12 @@ AUTH_USER_MODEL = 'accounts.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'accounts.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'EXCEPTION_HANDLER': 'accounts.authentication.exception_handler',
 }
 
 from datetime import timedelta
@@ -88,7 +94,32 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = []
+CSRF_TRUSTED_ORIGINS = [APP_ORIGIN]
+COOKIE_SECURE = os.environ.get('COOKIE_SECURE', '0' if DEBUG else '1') == '1'
+if not DEBUG and not COOKIE_SECURE:
+    raise ImproperlyConfigured('Secure cookies are required in production')
+SESSION_COOKIE_NAME = '__Host-ansar_session' if COOKIE_SECURE else 'ansar_session'
+CSRF_COOKIE_NAME = '__Host-ansar_csrf' if COOKIE_SECURE else 'ansar_csrf'
+SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = COOKIE_SECURE
+SESSION_COOKIE_HTTPONLY = CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+CSRF_FAILURE_VIEW = 'accounts.authentication.csrf_failure'
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SESSION_SAVE_EVERY_REQUEST = False
+AUTH_LOGIN_LIMIT = int(os.environ.get('AUTH_LOGIN_LIMIT', '10'))
+AUTH_LOGIN_WINDOW = int(os.environ.get('AUTH_LOGIN_WINDOW', '60'))
+AUTH_REGISTER_LIMIT = int(os.environ.get('AUTH_REGISTER_LIMIT', '5'))
+AUTH_REGISTER_WINDOW = int(os.environ.get('AUTH_REGISTER_WINDOW', '3600'))
+AUTH_TRACK_LIMIT = int(os.environ.get('AUTH_TRACK_LIMIT', '10'))
+AUTH_TRACK_WINDOW = int(os.environ.get('AUTH_TRACK_WINDOW', '60'))
 
 LANGUAGE_CODE = 'fa-ir'
 TIME_ZONE = 'Asia/Tehran'
