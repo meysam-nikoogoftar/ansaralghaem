@@ -1,53 +1,58 @@
+import Dialog from '../../components/Dialog'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
 import { useEffect, useState } from 'react'
 import api from '../../services/api'
 
 function Gallery() {
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [images, setImages] = useState([])
   const [selected, setSelected] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/content/gallery/')
+    observeLoad(() => api.get('/content/gallery/')
       .then(res => setImages(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }, [])
+      .catch(error => { throw error })
+      .finally(() => setIsLoading(false)), "'/content/gallery/'")
+  }, [observeLoad])
 
-  if (isLoading) return <div className="gl-loading">در حال بارگذاری...</div>
+  if (isLoading) return <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="gl-loading">در حال بارگذاری...</div>}</>
 
   return (
-    <div className="gl-page" dir="rtl">
+    <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="gl-page" dir="rtl">
       <div className="container">
         <div className="gl-head">
           <div className="section-kicker">✦ گالری تصاویر ✦</div>
           <h1 className="section-title">گالری تصاویر</h1>
         </div>
 
-        {images.length === 0 ? (
+        {(images.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && images.length === 0) ? null : images.length === 0 ? (
           <div className="gl-empty">تصویری وجود ندارد</div>
         ) : (
           <div className="gl-grid">
             {images.map((img) => (
-              <div key={img.id} onClick={() => setSelected(img)} className="gl-item">
+              <button type="button" key={img.id} onClick={() => setSelected(img)} className="gl-item">
                 <img src={img.image} alt={img.title} loading="lazy" />
                 <div className="gl-item-overlay">
                   <span>{img.title}</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
       </div>
 
       {selected && (
-        <div className="gl-lightbox" onClick={() => setSelected(null)}>
+        <Dialog label="نمایش تصویر" className="gl-lightbox" onClose={() => setSelected(null)}>
           <div className="gl-lightbox-content" onClick={(e) => e.stopPropagation()}>
             <img src={selected.image} alt={selected.title} />
             {selected.title && <p className="gl-lightbox-title">{selected.title}</p>}
             <p className="gl-lightbox-uploader">{selected.uploader_name}</p>
             <button onClick={() => setSelected(null)} className="gl-lightbox-close">بستن</button>
           </div>
-        </div>
+        </Dialog>
       )}
 
       <style>{`
@@ -115,7 +120,7 @@ function Gallery() {
         }
         .gl-lightbox-close:hover { background: rgba(15,111,92,0.1); }
       `}</style>
-    </div>
+    </div>}</>
   )
 }
 

@@ -1,7 +1,12 @@
+import Dialog from '../../components/Dialog'
+import ShrineAnimation from '../../components/ShrineAnimation'
+import useReducedMotion from '../../hooks/useReducedMotion'
+import useMediaQuery from '../../hooks/useMediaQuery'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../services/api'
 import useAuthStore from '../../store/authStore'
+import './home.css'
 
 // تصاویر محلی سایت
 import heroDomeSunset from '../../assets/hero/hero-1-dome-sunset.jpg'
@@ -98,6 +103,12 @@ const STATIC_NEWS = [
 
 function Home() {
   const { isAuthenticated } = useAuthStore()
+  const reducedMotion = useReducedMotion()
+  const canHover = useMediaQuery('(min-width: 901px) and (hover: hover) and (pointer: fine)')
+  const [selectedPhoto, setSelectedPhoto] = useState(null)
+  const [sliderFocused, setSliderFocused] = useState(false)
+  const swipeRef = useRef(null)
+  const suppressSlideClick = useRef(false)
 
   // API data
   const [sliders, setSliders] = useState([])
@@ -155,10 +166,11 @@ function Home() {
   // Slider
   const startSlider = useCallback(() => {
     clearInterval(slideIntervalRef.current)
+    if (sliderFocused || reducedMotion) return
     slideIntervalRef.current = setInterval(() => {
       setCurrentSlide(prev => (prev + 1) % displaySliders.length)
     }, 6000)
-  }, [displaySliders.length])
+  }, [displaySliders.length, sliderFocused, reducedMotion])
 
   useEffect(() => {
     startSlider()
@@ -168,6 +180,41 @@ function Home() {
   const changeSlide = (dir) => {
     setCurrentSlide(prev => (prev + dir + displaySliders.length) % displaySliders.length)
     startSlider()
+  }
+
+  const startSwipe = event => {
+    suppressSlideClick.current = false
+    if (!event.isPrimary || event.button !== 0 || event.target.closest('a, button')) return
+    swipeRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY, horizontal: false }
+    suppressSlideClick.current = false
+    clearInterval(slideIntervalRef.current)
+  }
+  const moveSwipe = event => {
+    const gesture = swipeRef.current
+    if (!gesture || gesture.id !== event.pointerId) return
+    const dx = event.clientX - gesture.x
+    const dy = event.clientY - gesture.y
+    if (!gesture.horizontal && Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) {
+      swipeRef.current = null
+      startSlider()
+      return
+    }
+    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      gesture.horizontal = true
+      suppressSlideClick.current = true
+      event.currentTarget.setPointerCapture(event.pointerId)
+    }
+  }
+  const finishSwipe = event => {
+    const gesture = swipeRef.current
+    if (!gesture || gesture.id !== event.pointerId) return
+    swipeRef.current = null
+    const dx = event.clientX - gesture.x
+    if (event.type !== 'pointercancel' && gesture.horizontal && Math.abs(dx) >= 48) {
+      changeSlide(dx < 0 ? 1 : -1)
+    } else startSlider()
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+    setTimeout(() => { suppressSlideClick.current = false }, 0)
   }
 
   // Countdown
@@ -190,6 +237,7 @@ function Home() {
   // Stats counter
   useEffect(() => {
     if (!statsRef.current) return
+    if (reducedMotion) return
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting && !statsVisible) {
         setStatsVisible(true)
@@ -212,7 +260,7 @@ function Home() {
     }, { threshold: 0.3 })
     observer.observe(statsRef.current)
     return () => observer.disconnect()
-  }, [statsVisible])
+  }, [statsVisible, reducedMotion])
 
   // Donate progress
   useEffect(() => {
@@ -226,6 +274,7 @@ function Home() {
 
   // 3D Tilt
   const handleTilt = (e) => {
+    if (reducedMotion) return
     const card = e.currentTarget
     const rect = card.getBoundingClientRect()
     const x = e.clientX - rect.left
@@ -242,10 +291,10 @@ function Home() {
   return (
     <>
       {/* Hero Slider */}
-      <section className="hero-slider">
+      <section className="hero-slider" aria-label="اسلایدر معرفی هیئت" onPointerDown={startSwipe} onPointerMove={moveSwipe} onPointerUp={finishSwipe} onPointerCancel={finishSwipe} onClickCapture={event => { if (suppressSlideClick.current) { event.preventDefault(); event.stopPropagation(); suppressSlideClick.current = false } }} onFocusCapture={() => setSliderFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setSliderFocused(false) }}>
         <div className="slides">
           {displaySliders.map((slide, i) => (
-            <div key={slide.id} className={`slide${i === currentSlide ? ' active' : ''}`}>
+            <div key={slide.id} role="group" aria-roledescription="اسلاید" aria-label={`${i + 1} از ${displaySliders.length}`} inert={i !== currentSlide} aria-hidden={i !== currentSlide} className={`slide${i === currentSlide ? ' active' : ''}`}>
               <div
                 className="slide-bg"
                 style={{ backgroundImage: `url('${slide.image}')` }}
@@ -261,7 +310,7 @@ function Home() {
                   <Link to={slide.link || '/'} className="btn btn-gold">
                     {slide.btnLabel || 'مشاهده جزئیات'}
                   </Link>
-                  <Link to={isAuthenticated ? '/dashboard' : '/login'} className="btn btn-ghost">
+                  <Link to={isAuthenticated ? '/dashboard' : '/#about'} className="btn btn-ghost">
                     {isAuthenticated ? 'پنل کاربری' : 'آشنایی با هیئت'}
                   </Link>
                 </div>
@@ -270,25 +319,37 @@ function Home() {
           ))}
         </div>
 
-        <button className="slider-arrow prev" onClick={() => changeSlide(-1)}>‹</button>
-        <button className="slider-arrow next" onClick={() => changeSlide(1)}>›</button>
+        <button aria-label="اسلاید قبلی" className="slider-arrow prev" onClick={() => changeSlide(-1)}>‹</button>
+        <button aria-label="اسلاید بعدی" className="slider-arrow next" onClick={() => changeSlide(1)}>›</button>
 
         <div className="slider-dots">
           {displaySliders.map((_, i) => (
-            <div
+            <button type="button"
               key={i}
+              aria-label={`نمایش اسلاید ${i + 1}`} aria-pressed={i === currentSlide}
               className={`dot${i === currentSlide ? ' active' : ''}`}
               onClick={() => { setCurrentSlide(i); startSlider() }}
             />
           ))}
         </div>
+        <svg className="hero-wave" aria-hidden="true" focusable="false" viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <path d="M0 66C150 6 270 6 440 48C560 78 640 108 720 108C800 108 880 78 1000 48C1170 6 1290 6 1440 66V120H0Z" />
+        </svg>
       </section>
 
       {/* About + Stats */}
       <section id="about">
+        <svg className="hero-wave-glow" aria-hidden="true" focusable="false" viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <defs>
+            <filter id="home-wave-soft-light" x="-20%" y="-100%" width="140%" height="400%"><feGaussianBlur stdDeviation="16" /></filter>
+            <clipPath id="home-wave-lower-side"><path d="M0 66C150 6 270 6 440 48C560 78 640 108 720 108C800 108 880 78 1000 48C1170 6 1290 6 1440 66V240H0Z" /></clipPath>
+          </defs>
+          <g clipPath="url(#home-wave-lower-side)">
+            <path d="M0 66C150 6 270 6 440 48C560 78 640 108 720 108C800 108 880 78 1000 48C1170 6 1290 6 1440 66" fill="none" stroke="#26a77d" strokeWidth="32" opacity=".38" filter="url(#home-wave-soft-light)" />
+          </g>
+        </svg>
         <div className="container">
           <div className="section-head fade-in">
-            <div className="section-kicker">✦ درباره هیئت ✦</div>
             <h2 className="section-title">خادمانی کوچک، برای آقایی بزرگ</h2>
             <p className="section-desc">هیئت دانشجویی انصار القائم (عج) از سال ۱۳۹۷ با جمعی از دانشجویان دلباخته اباعبدالله‌الحسین (ع) شکل گرفت.</p>
           </div>
@@ -299,21 +360,18 @@ function Home() {
                 <p>با یک هدف ساده: هموار کردن مسیر عاشقان برای رسیدن به کربلا و همراهی صمیمانه با زائرین، از لحظه ثبت‌نام تا بازگشت.</p>
                 <p>هر سال، کاروان پیاده‌روی اربعین هیئت با اولویت دانشجویان و اساتید دانشگاه‌های تهران برگزار می‌شود.</p>
               </div>
-              <div className="about-features">
+              <dl className="community-principles">
                 {[
-                  { icon: '✦', title: 'خادمی داوطلبانه', desc: 'مدیریت هیئت به‌صورت کاملاً دانشجویی و جهادی است.' },
-                  { icon: '✦', title: 'اولویت با دانشجویان', desc: 'ثبت‌نام با دانشجویان و اساتید فارغ‌التحصیل تا سه سال اخیر.' },
-                  { icon: '✦', title: 'همراهی تا انتها', desc: 'از تهران تا کربلا و اسلامشهر تا مرز، همراه کاروانیم.' },
-                ].map((f, i) => (
-                  <div key={i} className="feature fade-in">
-                    <div className="feature-icon">{f.icon}</div>
-                    <div>
-                      <h4>{f.title}</h4>
-                      <p>{f.desc}</p>
-                    </div>
+                  { title: 'خادمی داوطلبانه', desc: 'مدیریت هیئت به‌صورت کاملاً دانشجویی و جهادی است.' },
+                  { title: 'اولویت با دانشجویان', desc: 'ثبت‌نام با دانشجویان و اساتید فارغ‌التحصیل تا سه سال اخیر.' },
+                  { title: 'همراهی تا انتها', desc: 'از تهران تا کربلا و اسلامشهر تا مرز، همراه کاروانیم.' },
+                ].map(f => (
+                  <div key={f.title}>
+                    <dt>{f.title}</dt>
+                    <dd>{f.desc}</dd>
                   </div>
                 ))}
-              </div>
+              </dl>
             </div>
 
             <div className="about-visual fade-in-right">
@@ -328,10 +386,10 @@ function Home() {
           <div className="stats-section fade-in" ref={statsRef}>
             <div className="stats">
               {[
-                { icon: '✦', num: statsNums.trips, label: 'دوره کاروان اربعین', suffix: '' },
-                { icon: '♡', num: statsNums.pilgrims, label: 'زائر اعزام‌شده', suffix: '+' },
-                { icon: '✧', num: statsNums.year, label: 'سال تأسیس هیئت', suffix: '' },
-                { icon: '❖', num: statsNums.percent, label: 'دانشجویی و مردمی', suffix: '٪' },
+                { icon: <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3m8-3v3M8 7h8M8 15h.01M16 15h.01"/></></svg>, num: reducedMotion ? 7 : statsNums.trips, label: 'دوره کاروان اربعین', suffix: '' },
+                { icon: <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 4a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 4v3"/></></svg>, num: reducedMotion ? 2000 : statsNums.pilgrims, label: 'زائر اعزام‌شده', suffix: '+' },
+                { icon: <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18m-13 5 3 3 5-5"/></></svg>, num: reducedMotion ? 1397 : statsNums.year, label: 'سال تأسیس هیئت', suffix: '' },
+                { icon: <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><><path d="m2 10 4-4 4 1 4-1 8 5-5 8-5 2-8-7M8 7l4 4 3-3M7 15l4 4M10 12l5 5"/></></svg>, num: reducedMotion ? 100 : statsNums.percent, label: 'دانشجویی و مردمی', suffix: '٪' },
               ].map((s, i) => (
                 <div key={i} className="stat-card">
                   <div className="stat-icon">{s.icon}</div>
@@ -344,11 +402,12 @@ function Home() {
         </div>
       </section>
 
+      <ShrineAnimation />
+
       {/* Countdown */}
       <section className="countdown-section">
         <div className="container" style={{ textAlign: 'center' }}>
           <div className="section-head fade-in">
-            <div className="section-kicker">⏱ شمارش معکوس</div>
             <h2 className="section-title">تا آغاز هفتمین کاروان اربعین</h2>
             <p className="section-desc">هر ثانیه، قدمی نزدیک‌تر به کربلا</p>
           </div>
@@ -375,46 +434,41 @@ function Home() {
       <section id="caravan">
         <div className="container">
           <div className="section-head fade-in">
-            <div className="section-kicker">کاروان پیاده‌روی اربعین ✦</div>
             <h2 className="section-title">{activeTrip ? activeTrip.title : 'کاروان اربعین هیئت'}</h2>
             <p className="section-desc">ثبت‌نام کاروان انصار القائم برای پیاده‌روی اربعین حسینی آغاز شده است.</p>
           </div>
 
-          <div className="caravan-card fade-in" onMouseMove={handleTilt} onMouseLeave={resetTilt}>
-            <div className="caravan-head">
+          <div className="trip-overview">
+            <div className="trip-overview-head">
               <div>
-                <span className="caravan-tag">ظرفیت محدود</span>
-                <div className="caravan-route">تهران – کربلای معلی – تهران</div>
+                <span className="trip-capacity">ظرفیت محدود</span>
+                <p className="trip-route">تهران – کربلای معلی – تهران</p>
               </div>
               <Link to="/dashboard/trips/register" className="btn btn-gold">
                 مشاهده شرایط و ثبت‌نام
               </Link>
             </div>
 
-            <p style={{ color: 'var(--ink-dim)', lineHeight: 2, maxWidth: 800, position: 'relative', zIndex: 2 }}>
+            <p className="trip-summary">
               {activeTrip?.conditions?.substring(0, 250) || 'کاروان با نظارت مستقیم خادمین هیئت، از تهران به سمت مرز و کربلا حرکت کرده و پس از پیاده‌روی اربعین، از مسیر زمینی بازمی‌گردد. اولویت ثبت‌نام با دانشجویان و همسر دانشجو خواهد بود.'}
             </p>
 
-            <div className="caravan-details">
+            <dl className="trip-facts">
               {[
                 { label: 'تاریخ حرکت از تهران', value: activeTrip?.start_date || '—' },
                 { label: 'تاریخ بازگشت', value: activeTrip?.end_date || '—' },
                 { label: 'هزینه سفر', value: activeTrip?.cost ? `${activeTrip.cost.toLocaleString('fa-IR')} ت` : '—' },
                 { label: 'مسیر رفت و برگشت', value: 'اتوبوس VIP' },
-              ].map((d, i) => (
-                <div key={i} className="detail-item">
-                  <div className="label">{d.label}</div>
-                  <div className="value">{d.value}</div>
+              ].map(d => (
+                <div key={d.label}>
+                  <dt>{d.label}</dt>
+                  <dd>{d.value}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
 
             {isAuthenticated && walletBalance !== null && (
-              <div style={{
-                marginTop: 16, padding: '12px 18px', borderRadius: 12,
-                background: 'rgba(15,111,92,0.1)', border: '1px solid var(--line)',
-                display: 'inline-flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2,
-              }}>
+              <div className="trip-wallet">
                 <span style={{ color: 'var(--ink-dim)', fontSize: 13 }}>موجودی کیف پول:</span>
                 <span style={{ color: 'var(--teal-glow)', fontWeight: 700 }}>
                   {walletBalance.toLocaleString('fa-IR')} تومان
@@ -429,26 +483,20 @@ function Home() {
       </section>
 
       {/* Promo Banners */}
-      <section style={{ padding: '30px 0' }}>
+      <section className="home-updates" aria-label="اطلاعیه و فروشگاه">
         <div className="container">
-          <div className="promo-grid">
-            <Link to="/news" className="promo-card gold-theme fade-in-left">
-              <div>
-                <div className="promo-icon">✦</div>
-                <h3>اطلاعیه مهم کاروانیان</h3>
+          <div className="home-updates-layout">
+            <article className="caravan-notice">
+                <h2>اطلاعیه مهم کاروانیان</h2>
                 <p>جلسه توجیهی کاروانیان برگزار می‌شود. حضور در جلسه الزامی بوده و عدم حضور به منزله انصراف تلقی می‌گردد.</p>
-              </div>
-              <span className="promo-link">مشاهده جزئیات جلسه ←</span>
-            </Link>
+              <Link to="/news" className="home-action-button">مشاهده جزئیات جلسه <span aria-hidden="true">←</span></Link>
+            </article>
 
-            <Link to="/shop" className="promo-card teal-theme fade-in-right">
-              <div>
-                <div className="promo-icon">♡</div>
-                <h3>فروشگاه صنایع‌دستی هیئت</h3>
+            <article className="community-shop">
+                <h2>فروشگاه صنایع‌دستی هیئت</h2>
                 <p>محصولات منتخب صنایع‌دستی با طرح‌های مذهبی؛ درآمد آن صرف تأمین هزینه زائرین کم‌بضاعت کاروان می‌شود.</p>
-              </div>
-              <span className="promo-link">مشاهده محصولات ←</span>
-            </Link>
+              <Link to="/shop" className="home-action-button">مشاهده محصولات <span aria-hidden="true">←</span></Link>
+            </article>
           </div>
         </div>
       </section>
@@ -456,15 +504,20 @@ function Home() {
       {/* Gallery */}
       <section id="gallery">
         <div className="container">
-          <div className="section-head fade-in">
-            <div className="section-kicker">گالری تصاویر ✦</div>
-            <h2 className="section-title">لحظه‌های ماندگار مسیر</h2>
-            <p className="section-desc">نگاهی به فضای معنوی کاروان‌های پیش‌رو و همراهی خادمین هیئت.</p>
+          <div className="gallery-heading-row">
+            <div className="section-head">
+              <h2 className="section-title">لحظه‌های ماندگار مسیر</h2>
+              <p className="section-desc">نگاهی به فضای معنوی کاروان‌های پیش‌رو و همراهی خادمین هیئت.</p>
+            </div>
+            <Link to="/gallery" className="gallery-view-all">
+              <span>مشاهده همه تصاویر</span>
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5m6-6-6 6 6 6" /></svg>
+            </Link>
           </div>
 
           <div className="gallery-tabs fade-in">
             {GALLERY_TABS.map(tab => (
-              <button
+              <button aria-pressed={galleryFilter === tab.key}
                 key={tab.key}
                 className={`gallery-tab${galleryFilter === tab.key ? ' active' : ''}`}
                 onClick={() => setGalleryFilter(tab.key)}
@@ -476,24 +529,35 @@ function Home() {
 
           <div className="gallery-grid">
             {filteredGallery.map(item => (
-              <div key={item.id} className={`gallery-item scale-in${item.featured ? ' featured' : ''}`}>
-                <img src={item.image} alt={item.title} loading="lazy" />
-                <div className="gallery-caption">{item.title}</div>
-              </div>
+              <button type="button" key={item.id} onClick={() => setSelectedPhoto(item)} className={`gallery-item${item.featured ? ' gallery-poster' : ''}`}>
+                <img src={item.image} alt={item.title} loading="lazy" draggable={false} />
+                <span className="gallery-caption">{item.title}</span>
+              </button>
             ))}
           </div>
-
-          <div style={{ textAlign: 'center', marginTop: 28 }}>
-            <Link to="/gallery" className="btn btn-ghost">مشاهده همه تصاویر ←</Link>
+          {filteredGallery.length === 0 && <p className="gallery-empty" role="status">تصویری در این دسته وجود ندارد. برای دیدن تصاویر دیگر، دسته «همه» را انتخاب کنید.</p>}
+          <div className="gallery-mobile-action">
+            <Link to="/gallery" className="gallery-view-all">
+              <span>مشاهده همه تصاویر</span>
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5m6-6-6 6 6 6" /></svg>
+            </Link>
           </div>
+
         </div>
       </section>
+
+      {selectedPhoto && (
+        <Dialog label={selectedPhoto.title} className="home-lightbox" onClose={() => setSelectedPhoto(null)}>
+          <img src={selectedPhoto.image} alt={selectedPhoto.title} draggable={false} />
+          <p>{selectedPhoto.title}</p>
+          <button type="button" className="btn btn-ghost" onClick={() => setSelectedPhoto(null)}>بستن</button>
+        </Dialog>
+      )}
 
       {/* News */}
       <section id="news">
         <div className="container">
           <div className="section-head fade-in">
-            <div className="section-kicker">✦ اخبار و اطلاعیه‌ها ✦</div>
             <h2 className="section-title">تازه‌های هیئت</h2>
             <p className="section-desc">آخرین اخبار، اطلاعیه‌ها و رویدادهای هیئت دانشجویی انصار القائم.</p>
           </div>
@@ -503,10 +567,8 @@ function Home() {
               <article
                 key={item.id}
                 className="news-card fade-in"
-                onMouseMove={handleTilt}
-                onMouseLeave={resetTilt}
               >
-                <div className="news-img">
+                <Link to={item.link || `/news/${item.id}`} className="news-img" aria-label={item.title}>
                   <span className="news-date">
                     {item.date || (item.published_at && new Date(item.published_at).toLocaleDateString('fa-IR')) || ''}
                   </span>
@@ -514,11 +576,12 @@ function Home() {
                     src={item.image || galleryPoster}
                     alt={item.title}
                     loading="lazy"
+                    draggable={false}
                   />
-                </div>
+                </Link>
                 <div className="news-body">
                   <span className="news-cat">{item.category || 'اخبار'}</span>
-                  <h3 className="news-title">{item.title}</h3>
+                  <h3 className="news-title"><Link to={item.link || `/news/${item.id}`}>{item.title}</Link></h3>
                   <p className="news-excerpt">{item.excerpt || item.content?.substring(0, 150)}</p>
                   <Link to={item.link || `/news/${item.id}`} className="news-link">
                     مشاهده جزئیات ←
@@ -540,14 +603,14 @@ function Home() {
           <div
             className="donate-card scale-in"
             ref={donateRef}
-            onMouseMove={handleTilt}
-            onMouseLeave={resetTilt}
+            onMouseMove={canHover ? handleTilt : undefined}
+            onMouseLeave={canHover ? resetTilt : undefined}
           >
             <div className="donate-icon">♡</div>
             <h3>قلک اربعین</h3>
             <p>
               می‌توانید هر روز مبلغی را به کیف پول خود اضافه کنید.
-              هنگام ثبت‌نام سفر، موجودی کیف پول به‌صورت خودکار از هزینه سفر کسر می‌شود.
+              هنگام ثبت‌نام سفر، می‌توانید در بخش سفرهای من، مبلغ دلخواه را از کیف پول برای پرداخت هزینه سفر انتخاب کنید.
             </p>
 
             {activeContribution && (
@@ -580,29 +643,27 @@ function Home() {
 
             <div style={{ marginTop: 26, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link to="/dashboard/wallet" className="btn btn-gold">شارژ کیف پول</Link>
-              <Link to="/dashboard" className="btn btn-ghost">همپای قافله</Link>
+              <Link to="/dashboard" className="btn btn-ghost">پنل کاربری و پیگیری مشارکت</Link>
             </div>
           </div>
         </div>
       </section>
 
       {/* Quote */}
-      <section className="quote-section">
-        <div className="container fade-in">
-          <div style={{ fontFamily: 'Aref Ruqaa, serif', fontSize: 80, color: 'var(--gold)', lineHeight: 0.5, opacity: 0.2, textAlign: 'center', marginBottom: 20 }}>
-            "
-          </div>
-          <p className="quote-text">
+      <section className="quote-section" aria-label="سخن امام حسین علیه السلام">
+        <figure className="container remembrance-quote">
+          <svg className="quote-mark" aria-hidden="true" width="42" height="34" viewBox="0 0 42 34" fill="currentColor"><path d="M0 20C0 9 5 3 16 0v6C9 9 7 12 7 17h10v17H0V20Zm25 0C25 9 30 3 41 0v6c-7 3-9 6-9 11h10v17H25V20Z" /></svg>
+          <blockquote className="quote-text" lang="ar">
             فَإِنّي لا أرَى المَوتَ إلّا سَعادَةً، وَ لَا الحَياةَ مَعَ الظّالِمينَ إلّا بَرَماً
-          </p>
-          <div className="quote-author">امام حسین علیه السلام</div>
-        </div>
+          </blockquote>
+          <figcaption className="quote-author">امام حسین علیه السلام</figcaption>
+        </figure>
       </section>
 
       {/* Panel CTA */}
       <section id="panel">
         <div className="container">
-          <div className="panel-cta scale-in" onMouseMove={handleTilt} onMouseLeave={resetTilt}>
+          <div className="panel-cta scale-in" onMouseMove={canHover ? handleTilt : undefined} onMouseLeave={canHover ? resetTilt : undefined}>
             <h3>پنل کاربری زائرین</h3>
             <p>مشاهده وضعیت ثبت‌نام، کارت زائر، کیف پول، تیکتینگ و گالری شخصی سفرهایتان.</p>
             <div className="panel-actions">
