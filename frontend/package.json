@@ -1,6 +1,7 @@
 {
   "name": "frontend",
   "private": true,
+  "engines": { "node": "22.23.x" },
   "version": "0.0.0",
   "type": "module",
   "scripts": {
