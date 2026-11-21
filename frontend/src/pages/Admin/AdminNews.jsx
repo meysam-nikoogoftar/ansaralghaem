@@ -1,11 +1,20 @@
-import { useEffect, useState } from 'react'
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useCallback, useEffect, useState } from 'react'
 import api from '../../services/api'
 
 const emptyForm = { title: '', content: '', is_published: false }
 
 function AdminNews() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [newsList, setNewsList] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [formData, setFormData] = useState(emptyForm)
@@ -13,15 +22,16 @@ function AdminNews() {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
 
-  const fetchNews = () => {
-    setIsLoading(true)
-    api.get('/content/admin/news/')
-      .then(res => setNewsList(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }
 
-  useEffect(() => { fetchNews() }, [])
+
+  const fetchNews = useCallback(() => {
+    observeLoad(() => api.get('/content/admin/news/')
+      .then(res => setNewsList(res.data))
+      .catch(error => { throw error })
+      , "'/content/admin/news/'")
+  }, [observeLoad])
+
+  useEffect(() => { fetchNews() }, [fetchNews])
 
   const openCreateForm = () => {
     setEditingId(null)
@@ -56,6 +66,8 @@ function AdminNews() {
   }
 
   const handleSubmit = async (e) => {
+    setValidationErrors({})
+
     e.preventDefault()
     setIsSaving(true)
     setMessage('')
@@ -72,7 +84,9 @@ function AdminNews() {
         setMessage('خبر جدید ثبت شد')
       }
       setIsFormOpen(false)
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       setMessage('خطا در ذخیره خبر')
     }
     setIsSaving(false)
@@ -83,47 +97,53 @@ function AdminNews() {
     try {
       await api.delete(`/content/admin/news/${id}/`)
       setNewsList(newsList.filter(n => n.id !== id))
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در حذف خبر')
     }
   }
 
   const handleTogglePublish = async (item) => {
+    setValidationErrors({})
+
     try {
       const res = await api.patch(`/content/admin/news/${item.id}/`, { is_published: !item.is_published })
       setNewsList(newsList.map(n => n.id === item.id ? res.data : n))
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       alert('خطا در تغییر وضعیت انتشار')
     }
   }
 
   return (
-    <div className="anw-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="anw-page">
       <div className="anw-head">
         <h1>مدیریت اخبار</h1>
         <button onClick={openCreateForm} className="anw-new-btn">+ خبر جدید</button>
       </div>
 
-      {message && <div className="anw-message">{message}</div>}
+      {message && <div role="status" aria-live="polite" aria-atomic="true" className="anw-message">{message}</div>}
 
       {isFormOpen && (
         <div className="anw-card">
           <h2>{editingId ? 'ویرایش خبر' : 'ثبت خبر جدید'}</h2>
           <form onSubmit={handleSubmit} className="anw-form">
             <div className="anw-field">
-              <label>عنوان خبر</label>
-              <input type="text" name="title" value={formData.title} onChange={handleChange} className="anw-input" required />
+
+              <FormControl as="input" label={<>عنوان خبر</>} type="text" name="title" value={formData.title} onChange={handleChange} className="anw-input" required />
             </div>
             <div className="anw-field">
-              <label>تصویر {editingId && '(خالی بذار اگه نمی‌خوای عوض بشه)'}</label>
-              <input type="file" accept="image/*" onChange={(e) => setSelectedFile(e.target.files[0])} className="anw-file-input" />
+
+              <FormControl as="input" label={<>تصویر {editingId && '(خالی بذار اگه نمی‌خوای عوض بشه)'}</>} type="file" accept="image/*" onChange={(e) => setSelectedFile(e.target.files[0])} className="anw-file-input" />
             </div>
             <div className="anw-field">
-              <label>متن کامل خبر</label>
-              <textarea name="content" value={formData.content} onChange={handleChange} rows={6} className="anw-input" required />
+
+              <FormControl as="textarea" label={<>متن کامل خبر</>} name="content" value={formData.content} onChange={handleChange} rows={6} className="anw-input" required />
             </div>
             <label className="anw-checkbox-label">
-              <input type="checkbox" name="is_published" checked={formData.is_published} onChange={handleChange} />
+              <FormControl as="input" type="checkbox" name="is_published" checked={formData.is_published} onChange={handleChange} />
               <span>منتشر شود (روی سایت نمایش داده شود)</span>
             </label>
             <div className="anw-form-actions">
@@ -138,7 +158,7 @@ function AdminNews() {
 
       {isLoading ? (
         <div className="anw-loading">در حال بارگذاری...</div>
-      ) : newsList.length === 0 ? (
+      ) : (newsList.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && newsList.length === 0) ? null : newsList.length === 0 ? (
         <div className="anw-empty">خبری ثبت نشده است</div>
       ) : (
         <div className="anw-list">
@@ -236,14 +256,14 @@ function AdminNews() {
         .anw-toggle-pill.on { color: var(--status-ok); border-color: var(--status-ok); background: var(--status-ok-bg); }
         .anw-edit-btn, .anw-delete-btn { font-size: 11.5px; padding: 6px 13px; border-radius: 999px; cursor: pointer; border: 1px solid; white-space: nowrap; }
         .anw-edit-btn { color: var(--teal-glow); border-color: rgba(15,111,92,0.4); background: transparent; }
-        .anw-delete-btn { color: #ff9aa8; border-color: rgba(255,107,125,0.4); background: transparent; }
+        .anw-delete-btn { color: var(--status-danger); border-color: rgba(255,107,125,0.4); background: transparent; }
 
         @media (max-width: 560px) {
           .anw-row { flex-wrap: wrap; }
           .anw-row-actions { width: 100%; justify-content: flex-start; }
         }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 

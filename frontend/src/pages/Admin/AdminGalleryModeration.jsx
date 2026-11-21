@@ -1,3 +1,8 @@
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import Dialog from '../../components/Dialog'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
 import { useEffect, useState } from 'react'
 import api from '../../services/api'
 
@@ -8,20 +13,23 @@ const statusMeta = {
 }
 
 function AdminGalleryModeration() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [images, setImages] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [statusFilter, setStatusFilter] = useState('')
   const [busyId, setBusyId] = useState(null)
   const [lightbox, setLightbox] = useState(null)
 
-  const fetchImages = () => {
-    setIsLoading(true)
+  function fetchImages() {
     const params = new URLSearchParams()
     if (statusFilter) params.append('status', statusFilter)
-    api.get(`/content/admin/gallery/?${params.toString()}`)
+    observeLoad(() => api.get(`/content/admin/gallery/?${params.toString()}`)
       .then(res => setImages(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
+      .catch(error => { throw error })
+      , "`/content/admin/gallery/?${params.toString()}`")
   }
 
   useEffect(() => {
@@ -30,12 +38,16 @@ function AdminGalleryModeration() {
   }, [statusFilter])
 
   const handleAction = async (id, action) => {
+    setValidationErrors({})
+
     setBusyId(id)
     try {
       const res = await api.post(`/content/admin/gallery/${id}/action/`, { action })
       setImages(images.map(img => img.id === id ? res.data : img))
       if (lightbox?.id === id) setLightbox(res.data)
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       alert(err.response?.data?.error || 'خطا در ثبت عملیات')
     }
     setBusyId(null)
@@ -44,7 +56,7 @@ function AdminGalleryModeration() {
   const pendingCount = images.filter(img => img.status === 'pending').length
 
   return (
-    <div className="agm-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="agm-page">
       <div className="agm-head">
         <h1>تایید تصاویر گالری</h1>
         {pendingCount > 0 && <span className="agm-pending-badge">{pendingCount} در انتظار بررسی</span>}
@@ -57,7 +69,7 @@ function AdminGalleryModeration() {
           { key: 'approved', label: 'تایید شده' },
           { key: 'rejected', label: 'رد شده' },
         ].map(t => (
-          <button
+          <button aria-pressed={statusFilter === t.key}
             key={t.key}
             onClick={() => setStatusFilter(t.key)}
             className={`agm-status-tab${statusFilter === t.key ? ' active' : ''}`}
@@ -69,13 +81,13 @@ function AdminGalleryModeration() {
 
       {isLoading ? (
         <div className="agm-loading">در حال بارگذاری...</div>
-      ) : images.length === 0 ? (
+      ) : (images.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && images.length === 0) ? null : images.length === 0 ? (
         <div className="agm-empty">تصویری یافت نشد</div>
       ) : (
         <div className="agm-grid">
           {images.map(img => (
             <div key={img.id} className="agm-card">
-              <div className="agm-thumb-wrap" onClick={() => setLightbox(img)}>
+              <button type="button" className="agm-thumb-wrap" onClick={() => setLightbox(img)}>
                 <img src={img.image} alt={img.title} />
                 <span
                   className="agm-badge"
@@ -87,7 +99,7 @@ function AdminGalleryModeration() {
                 >
                   {statusMeta[img.status]?.label}
                 </span>
-              </div>
+              </button>
 
               <div className="agm-card-body">
                 <p className="agm-uploader">{img.uploader_name}</p>
@@ -120,7 +132,7 @@ function AdminGalleryModeration() {
       )}
 
       {lightbox && (
-        <div className="agm-lightbox" onClick={() => setLightbox(null)}>
+        <Dialog label="نمایش تصویر" className="agm-lightbox" onClose={() => setLightbox(null)}>
           <div className="agm-lightbox-content" onClick={(e) => e.stopPropagation()}>
             <img src={lightbox.image} alt={lightbox.title} />
             <div className="agm-lightbox-info">
@@ -151,7 +163,7 @@ function AdminGalleryModeration() {
             )}
             <button onClick={() => setLightbox(null)} className="agm-lightbox-close">بستن</button>
           </div>
-        </div>
+        </Dialog>
       )}
 
       <style>{`
@@ -219,7 +231,7 @@ function AdminGalleryModeration() {
         }
         .agm-lightbox-close:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 

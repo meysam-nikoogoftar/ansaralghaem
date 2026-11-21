@@ -1,4 +1,9 @@
-import { useEffect, useState } from 'react'
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useCallback, useEffect, useState } from 'react'
 import api from '../../services/api'
 
 const refundStatusMeta = {
@@ -8,22 +13,29 @@ const refundStatusMeta = {
 }
 
 function AdminRefunds() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [refunds, setRefunds] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [busyId, setBusyId] = useState(null)
   const [amountOverride, setAmountOverride] = useState({})
 
-  const fetchRefunds = () => {
-    setIsLoading(true)
-    api.get('/trips/admin/refunds/')
-      .then(res => setRefunds(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }
 
-  useEffect(() => { fetchRefunds() }, [])
+
+  const fetchRefunds = useCallback(() => {
+    observeLoad(() => api.get('/trips/admin/refunds/')
+      .then(res => setRefunds(res.data))
+      .catch(error => { throw error })
+      , "'/trips/admin/refunds/'")
+  }, [observeLoad])
+
+  useEffect(() => { fetchRefunds() }, [fetchRefunds])
 
   const handleApprove = async (r) => {
+    setValidationErrors({})
+
     setBusyId(r.id)
     try {
       const payload = { action: 'approve' }
@@ -31,18 +43,24 @@ function AdminRefunds() {
       const res = await api.post(`/trips/admin/refunds/${r.id}/action/`, payload)
       setRefunds(refunds.map(x => x.id === r.id ? res.data : x))
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       alert(err.response?.data?.error || 'خطا در تایید عودت وجه')
     }
     setBusyId(null)
   }
 
   const handleReject = async (r) => {
+    setValidationErrors({})
+
     if (!window.confirm('این درخواست عودت وجه رد بشه؟')) return
     setBusyId(r.id)
     try {
       const res = await api.post(`/trips/admin/refunds/${r.id}/action/`, { action: 'reject' })
       setRefunds(refunds.map(x => x.id === r.id ? res.data : x))
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       alert(err.response?.data?.error || 'خطا در رد درخواست')
     }
     setBusyId(null)
@@ -51,7 +69,7 @@ function AdminRefunds() {
   const pendingCount = refunds.filter(r => r.refund_status === 'pending').length
 
   return (
-    <div className="arf-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="arf-page">
       <div className="arf-head">
         <h1>عودت وجه کیف پول</h1>
         {pendingCount > 0 && <span className="arf-pending-badge">{pendingCount} درخواست در انتظار</span>}
@@ -60,7 +78,7 @@ function AdminRefunds() {
 
       {isLoading ? (
         <div className="arf-loading">در حال بارگذاری...</div>
-      ) : refunds.length === 0 ? (
+      ) : (refunds.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && refunds.length === 0) ? null : refunds.length === 0 ? (
         <div className="arf-empty">درخواست عودت وجهی وجود ندارد</div>
       ) : (
         <div className="arf-list">
@@ -93,7 +111,7 @@ function AdminRefunds() {
 
               {r.refund_status === 'pending' && (
                 <div className="arf-actions">
-                  <input
+                  <FormControl as="input" hiddenLabel label="مبلغ دلخواه (اختیاری)"
                     type="number"
                     placeholder="مبلغ دلخواه (اختیاری)"
                     className="arf-amount-input"
@@ -152,7 +170,7 @@ function AdminRefunds() {
         .arf-reject-btn:hover { background: rgba(122,35,48,0.12); }
         .arf-approve-btn:disabled, .arf-reject-btn:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 
