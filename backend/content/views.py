@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from .models import Article, News, Gallery, Download, Slider, Announcement
 from .serializers import (
-    ArticleSerializer, CreateArticleSerializer, NewsSerializer,
+    ArticleSerializer, CreateArticleSerializer, NewsSerializer, AdminNewsSerializer,
     GallerySerializer, DownloadSerializer, SliderSerializer, AnnouncementSerializer
 )
 
@@ -217,12 +217,12 @@ class AdminGalleryActionView(APIView):
 class AdminNewsListView(generics.ListCreateAPIView):
     """لیست/ایجاد اخبار توسط ادمین (بدون نیاز به تایید، مستقیم منتشر می‌شه)."""
     permission_classes = [HasAdminPermission('perm_content')]
-    serializer_class = NewsSerializer
+    serializer_class = AdminNewsSerializer
     queryset = News.objects.all().order_by('-created_at')
 
 
 class AdminNewsDetailView(generics.RetrieveUpdateDestroyAPIView):
     """ویرایش/حذف یک خبر."""
     permission_classes = [HasAdminPermission('perm_content')]
-    serializer_class = NewsSerializer
+    serializer_class = AdminNewsSerializer
     queryset = News.objects.all()
