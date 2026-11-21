@@ -2,9 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { useEffect } from 'react'
 import useAuthStore from './store/authStore'
 import useThemeStore from './store/themeStore'
+import { subscribeSessionChange } from '../../shared/session-client'
 import RouteTitle from './components/RouteTitle'
 import NotFound from './pages/NotFound'
-import MyOrders from './pages/Dashboard/MyOrders'
+import MigrationBoundary, { MigrationRedirect } from './components/MigrationBoundary'
 
 // Layouts
 import MainLayout from './layouts/MainLayout'
@@ -12,26 +13,11 @@ import DashboardLayout from './layouts/DashboardLayout'
 import AdminLayout from './layouts/AdminLayout'
 
 // Pages
-import Home from './pages/Home/Home'
-import Login from './pages/Auth/Login'
-import Register from './pages/Auth/Register'
-import Dashboard from './pages/Dashboard/Dashboard'
-import Profile from './pages/Dashboard/Profile'
-import MyTrips from './pages/Dashboard/MyTrips'
-import MyWallet from './pages/Dashboard/MyWallet'
-import MyTickets from './pages/Dashboard/MyTickets'
-import MyGallery from './pages/Dashboard/MyGallery'
-import MyArticles from './pages/Dashboard/MyArticles'
-import FinancialReport from './pages/Dashboard/FinancialReport'
 import News from './pages/News/News'
 import NewsDetail from './pages/News/NewsDetail'
 import Articles from './pages/Content/Articles'
 import ArticleDetail from './pages/Content/ArticleDetail'
 import Gallery from './pages/Gallery/Gallery'
-import Shop from './pages/Shop/Shop'
-import ProductDetail from './pages/Shop/ProductDetail'
-import TripRegister from './pages/Dashboard/TripRegister'
-import TrackRegistration from './pages/Dashboard/TrackRegistration'
 import AdminDashboard from './pages/Admin/AdminDashboard'
 import AdminUsers from './pages/Admin/AdminUsers'
 import AdminUserDetail from './pages/Admin/AdminUserDetail'
@@ -80,7 +66,10 @@ function AuthGate({ children }) {
       </div>
     )
   }
-  return <>{authError && <div role="alert" className="request-feedback">{authError}<button type="button" onClick={initAuth}>تلاش مجدد</button></div>}{children}</>
+  if (authError) {
+    return <div role="alert" className="request-feedback">بررسی ورود موقتاً در دسترس نیست.<button type="button" onClick={initAuth}>تلاش مجدد</button></div>
+  }
+  return children
 }
 
 function App() {
@@ -90,53 +79,54 @@ function App() {
   useEffect(() => {
     initAuth()
     initTheme()
+    return subscribeSessionChange(initAuth)
   }, [initAuth, initTheme])
 
   return (
-    <AuthGate>
       <BrowserRouter>
+        <MigrationBoundary />
         <RouteTitle />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<MainLayout />}>
-            <Route index element={<Home />} />
+            <Route index element={<MigrationRedirect />} />
             <Route path="news" element={<News />} />
             <Route path="news/:id" element={<NewsDetail />} />
             <Route path="articles" element={<Articles />} />
             <Route path="articles/:id" element={<ArticleDetail />} />
             <Route path="gallery" element={<Gallery />} />
-            <Route path="shop" element={<Shop />} />
-            <Route path="shop/:id" element={<ProductDetail />} />
-            <Route path="track" element={<TrackRegistration />} />
+            <Route path="shop" element={<MigrationRedirect />} />
+            <Route path="shop/:id" element={<MigrationRedirect />} />
+            <Route path="track" element={<MigrationRedirect />} />
           </Route>
 
           {/* Auth Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<MigrationRedirect />} />
+          <Route path="/register" element={<MigrationRedirect />} />
 
           {/* Protected Dashboard Routes */}
           <Route path="/dashboard" element={
-            <ProtectedRoute>
+            <AuthGate><ProtectedRoute>
               <DashboardLayout />
-            </ProtectedRoute>
+            </ProtectedRoute></AuthGate>
           }>
-            <Route index element={<Dashboard />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="trips" element={<MyTrips />} />
-            <Route path="trips/register" element={<TripRegister />} />
-            <Route path="wallet" element={<MyWallet />} />
-            <Route path="orders" element={<MyOrders />} />
-            <Route path="tickets" element={<MyTickets />} />
-            <Route path="gallery" element={<MyGallery />} />
-            <Route path="articles" element={<MyArticles />} />
-            <Route path="financial-report" element={<FinancialReport />} />
+            <Route index element={<MigrationRedirect />} />
+            <Route path="profile" element={<MigrationRedirect />} />
+            <Route path="trips" element={<MigrationRedirect />} />
+            <Route path="trips/register" element={<MigrationRedirect />} />
+            <Route path="wallet" element={<MigrationRedirect />} />
+            <Route path="orders" element={<MigrationRedirect />} />
+            <Route path="tickets" element={<MigrationRedirect />} />
+            <Route path="gallery" element={<MigrationRedirect />} />
+            <Route path="articles" element={<MigrationRedirect />} />
+            <Route path="financial-report" element={<MigrationRedirect />} />
           </Route>
 
           {/* Protected Admin Routes */}
           <Route path="/admin" element={
-            <ProtectedAdminRoute>
+            <AuthGate><ProtectedAdminRoute>
               <AdminLayout />
-            </ProtectedAdminRoute>
+            </ProtectedAdminRoute></AuthGate>
           }>
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
@@ -153,7 +143,6 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    </AuthGate>
   )
 }
 
