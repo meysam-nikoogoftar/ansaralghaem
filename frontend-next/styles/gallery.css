@@ -1,0 +1,118 @@
+.gl-loading {
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-dim);
+}
+.gl-page {
+  padding: 56px 0 80px;
+}
+.gl-head {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.gl-head .section-title {
+  margin-top: 4px;
+}
+
+.gl-empty {
+  text-align: center;
+  padding: 60px 0;
+  color: var(--ink-dim);
+  font-size: 14px;
+}
+
+.gl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.gl-item {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.4s ease;
+}
+.gl-item:hover {
+  transform: translateY(-6px);
+  border-color: var(--teal-glow);
+  box-shadow: 0 20px 40px -15px rgba(15, 111, 92, 0.3);
+}
+.gl-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+.gl-item:hover img {
+  transform: scale(1.1);
+}
+.gl-item-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, rgba(6, 13, 11, 0.9));
+  display: flex;
+  align-items: flex-end;
+  padding: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.gl-item:hover .gl-item-overlay {
+  opacity: 1;
+}
+.gl-item-overlay span {
+  color: var(--teal-glow);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.gl-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(6, 13, 11, 0.9);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.gl-lightbox-content {
+  max-width: 720px;
+  width: 100%;
+  text-align: center;
+}
+.gl-lightbox-content img {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+}
+.gl-lightbox-title {
+  color: var(--teal-glow);
+  margin-top: 16px;
+  font-weight: 600;
+}
+.gl-lightbox-uploader {
+  color: var(--ink-faint);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.gl-lightbox-close {
+  margin: 18px auto 0;
+  display: block;
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 1px solid var(--teal-glow);
+  background: transparent;
+  color: var(--teal-glow);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.gl-lightbox-close:hover {
+  background: rgba(15, 111, 92, 0.1);
+}

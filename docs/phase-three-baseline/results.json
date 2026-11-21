@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "errors": [],
+  "timings": {
+    "/": {
+      "cls": 0,
+      "lcp": 80,
+      "ttfb": 19.5,
+      "domContentLoaded": 81.29999999888241
+    },
+    "/shop": {
+      "cls": 0,
+      "lcp": 52,
+      "ttfb": 21.5,
+      "domContentLoaded": 57.70000000111759
+    },
+    "/shop/1": {
+      "cls": 0,
+      "lcp": 52,
+      "ttfb": 18.699999999254942,
+      "domContentLoaded": 58
+    },
+    "/track": {
+      "cls": 0,
+      "lcp": 40,
+      "ttfb": 14.400000000372529,
+      "domContentLoaded": 45.40000000037253
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "results": [
+    "SSR HTML, metadata, JSON-LD, exact detail reads, HTTP 404, robots and sitemap",
+    "Main content remains readable without JavaScript",
+    "Visual, one H1, overflow, filters and accessible gallery: 1440 light",
+    "Visual, one H1, overflow, filters and accessible gallery: 390 dark",
+    "Legacy login round trip preserves draft; authenticated comment, reply and duplicate reaction guards",
+    "Soft navigation within Next and full navigation across legacy ownership boundary",
+    "Empty state, upstream failure/retry and no authentication forwarded in public SSR"
+  ],
+  "publicAuth": [],
+  "newsDetails": 4,
+  "articleDetails": 5,
+  "comments": 2,
+  "reactions": 1,
+  "performanceResults": [
+    {
+      "route": "/news",
+      "width": 1440,
+      "domContentLoadedMs": 49,
+      "scriptBytes": 184716,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/news/7",
+      "width": 1440,
+      "domContentLoadedMs": 69,
+      "scriptBytes": 184716,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/articles",
+      "width": 1440,
+      "domContentLoadedMs": 72,
+      "scriptBytes": 184716,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/articles/4",
+      "width": 1440,
+      "domContentLoadedMs": 61,
+      "scriptBytes": 190676,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/gallery",
+      "width": 1440,
+      "domContentLoadedMs": 65,
+      "scriptBytes": 185530,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/news",
+      "width": 390,
+      "domContentLoadedMs": 32,
+      "scriptBytes": 184716,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/news/7",
+      "width": 390,
+      "domContentLoadedMs": 84,
+      "scriptBytes": 184716,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/articles",
+      "width": 390,
+      "domContentLoadedMs": 50,
+      "scriptBytes": 184716,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/articles/4",
+      "width": 390,
+      "domContentLoadedMs": 55,
+      "scriptBytes": 190676,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/gallery",
+      "width": 390,
+      "domContentLoadedMs": 58,
+      "scriptBytes": 185530,
+      "imageBytes": 1448
+    }
+  ]
+}

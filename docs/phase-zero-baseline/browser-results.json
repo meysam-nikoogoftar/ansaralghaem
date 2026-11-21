@@ -1,0 +1,79 @@
+{
+  "results": [
+    {
+      "name": "route/field/reflow smoke light 360",
+      "routes": 33
+    },
+    {
+      "name": "route/field/reflow smoke light 390",
+      "routes": 33
+    },
+    {
+      "name": "route/field/reflow smoke light 768",
+      "routes": 33
+    },
+    {
+      "name": "route/field/reflow smoke light 1024",
+      "routes": 33
+    },
+    {
+      "name": "route/field/reflow smoke light 1440",
+      "routes": 33
+    },
+    {
+      "name": "route/field/reflow smoke dark 360",
+      "routes": 33
+    },
+    {
+      "name": "route/field/reflow smoke dark 390",
+      "routes": 33
+    },
+    {
+      "name": "route/field/reflow smoke dark 768",
+      "routes": 33
+    },
+    {
+      "name": "route/field/reflow smoke dark 1024",
+      "routes": 33
+    },
+    {
+      "name": "route/field/reflow smoke dark 1440",
+      "routes": 33
+    },
+    {
+      "name": "stable profile identity and saved passport expiry"
+    },
+    {
+      "name": "calendar keyboard open, arrow, pick and focus return"
+    },
+    {
+      "name": "trip terms reset"
+    },
+    {
+      "name": "gallery keyboard dialog trap, Escape and restoration"
+    },
+    {
+      "name": "mobile drawer exposure and Escape"
+    },
+    {
+      "name": "failed list retry restores records"
+    },
+    {
+      "name": "failed modal save retains draft and retry succeeds"
+    },
+    {
+      "name": "login returns to intended protected route"
+    },
+    {
+      "name": "single order submission, receipt and existing history endpoint"
+    },
+    {
+      "name": "duplicate comment submission guarded"
+    },
+    {
+      "name": "duplicate reaction guarded"
+    }
+  ],
+  "browserErrors": [],
+  "requests": 867
+}

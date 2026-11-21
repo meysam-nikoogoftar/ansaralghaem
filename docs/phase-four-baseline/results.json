@@ -1,0 +1,122 @@
+{
+  "results": [
+    "SSR HTML, metadata, JSON-LD, exact detail reads, HTTP 404, robots and sitemap",
+    "Main content remains readable without JavaScript",
+    "Visual, one H1, overflow, filters and accessible gallery: 1440 light",
+    "Visual, one H1, overflow, filters and accessible gallery: 390 dark",
+    "Next login round trip preserves draft; authenticated comment, reply and duplicate reaction guards",
+    "Soft navigation within Next and full navigation across legacy ownership boundary",
+    "Empty state, upstream failure/retry and no authentication forwarded in public SSR",
+    "Private Vite route reaches Next login; safe destination survives register toggle, failed login and one successful submission",
+    "Logout propagates to both Next and Vite tabs without restoring a stale session",
+    "Registration validation, backend field errors, outage retry, duplicate guard and safe default redirect",
+    "A partial storage failure clears credentials and keeps a recoverable sign-in error"
+  ],
+  "publicAuth": [],
+  "newsDetails": 4,
+  "articleDetails": 5,
+  "comments": 2,
+  "reactions": 1,
+  "performanceResults": [
+    {
+      "route": "/login",
+      "width": 1440,
+      "domContentLoadedMs": 39,
+      "scriptBytes": 183965,
+      "imageBytes": 0
+    },
+    {
+      "route": "/register",
+      "width": 1440,
+      "domContentLoadedMs": 76,
+      "scriptBytes": 183915,
+      "imageBytes": 0
+    },
+    {
+      "route": "/news",
+      "width": 1440,
+      "domContentLoadedMs": 80,
+      "scriptBytes": 184814,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/news/7",
+      "width": 1440,
+      "domContentLoadedMs": 62,
+      "scriptBytes": 184814,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/articles",
+      "width": 1440,
+      "domContentLoadedMs": 68,
+      "scriptBytes": 184814,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/articles/4",
+      "width": 1440,
+      "domContentLoadedMs": 69,
+      "scriptBytes": 190826,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/gallery",
+      "width": 1440,
+      "domContentLoadedMs": 82,
+      "scriptBytes": 185628,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/login",
+      "width": 390,
+      "domContentLoadedMs": 40,
+      "scriptBytes": 183965,
+      "imageBytes": 0
+    },
+    {
+      "route": "/register",
+      "width": 390,
+      "domContentLoadedMs": 169,
+      "scriptBytes": 183915,
+      "imageBytes": 0
+    },
+    {
+      "route": "/news",
+      "width": 390,
+      "domContentLoadedMs": 98,
+      "scriptBytes": 184814,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/news/7",
+      "width": 390,
+      "domContentLoadedMs": 89,
+      "scriptBytes": 184814,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/articles",
+      "width": 390,
+      "domContentLoadedMs": 79,
+      "scriptBytes": 184814,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/articles/4",
+      "width": 390,
+      "domContentLoadedMs": 97,
+      "scriptBytes": 190826,
+      "imageBytes": 1448
+    },
+    {
+      "route": "/gallery",
+      "width": 390,
+      "domContentLoadedMs": 86,
+      "scriptBytes": 185628,
+      "imageBytes": 1448
+    }
+  ],
+  "loginPosts": 5,
+  "registerPosts": 3
+}

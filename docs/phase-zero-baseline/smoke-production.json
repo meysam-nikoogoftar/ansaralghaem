@@ -1,0 +1,14 @@
+{
+  "base": "http://127.0.0.1:3000",
+  "checks": [
+    "Next route",
+    "Legacy SPA: /",
+    "Asset: /assets/index-Bpw3ZjS7.js",
+    "Asset: /assets/index-ChQmx2yX.css",
+    "Legacy SPA: /news",
+    "Legacy SPA: /dashboard/profile",
+    "Legacy SPA: /admin/users",
+    "Django API: anonymous profile returns JSON 401",
+    "Missing media reaches Django, not SPA fallback"
+  ]
+}

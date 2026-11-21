@@ -1,0 +1,669 @@
+.mt-page,
+.fin-page {
+  width: 100%;
+  max-width: 1040px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.mt-head,
+.fin-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.mt-head h1,
+.fin-heading {
+  color: var(--teal-glow);
+  font-size: 26px;
+  font-family: var(--font-display);
+}
+.mt-description,
+.fin-head p {
+  font-size: 14px;
+  color: var(--ink-dim);
+  line-height: 1.9;
+  margin-top: 8px;
+}
+.fin-head > span {
+  font-size: 12px;
+  color: var(--ink-dim);
+  padding-top: 8px;
+}
+.mt-new-btn,
+.mt-action-btn.primary {
+  background: var(--teal);
+  color: white;
+  border: 1px solid var(--teal);
+}
+.mt-new-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 10px;
+  min-height: 48px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.mt-wallet-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 14px;
+}
+.mt-wallet-strip span {
+  color: var(--ink-dim);
+}
+.mt-wallet-strip strong {
+  color: var(--teal-glow);
+  font-variant-numeric: tabular-nums;
+}
+.mt-wallet-strip a {
+  margin-inline-start: auto;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--teal-glow);
+}
+.mt-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mt-filters button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.mt-filters button[aria-pressed='true'] {
+  color: var(--teal-glow);
+  border-color: var(--teal-glow);
+  background: var(--surface-2);
+}
+.mt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.mt-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+  background: var(--surface);
+  min-width: 0;
+}
+.mt-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 24px;
+}
+.mt-card-head h2 {
+  font-size: 20px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.mt-card-head p {
+  font-size: 13px;
+  color: var(--ink-dim);
+  margin-top: 8px;
+}
+.mt-mono {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.mt-badge {
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+.mt-financials {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  padding-block: 20px;
+  border-block: 1px solid var(--line);
+}
+.mt-financials p {
+  color: var(--ink-dim);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.mt-financials strong {
+  color: var(--ink);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.mt-financials .mt-paid {
+  color: var(--status-ok);
+}
+.mt-financials .mt-remaining {
+  color: var(--ink);
+}
+.mt-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 20px;
+  font-size: 14px;
+}
+.mt-action-btn {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.mt-action-btn.outline {
+  background: transparent;
+  color: var(--teal-glow);
+}
+.mt-action-btn.danger {
+  background: transparent;
+  color: var(--status-danger);
+  border-color: var(--status-danger);
+}
+.mt-page button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.mt-pay-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.mt-pay-box h3 {
+  font-size: 16px;
+  color: var(--ink);
+}
+.mt-pay-box label,
+.mt-refund-box label {
+  font-size: 14px;
+  color: var(--ink);
+}
+.mt-pay-input {
+  min-height: 48px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  background: var(--input-bg);
+  font: inherit;
+  font-size: 16px;
+}
+.mt-pay-btns {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.mt-pay-btns > button {
+  flex: 1;
+}
+.mt-pay-feedback {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px;
+  margin-top: 12px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.mt-pay-feedback.error,
+.mt-pay-feedback.low-balance {
+  color: var(--status-danger);
+}
+.mt-pay-feedback.success {
+  color: var(--status-ok);
+}
+.mt-charge-link {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--teal);
+  color: white;
+  cursor: pointer;
+}
+.mt-refund-box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--panel-inset-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 16px;
+  width: 100%;
+}
+.mt-refund-box p {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.mt-refund-checkbox {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 12px;
+  cursor: pointer;
+}
+.mt-refund-checkbox input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--teal);
+}
+.mt-refund-status,
+.mt-companions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 1.9;
+  color: var(--ink-dim);
+}
+.mt-companion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.mt-companion-chips span {
+  background: var(--panel-inset-bg);
+  color: var(--ink);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.mt-empty,
+.mt-loading {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--ink-dim);
+  line-height: 2;
+}
+.mt-empty {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 16px;
+}
+.mt-empty .mt-new-btn {
+  margin-top: 20px;
+}
+.mt-page :focus-visible {
+  outline: 2px solid var(--teal-glow);
+  outline-offset: 4px;
+}
+@media (max-width: 700px) {
+  .mt-card {
+    padding: 20px;
+  }
+  .mt-wallet-strip {
+    padding: 16px;
+  }
+  .mt-financials {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .mt-financials > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: baseline;
+  }
+  .mt-financials p {
+    margin: 0;
+  }
+  .mt-financials strong {
+    font-size: 16px;
+  }
+  .mt-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mt-pay-btns {
+    flex-direction: column;
+  }
+  .mt-filters button {
+    flex-grow: 1;
+  }
+}
+
+/* A travel dossier: a strong identity band, dates, then payment details. */
+.mt-head h1,
+.fin-heading {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.mt-wallet-strip {
+  border: 0;
+  border-block: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding-inline: 0;
+}
+.mt-card {
+  overflow: hidden;
+  padding: 0 28px 28px;
+  box-shadow: 0 12px 30px -24px rgba(0, 0, 0, 0.35);
+}
+.mt-card-head {
+  margin-inline: -28px;
+  padding: 26px 28px;
+  background: #114e48;
+  color: #fff;
+  align-items: center;
+}
+.mt-travel-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.mt-travel-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #65938b;
+  border-radius: 12px;
+  color: #ead7a0;
+  flex-shrink: 0;
+}
+.mt-card-head h2 {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 800;
+}
+.mt-card-head p,
+.mt-card-head .mt-mono {
+  color: #d5e7e2;
+}
+.mt-card-head .mt-dates {
+  display: none;
+}
+.mt-card-head .mt-badge {
+  background: #f1dfb6 !important;
+  color: #584015 !important;
+  border-color: transparent !important;
+}
+.mt-itinerary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 28px 0;
+}
+.mt-itinerary > div:not(.mt-itinerary-line) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 90px;
+}
+.mt-itinerary span,
+.mt-itinerary small {
+  color: var(--ink-dim);
+  font-size: 12px;
+}
+.mt-itinerary strong {
+  font-size: 23px;
+  color: var(--ink);
+  font-weight: 750;
+}
+.mt-itinerary-line {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mt-itinerary-line i {
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--teal-glow);
+  border-radius: 50%;
+}
+.mt-itinerary-line span {
+  flex: 1;
+  border-top: 1px dashed var(--line);
+}
+.mt-financials {
+  padding: 24px 0;
+}
+.mt-financials strong {
+  font-size: 21px;
+}
+.mt-financials > div:last-child strong {
+  color: var(--teal-glow);
+}
+.mt-payment-progress {
+  padding-top: 22px;
+}
+.mt-payment-progress > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-dim);
+  margin-bottom: 10px;
+}
+.mt-payment-progress strong {
+  color: var(--teal-glow);
+}
+.mt-payment-progress progress {
+  display: block;
+  width: 100%;
+  height: 7px;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--panel-inset-bg);
+  accent-color: var(--teal);
+}
+.mt-payment-progress progress::-webkit-progress-bar {
+  background: var(--panel-inset-bg);
+  border-radius: 8px;
+}
+.mt-payment-progress progress::-webkit-progress-value {
+  background: var(--teal);
+  border-radius: 8px;
+}
+.mt-payment-progress progress::-moz-progress-bar {
+  background: var(--teal);
+  border-radius: 8px;
+}
+.mt-pay-box {
+  background: var(--panel-inset-bg);
+  margin-inline: -28px;
+  margin-bottom: -28px;
+  padding: 24px 28px 28px;
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.mt-pay-box .mt-pay-input {
+  max-width: 440px;
+}
+.mt-pay-box .mt-pay-btns {
+  justify-content: flex-start;
+}
+.mt-pay-box .mt-pay-btns button {
+  flex: initial;
+  min-width: 180px;
+}
+.mt-filters {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+@media (max-width: 700px) {
+  .mt-head h1,
+  .fin-heading {
+    font-size: 28px;
+  }
+  .mt-card {
+    padding: 0 20px 20px;
+  }
+  .mt-card-head {
+    margin-inline: -20px;
+    padding: 20px;
+    gap: 20px;
+  }
+  .mt-card-head h2 {
+    font-size: 20px;
+  }
+  .mt-travel-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .mt-itinerary {
+    gap: 12px;
+    padding: 24px 0;
+  }
+  .mt-itinerary strong {
+    font-size: 20px;
+  }
+  .mt-itinerary > div:not(.mt-itinerary-line) {
+    min-width: 80px;
+  }
+  .mt-financials strong {
+    font-size: 18px;
+  }
+  .mt-pay-box {
+    margin-inline: -20px;
+    margin-bottom: -20px;
+    padding: 20px;
+  }
+  .mt-pay-box .mt-pay-btns button {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.mt-itinerary > .mt-time-progress {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  text-align: center;
+}
+.mt-time-progress progress {
+  width: 100%;
+  height: 8px;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--panel-inset-bg);
+  accent-color: var(--teal);
+}
+.mt-time-progress progress::-webkit-progress-bar {
+  background: var(--panel-inset-bg);
+  border-radius: 8px;
+}
+.mt-time-progress progress::-webkit-progress-value {
+  background: var(--teal);
+  border-radius: 8px;
+}
+.mt-time-progress progress::-moz-progress-bar {
+  background: var(--teal);
+  border-radius: 8px;
+}
+.mt-action-btn.danger {
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.mt-action-btn.danger:hover:not(:disabled) {
+  background: var(--status-danger);
+  color: var(--surface);
+  box-shadow: 0 5px 12px -7px var(--status-danger);
+}
+.mt-cancel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  direction: rtl;
+}
+.mt-cancel-overlay .dialog-surface {
+  width: min(100%, 520px);
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.mt-cancel-overlay .mt-refund-box {
+  margin: 0;
+  padding: 28px;
+  border: 0;
+  background: transparent;
+}
+.mt-cancel-overlay h2 {
+  font-size: 22px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.mt-cancel-overlay :focus-visible {
+  outline: 2px solid var(--teal-glow);
+  outline-offset: 3px;
+}
+.mt-cancel-overlay button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+@media (max-width: 600px) {
+  .mt-itinerary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .mt-itinerary > .mt-time-progress {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    align-items: stretch;
+  }
+  .mt-itinerary > div:last-child {
+    text-align: end;
+  }
+  .mt-cancel-overlay .mt-refund-box {
+    padding: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mt-action-btn.danger {
+    transition: none;
+  }
+}

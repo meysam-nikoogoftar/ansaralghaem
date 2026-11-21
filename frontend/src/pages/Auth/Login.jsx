@@ -5,6 +5,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
 import logo from '../../assets/logo.png'
 import { safeReturnTo } from '../../utils/navigation'
+import { isNextPath } from '../../utils/migrationRoutes'
 
 function Login() {
   const [mobile, setMobile] = useState('')
@@ -17,7 +18,10 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     const success = await login(mobile, password)
-    if (success) navigate(returnTo, { replace: true, state: location.state?.resumeState })
+    if (success) {
+      if (isNextPath(new URL(returnTo, window.location.origin).pathname)) window.location.replace(returnTo)
+      else navigate(returnTo, { replace: true, state: location.state?.resumeState })
+    }
   }
 
   return (

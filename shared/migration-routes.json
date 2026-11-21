@@ -1,0 +1,38 @@
+{
+  "nextPrefixes": [
+    "/news",
+    "/articles",
+    "/gallery",
+    "/shop"
+  ],
+  "nextExact": [
+    "/migration",
+    "/login",
+    "/register",
+    "/dashboard",
+    "/dashboard/orders",
+    "/track",
+    "/",
+    "/dashboard/profile",
+    "/dashboard/articles",
+    "/dashboard/gallery",
+    "/dashboard/tickets",
+    "/dashboard/trips",
+    "/dashboard/trips/register",
+    "/dashboard/wallet",
+    "/dashboard/financial-report",
+    "/admin",
+    "/admin/users",
+    "/admin/news",
+    "/admin/articles",
+    "/admin/gallery",
+    "/admin/trips",
+    "/admin/registrations",
+    "/admin/contributions",
+    "/admin/expenses",
+    "/admin/refunds"
+  ],
+  "nextSingleSegment": [
+    "/admin/users"
+  ]
+}

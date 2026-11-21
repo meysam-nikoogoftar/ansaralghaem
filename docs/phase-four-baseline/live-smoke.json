@@ -1,0 +1,19 @@
+{
+  "results": [
+    {
+      "route": "/login",
+      "title": "ورود به حساب | هیئت انصار القائم (عج)",
+      "ready": true
+    },
+    {
+      "route": "/register",
+      "title": "ثبت‌نام | هیئت انصار القائم (عج)",
+      "ready": true
+    },
+    {
+      "protectedDestinationPreserved": true
+    }
+  ],
+  "errors": [],
+  "credentialRequests": []
+}

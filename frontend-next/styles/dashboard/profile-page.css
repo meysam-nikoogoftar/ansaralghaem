@@ -1,0 +1,131 @@
+.pf-page {
+  width: 100%;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 880px;
+}
+.pf-heading {
+  font-family: var(--font-display);
+  color: var(--teal-glow);
+  font-size: 22px;
+}
+.pf-message {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+.pf-message.success {
+  background: rgba(31, 163, 130, 0.15);
+  border: 1px solid rgba(31, 163, 130, 0.3);
+  color: var(--teal-glow);
+}
+.pf-message.error {
+  background: rgba(122, 35, 48, 0.2);
+  border: 1px solid rgba(122, 35, 48, 0.4);
+  color: var(--status-danger);
+}
+
+.pf-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+}
+.pf-card-title {
+  font-family: var(--font-display);
+  color: var(--teal-glow);
+  font-size: 16px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.pf-span-2 {
+  grid-column: span 2;
+}
+
+.pf-field label {
+  display: block;
+  color: var(--ink-dim);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.pf-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: all 0.25s ease;
+}
+.pf-input:focus {
+  border-color: var(--teal-glow);
+  box-shadow: 0 0 0 3px rgba(15, 111, 92, 0.15);
+}
+select.pf-input option {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.pf-health-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pf-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: var(--ink-dim);
+  font-size: 13px;
+}
+.pf-checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--teal-glow);
+}
+
+.pf-submit {
+  width: 100%;
+  padding: 15px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  color: #eefaf5;
+  background: linear-gradient(135deg, var(--teal-light), var(--teal) 65%, var(--teal));
+  box-shadow: 0 6px 20px -6px rgba(15, 111, 92, 0.45);
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}
+.pf-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.pf-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .pf-grid {
+    grid-template-columns: 1fr;
+  }
+  .pf-span-2 {
+    grid-column: span 1;
+  }
+}
