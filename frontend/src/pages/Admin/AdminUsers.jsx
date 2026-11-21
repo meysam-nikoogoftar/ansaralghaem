@@ -1,6 +1,14 @@
-import { useEffect, useState } from 'react'
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
+import { useEffect, useRef, useState } from 'react'
+import Dialog from '../../components/Dialog'
+import ErrorSummary from '../../components/ErrorSummary'
 import { Link } from 'react-router-dom'
 import api from '../../services/api'
+import './admin-overview.css'
 import useAuthStore from '../../store/authStore'
 
 const typeMeta = {
@@ -12,243 +20,95 @@ const typeMeta = {
 function AdminUsers() {
   const { user: currentUser } = useAuthStore()
   const isSuperAdmin = currentUser?.user_type === 'superadmin'
-
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
   const [users, setUsers] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [query, setQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const [serverPage, setServerPage] = useState(1)
+  const [pagination, setPagination] = useState(null)
+  const [loadedFor, setLoadedFor] = useState(null)
+  const [revision, setRevision] = useState(0)
+  const [selected, setSelected] = useState(null)
   const [busyId, setBusyId] = useState(null)
-  const [message, setMessage] = useState('')
-
-  const fetchUsers = () => {
-    setIsLoading(true)
-    const params = new URLSearchParams()
-    if (search) params.append('search', search)
-    if (typeFilter) params.append('user_type', typeFilter)
-    api.get(`/accounts/admin/users/?${params.toString()}`)
-      .then(res => setUsers(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }
-
+  const pending = useRef(false)
+  const [message, setMessage] = useState(null)
+  const [validationErrors, setValidationErrors] = useState({})
+  const isLoading = !loadState.started || loadState.pending > 0
+  const requestKey = JSON.stringify([query, typeFilter, serverPage, revision])
+  const loaded = loadedFor === requestKey
+  const size = 12
   useEffect(() => {
-    fetchUsers()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeFilter])
+    const controller = new AbortController()
+    const params = new URLSearchParams()
+    if (query) params.set('search', query)
+    if (typeFilter) params.set('user_type', typeFilter)
+    if (serverPage > 1) params.set('page', String(serverPage))
+    observeLoad(async () => {
+      const response = await api.get(`/accounts/admin/users/?${params}`, { signal: controller.signal })
+      if (controller.signal.aborted) return
+      const data = response.data
+      setUsers(Array.isArray(data) ? data : data.results || [])
+      setPagination(Array.isArray(data) ? null : { count: data.count, next: data.next, previous: data.previous })
+      setLoadedFor(requestKey)
+    }, 'admin-users')
+    return () => controller.abort()
+  }, [query, typeFilter, serverPage, revision, observeLoad, requestKey])
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault()
-    fetchUsers()
-  }
-
-  const handleToggleRole = async (u) => {
-    const newType = u.user_type === 'admin' ? 'user' : 'admin'
-    setBusyId(u.id)
-    setMessage('')
+  const resetPages = () => { setPage(1); setServerPage(1) }
+  const total = pagination?.count ?? users.length
+  const pages = Math.max(1, Math.ceil(users.length / size))
+  const visibleUsers = pagination ? users : users.slice((page - 1) * size, page * size)
+  const changeRole = async () => {
+    if (!selected || pending.current || !isSuperAdmin || selected.user_type === 'superadmin') return
+    pending.current = true
+    setBusyId(selected.id)
+    setMessage(null)
+    setValidationErrors({})
+    const newType = selected.user_type === 'admin' ? 'user' : 'admin'
     try {
-      const res = await api.post(`/accounts/admin/users/${u.id}/promote/`, { user_type: newType })
-      setUsers(users.map(x => x.id === u.id ? { ...x, user_type: res.data.user_type } : x))
-      setMessage(`نقش ${u.first_name} ${u.last_name} به «${typeMeta[res.data.user_type].label}» تغییر کرد`)
-    } catch (err) {
-      setMessage(err.response?.data?.error || 'خطا در تغییر نقش کاربر')
-    }
-    setBusyId(null)
+      await api.post(`/accounts/admin/users/${selected.id}/promote/`, { user_type: newType })
+      setMessage({ text: `نقش ${selected.first_name || 'کاربر'} به «${typeMeta[newType].label}» تغییر کرد.`, error: false })
+      setSelected(null)
+      resetPages()
+      setRevision(value => value + 1)
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+      setMessage({ text: error.response?.data?.error || 'تغییر نقش انجام نشد. دوباره تلاش کنید.', error: true })
+    } finally { pending.current = false; setBusyId(null) }
   }
-
-  return (
-    <div className="aus-page">
-      <h1 className="aus-heading">مدیریت کاربران</h1>
-
-      {message && <div className="aus-message">{message}</div>}
-
-      <div className="aus-toolbar">
-        <form onSubmit={handleSearchSubmit} className="aus-search-form">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="جستجو بر اساس نام، موبایل یا کد ملی..."
-            className="aus-search-input"
-          />
-          <button type="submit" className="aus-search-btn">جستجو</button>
-        </form>
-
-        <div className="aus-type-tabs">
-          {[
-            { key: '', label: 'همه' },
-            { key: 'user', label: 'کاربر عادی' },
-            { key: 'admin', label: 'ادمین' },
-            { key: 'superadmin', label: 'سوپرادمین' },
-          ].map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTypeFilter(t.key)}
-              className={`aus-type-tab${typeFilter === t.key ? ' active' : ''}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="aus-loading">در حال بارگذاری...</div>
-      ) : users.length === 0 ? (
-        <div className="aus-empty">کاربری یافت نشد</div>
-      ) : (
-        <div className="aus-table-wrap">
-          <table className="aus-table">
-            <thead>
-              <tr>
-                <th>کاربر</th>
-                <th>موبایل</th>
-                <th>کد ملی</th>
-                <th>نقش</th>
-                <th>تاریخ عضویت</th>
-                <th>جزئیات</th>
-                {isSuperAdmin && <th>عملیات</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id}>
-                  <td>
-                    <div className="aus-user-cell">
-                      <div className="aus-avatar">
-                        {u.profile_image ? <img src={u.profile_image} alt="" /> : (u.first_name?.[0] || '؟')}
-                      </div>
-                      <span>{u.first_name} {u.last_name}</span>
-                    </div>
-                  </td>
-                  <td className="aus-mono">{u.mobile}</td>
-                  <td className="aus-mono">{u.national_code || '—'}</td>
-                  <td>
-                    <span
-                      className="aus-role-pill"
-                      style={{ color: typeMeta[u.user_type]?.color, borderColor: typeMeta[u.user_type]?.color, background: typeMeta[u.user_type]?.bg }}
-                    >
-                      {typeMeta[u.user_type]?.label || u.user_type}
-                    </span>
-                  </td>
-                  <td className="aus-date">{new Date(u.date_joined).toLocaleDateString('fa-IR')}</td>
-                  <td>
-                     <Link to={`/admin/users/${u.id}`} className="aus-detail-btn">مشاهده جزئیات</Link>
-                   </td>
-                  {isSuperAdmin && (
-                    <td>
-                      {u.user_type === 'superadmin' ? (
-                        <span className="aus-locked">—</span>
-                      ) : (
-                        <button
-                          onClick={() => handleToggleRole(u)}
-                          disabled={busyId === u.id}
-                          className={`aus-role-btn${u.user_type === 'admin' ? ' demote' : ''}`}
-                        >
-                          {busyId === u.id ? '...' : (u.user_type === 'admin' ? 'تنزل به کاربر عادی' : 'ارتقا به ادمین')}
-                        </button>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <style>{`
-        .aus-page { display: flex; flex-direction: column; gap: 18px; }
-        .aus-heading { font-family: var(--font-display); color: var(--teal-glow); font-size: 21px; }
-
-        .aus-message {
-          padding: 11px 14px; border-radius: var(--radius-sm);
-          background: rgba(31,163,130,0.12); border: 1px solid rgba(31,163,130,0.3);
-          color: var(--teal-glow); font-size: 13px;
-        }
-
-        .aus-toolbar {
-          display: flex; align-items: center; justify-content: space-between;
-          flex-wrap: wrap; gap: 12px;
-        }
-        .aus-search-form { display: flex; gap: 8px; flex: 1; min-width: 240px; max-width: 380px; }
-        .aus-search-input {
-          flex: 1; padding: 9px 14px;
-          background: var(--surface); border: 1px solid var(--line);
-          border-radius: var(--radius-sm); color: var(--ink); font-size: 13px; outline: none;
-        }
-        .aus-search-input:focus { border-color: var(--teal-glow); }
-        .aus-search-btn {
-          padding: 0 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);
-          background: transparent; color: var(--ink-dim); font-size: 13px; cursor: pointer;
-        }
-        .aus-search-btn:hover { border-color: var(--teal-glow); color: var(--teal-glow); }
-
-        .aus-type-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-        .aus-type-tab {
-          padding: 7px 14px; border-radius: 999px; font-size: 12px;
-          border: 1px solid var(--line); background: transparent; color: var(--ink-dim); cursor: pointer;
-        }
-        .aus-type-tab:hover { color: var(--teal-glow); border-color: var(--teal-glow); }
-        .aus-type-tab.active {
-          background: rgba(15,111,92,0.12); color: var(--teal-glow); border-color: var(--teal-glow);
-        }
-
-        .aus-loading, .aus-empty {
-          text-align: center; padding: 50px 0; color: var(--ink-dim); font-size: 13px;
-        }
-
-        .aus-table-wrap {
-          background: var(--surface); border: 1px solid var(--line);
-          border-radius: var(--radius-lg); overflow-x: auto;
-        }
-        .aus-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .aus-table th {
-          text-align: right; padding: 12px 16px; color: var(--ink-faint);
-          font-size: 11.5px; font-weight: 500;
-          border-bottom: 1px solid var(--line);
-          white-space: nowrap;
-        }
-        .aus-table td {
-          padding: 12px 16px; color: var(--ink);
-          border-bottom: 1px solid var(--line);
-          white-space: nowrap;
-        }
-        .aus-table tr:last-child td { border-bottom: none; }
-        .aus-table tr:hover td { background: rgba(255,255,255,0.02); }
-
-        .aus-user-cell { display: flex; align-items: center; gap: 10px; }
-        .aus-avatar {
-          width: 30px; height: 30px; border-radius: 50%; overflow: hidden;
-          background: var(--teal); color: var(--gold-light);
-          display: grid; place-items: center; font-size: 12px; font-weight: 700; flex-shrink: 0;
-        }
-        .aus-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .aus-mono { font-family: monospace; color: var(--ink-dim); font-size: 12.5px; }
-        .aus-date { color: var(--ink-faint); font-size: 12px; }
-
-        .aus-role-pill {
-          font-size: 11px; padding: 4px 11px; border-radius: 999px; border: 1px solid;
-        }
-
-        .aus-role-btn {
-          font-size: 11.5px; padding: 6px 13px; border-radius: 999px;
-          border: 1px solid rgba(15,111,92,0.4); background: transparent;
-          color: var(--teal-glow); cursor: pointer;
-        }
-        .aus-role-btn:hover { background: rgba(15,111,92,0.1); }
-        .aus-role-btn.demote { border-color: rgba(255,107,125,0.4); color: #ff9aa8; }
-        .aus-role-btn.demote:hover { background: rgba(122,35,48,0.12); }
-        .aus-role-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .aus-locked { color: var(--ink-faint); font-size: 12px; }
-        .aus-detail-btn {
-           font-size: 11.5px; padding: 6px 14px; border-radius: 999px;
-           border: 1px solid rgba(15,111,92,0.4); color: var(--teal-glow);
-           text-decoration: none; white-space: nowrap; display: inline-block;
-         }
-        .aus-detail-btn:hover { background: rgba(15,111,92,0.1); }
-      `}</style>
+  const resetFilters = () => { setSearch(''); setQuery(''); setTypeFilter(''); resetPages() }
+  const actions = user => (<div className="aus-row-actions"><Link to={`/admin/users/${user.id}`} className="aus-detail-btn" aria-label={`جزئیات ${user.first_name || 'کاربر'} ${user.last_name || ''}`}>مشاهده پرونده</Link>{isSuperAdmin && user.user_type !== 'superadmin' && <button type="button" disabled={busyId !== null} onClick={() => { setSelected(user); setMessage(null); setValidationErrors({}) }} className={`aus-role-btn${user.user_type === 'admin' ? ' demote' : ''}`}>تغییر نقش</button>}</div>)
+  return <FormValidation errors={validationErrors}><div className="aus-page">
+    <header className="admin-page-heading"><div><h1 className="aus-heading">مدیریت کاربران</h1><p>جستجوی اعضا، بررسی اطلاعات و مدیریت نقش‌ها.</p></div><span className="admin-heading-note">تغییر نقش فقط برای سوپرادمین</span></header>
+    <LoadFeedback state={loadState} onRetry={retryLoad} />
+    {message && !selected && <p className={`aus-message ${message.error ? 'error' : ''}`} role={message.error ? 'alert' : 'status'}>{message.text}</p>}
+    <div className="aus-control-panel">
+      <form onSubmit={event => { event.preventDefault(); setQuery(search.trim().replace(/[۰-۹]/g, digit => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))).replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))); resetPages(); setRevision(value => value + 1) }} className="aus-search-form">
+        <div className="aus-search-field"><FormControl as="input" label="جستجوی کاربران" name="search" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="نام، شماره موبایل یا کد ملی" className="aus-search-input" /></div>
+        <button type="submit" className="aus-search-btn">جستجو</button>
+      </form>
+      <div className="aus-filter-row"><div className="aus-type-tabs" role="group" aria-label="فیلتر نقش کاربران">{[['', 'همه نقش‌ها'], ['user', 'کاربر عادی'], ['admin', 'ادمین'], ['superadmin', 'سوپرادمین']].map(([value, label]) => <button type="button" key={value} aria-pressed={typeFilter === value} onClick={() => { setTypeFilter(value); resetPages() }} className={`aus-type-tab${typeFilter === value ? ' active' : ''}`}>{label}</button>)}</div>{(query || typeFilter) && <button className="aus-reset" type="button" onClick={resetFilters}>پاک‌کردن فیلترها</button>}</div>
     </div>
-  )
+    <div className="aus-results-heading"><h2>فهرست کاربران <span>{loaded ? `${Number(total).toLocaleString('fa-IR')} نتیجه` : '—'}</span></h2>{query && <p>جستجو: «{query}»</p>}</div>
+    {isLoading ? <div className="aus-loading" role="status">در حال دریافت کاربران…</div> : !loaded ? null : !users.length ? <div className="aus-empty"><h3>کاربری با این مشخصات پیدا نشد</h3><p>عبارت جستجو یا فیلتر نقش را تغییر دهید.</p>{(query || typeFilter) && <button type="button" onClick={resetFilters} className="aus-detail-btn">نمایش همه کاربران</button>}</div> : <>
+      <div className="aus-table-wrap"><table className="aus-table"><caption className="sr-only">فهرست کاربران و نقش‌های آن‌ها</caption><thead><tr>{['کاربر', 'اطلاعات تماس', 'نقش و وضعیت', 'تاریخ عضویت', 'عملیات'].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead><tbody>{visibleUsers.map(user => <tr key={user.id}>
+        <td data-label="کاربر"><div className="aus-user-cell"><span className="aus-avatar">{user.profile_image ? <img src={user.profile_image} alt="" /> : user.first_name?.[0] || '؟'}</span><div><strong>{[user.first_name, user.last_name].filter(Boolean).join(' ') || 'بدون نام'}</strong><small>شناسه {user.id.toLocaleString('fa-IR')}</small></div></div></td>
+        <td data-label="اطلاعات تماس"><div className="aus-contact"><a href={`tel:${user.mobile}`}><bdi>{user.mobile}</bdi></a><small>کد ملی: <bdi>{user.national_code || '—'}</bdi></small></div></td>
+        <td data-label="نقش و وضعیت"><span className="aus-role-pill" style={{ color: typeMeta[user.user_type]?.color, background: typeMeta[user.user_type]?.bg }}>{typeMeta[user.user_type]?.label || 'نامشخص'}</span><small className="aus-account-status">{({ active: 'حساب فعال', inactive: 'حساب غیرفعال', deleted: 'حساب حذف‌شده' })[user.status] || 'وضعیت حساب نامشخص'}</small></td>
+        <td data-label="تاریخ عضویت"><time dateTime={user.date_joined}>{user.date_joined ? new Date(user.date_joined).toLocaleDateString('fa-IR') : '—'}</time></td>
+        <td data-label="عملیات">{actions(user)}</td>
+      </tr>)}</tbody></table></div>
+      <ul className="aus-member-list" aria-label="فهرست کاربران">{visibleUsers.map(user => <li className="aus-member" key={user.id}>
+        <div className="aus-member-top"><span className="aus-avatar">{user.profile_image ? <img src={user.profile_image} alt="" /> : user.first_name?.[0] || '؟'}</span><div><h3>{[user.first_name, user.last_name].filter(Boolean).join(' ') || 'بدون نام'}</h3><span className="aus-role-pill" style={{ color: typeMeta[user.user_type]?.color, background: typeMeta[user.user_type]?.bg }}>{typeMeta[user.user_type]?.label || 'نامشخص'}</span></div></div>
+        <dl className="aus-member-details"><div><dt>موبایل</dt><dd><a href={`tel:${user.mobile}`}><bdi>{user.mobile}</bdi></a></dd></div><div><dt>کد ملی</dt><dd><bdi>{user.national_code || '—'}</bdi></dd></div><div><dt>عضویت</dt><dd>{user.date_joined ? new Date(user.date_joined).toLocaleDateString('fa-IR') : '—'}</dd></div><div><dt>وضعیت حساب</dt><dd>{({ active: 'فعال', inactive: 'غیرفعال', deleted: 'حذف‌شده' })[user.status] || 'نامشخص'}</dd></div></dl>
+        {actions(user)}
+      </li>)}</ul>
+      {(pagination ? pagination.next || pagination.previous : pages > 1) && <nav className="aus-pagination" aria-label="صفحه‌بندی کاربران"><button disabled={pagination ? !pagination.previous : page === 1} onClick={() => pagination ? setServerPage(value => value - 1) : setPage(value => value - 1)}>صفحه قبل</button><span>صفحه {(pagination ? serverPage : page).toLocaleString('fa-IR')}{!pagination && ` از ${pages.toLocaleString('fa-IR')}`}</span><button disabled={pagination ? !pagination.next : page >= pages} onClick={() => pagination ? setServerPage(value => value + 1) : setPage(value => value + 1)}>صفحه بعد</button></nav>}
+    </>}
+    {selected && <Dialog className="admin-dialog-overlay" label="تأیید تغییر نقش کاربر" onClose={() => { if (busyId === null) setSelected(null) }}><div className="admin-role-confirm"><h2>نقش کاربر تغییر کند؟</h2><p><strong>{selected.first_name} {selected.last_name}</strong> · <bdi>{selected.mobile}</bdi></p><div className="aus-role-transition"><span>{typeMeta[selected.user_type]?.label}</span><span aria-hidden="true">←</span><strong>{selected.user_type === 'admin' ? 'کاربر عادی' : 'ادمین'}</strong></div><p>{selected.user_type === 'admin' ? 'دسترسی‌های مدیریتی این حساب حذف می‌شوند.' : 'این حساب به ادمین تبدیل می‌شود. دسترسی‌های بخش‌ها را از پرونده کاربر تنظیم کنید.'}</p><ErrorSummary errors={validationErrors} />{message?.error && <p className="aus-message error" role="alert">{message.text}</p>}<div className="admin-dialog-actions"><button type="button" disabled={busyId !== null} onClick={() => setSelected(null)} className="aus-detail-btn">انصراف</button><button type="button" disabled={busyId !== null} onClick={changeRole} className="aus-search-btn">{busyId !== null ? 'در حال ذخیره…' : 'تأیید تغییر نقش'}</button></div></div></Dialog>}
+  </div></FormValidation>
 }
-
 export default AdminUsers
+

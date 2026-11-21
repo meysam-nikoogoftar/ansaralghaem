@@ -1,3 +1,9 @@
+import usePageTitle from '../../hooks/usePageTitle'
+import FormValidation from '../../components/FormValidation'
+import { fieldErrors } from '../../utils/validation'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import FormControl from '../../components/FormControl'
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../../services/api'
@@ -83,17 +89,21 @@ const DOCUMENT_FIELDS = [
 ]
 
 function PermissionsPanel({ userId }) {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [perms, setPerms] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    api.get(`/accounts/admin/users/${userId}/permissions/`)
+    observeLoad(() => api.get(`/accounts/admin/users/${userId}/permissions/`)
       .then(res => setPerms(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }, [userId])
+      .catch(error => { throw error })
+      , "`/accounts/admin/users/${userId}/permissions/`")
+  }, [observeLoad, userId])
 
   const applyPreset = (roleKey) => {
     const active = rolePresets[roleKey] || []
@@ -107,23 +117,27 @@ function PermissionsPanel({ userId }) {
   }
 
   const handleSave = async () => {
+    setValidationErrors({})
+
     setIsSaving(true)
     setMessage('')
     try {
       const res = await api.put(`/accounts/admin/users/${userId}/permissions/`, perms)
       setPerms(res.data)
       setMessage('دسترسی‌ها ذخیره شد')
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       setMessage('خطا در ذخیره دسترسی‌ها')
     }
     setIsSaving(false)
   }
 
-  if (isLoading) return <div className="aud-loading">در حال بارگذاری...</div>
-  if (!perms) return null
+  if (isLoading) return <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="aud-loading">در حال بارگذاری...</div>}</></FormValidation>
+  if (!perms) return <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{null}</></FormValidation>
 
   return (
-    <div className="aud-perm-panel">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="aud-perm-panel">
       <div className="aud-perm-presets">
         <span>نقش از پیش‌تعریف‌شده:</span>
         <button onClick={() => applyPreset('financial')} className="aud-perm-preset-btn">مسئول مالی</button>
@@ -135,22 +149,24 @@ function PermissionsPanel({ userId }) {
       <div className="aud-perm-grid">
         {permissionFields.map(f => (
           <label key={f.key} className="aud-perm-check">
-            <input type="checkbox" checked={!!perms[f.key]} onChange={() => toggleField(f.key)} />
+            <FormControl as="input" type="checkbox" checked={!!perms[f.key]} onChange={() => toggleField(f.key)} />
             <span>{f.label}</span>
           </label>
         ))}
       </div>
 
-      {message && <div className="aud-perm-message">{message}</div>}
+      {message && <div role="status" aria-live="polite" aria-atomic="true" className="aud-perm-message">{message}</div>}
 
       <button onClick={handleSave} disabled={isSaving} className="aud-perm-save">
         {isSaving ? 'در حال ذخیره...' : 'ذخیره دسترسی‌ها'}
       </button>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 
 function ProfileEditor({ user, onSaved }) {
+  const [validationErrors, setValidationErrors] = useState({})
+
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -170,6 +186,8 @@ function ProfileEditor({ user, onSaved }) {
   }
 
   const handleSave = async () => {
+    setValidationErrors({})
+
     setIsSaving(true)
     setMessage('')
     try {
@@ -177,7 +195,9 @@ function ProfileEditor({ user, onSaved }) {
       onSaved(res.data)
       setIsEditing(false)
       setMessage('اطلاعات ذخیره شد')
-    } catch {
+    } catch (error) {
+      setValidationErrors(fieldErrors(error))
+
       setMessage('خطا در ذخیره اطلاعات')
     }
     setIsSaving(false)
@@ -185,18 +205,18 @@ function ProfileEditor({ user, onSaved }) {
 
   if (!isEditing) {
     return (
-      <button onClick={startEdit} className="aud-edit-toggle">ویرایش اطلاعات</button>
+      <FormValidation errors={validationErrors}><button onClick={startEdit} className="aud-edit-toggle">ویرایش اطلاعات</button></FormValidation>
     )
   }
 
   return (
-    <div className="aud-edit-wrap">
+    <FormValidation errors={validationErrors}><div className="aud-edit-wrap">
       <div className="aud-edit-actions-top">
         <button onClick={handleSave} disabled={isSaving} className="aud-perm-save">
           {isSaving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
         </button>
         <button onClick={() => setIsEditing(false)} className="aud-edit-cancel">انصراف</button>
-        {message && <span className="aud-edit-message">{message}</span>}
+        {message && <span role="status" aria-live="polite" aria-atomic="true" className="aud-edit-message">{message}</span>}
       </div>
 
       {PROFILE_FIELDS.map(group => (
@@ -207,26 +227,26 @@ function ProfileEditor({ user, onSaved }) {
               <div key={f.key} className={f.type === 'textarea' ? 'aud-edit-field aud-edit-span-2' : 'aud-edit-field'}>
                 {f.type === 'checkbox' ? (
                   <label className="aud-edit-checkbox">
-                    <input type="checkbox" checked={!!formData[f.key]} onChange={(e) => handleChange(f.key, e, 'checkbox')} />
+                    <FormControl as="input" type="checkbox" checked={!!formData[f.key]} onChange={(e) => handleChange(f.key, e, 'checkbox')} />
                     <span>{f.label}</span>
                   </label>
                 ) : (
                   <>
-                    <label>{f.label}</label>
+                    <label htmlFor={`admin-profile-${user.id}-${f.key}`}>{f.label}</label>
                     {f.type === 'select' ? (
-                      <select value={formData[f.key] || ''} onChange={(e) => handleChange(f.key, e)}>
+                      <FormControl as="select" id={`admin-profile-${user.id}-${f.key}`} name={f.key} value={formData[f.key] || ''} onChange={(e) => handleChange(f.key, e)}>
                         <option value="">—</option>
                         {Object.entries(f.options).map(([val, lbl]) => <option key={val} value={val}>{lbl}</option>)}
-                      </select>
+                      </FormControl>
                     ) : f.type === 'textarea' ? (
-                      <textarea value={formData[f.key] || ''} onChange={(e) => handleChange(f.key, e)} rows={2} />
+                      <FormControl as="textarea" id={`admin-profile-${user.id}-${f.key}`} name={f.key} value={formData[f.key] || ''} onChange={(e) => handleChange(f.key, e)} rows={2} />
                     ) : f.type === 'jalali-date' ? (
-                      <JalaliDatePicker
+                      <JalaliDatePicker id={`admin-profile-${user.id}-${f.key}`}
                         value={formData[f.key] || ''}
                         onChange={(iso) => setFormData({ ...formData, [f.key]: iso })}
                       />
                     ) : (
-                      <input type={f.type || 'text'} value={formData[f.key] || ''} onChange={(e) => handleChange(f.key, e)} />
+                      <FormControl as="input" id={`admin-profile-${user.id}-${f.key}`} name={f.key} type={f.type || 'text'} value={formData[f.key] || ''} onChange={(e) => handleChange(f.key, e)} />
                     )}
                   </>
                 )}
@@ -235,7 +255,7 @@ function ProfileEditor({ user, onSaved }) {
           </div>
         </div>
       ))}
-    </div>
+    </div></FormValidation>
   )
 }
 
@@ -278,29 +298,37 @@ function InfoRow({ label, value }) {
 }
 
 function AdminUserDetail() {
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const { id } = useParams()
   const { user: currentUser } = useAuthStore()
+  const canViewFinancial = currentUser?.user_type === 'superadmin' || currentUser?.perm_financial !== false
   const [user, setUser] = useState(null)
+  usePageTitle(user ? [user.first_name, user.last_name].filter(Boolean).join(' ') : null)
   const [report, setReport] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
   const [isReportLoading, setIsReportLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('profile')
   const [statusBusy, setStatusBusy] = useState(false)
   const [statusMenuOpen, setStatusMenuOpen] = useState(false)
 
   useEffect(() => {
-    api.get(`/accounts/admin/users/${id}/`)
+    observeLoad(() => api.get(`/accounts/admin/users/${id}/`)
       .then(res => setUser(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
+      .catch(error => { throw error })
+      , "`/accounts/admin/users/${id}/`")
 
-    api.get(`/financial/admin/report/${id}/`)
+    if (canViewFinancial) observeLoad(() => api.get(`/financial/admin/report/${id}/`)
       .then(res => setReport(res.data))
-      .catch(() => {})
-      .finally(() => setIsReportLoading(false))
-  }, [id])
+      .catch(error => { throw error })
+      .finally(() => setIsReportLoading(false)), "`/financial/admin/report/${id}/`")
+  }, [canViewFinancial, id, observeLoad])
 
   const handleSetStatus = async (newStatus) => {
+    setValidationErrors({})
+
     setStatusMenuOpen(false)
     if (newStatus === user.status) return
     if (!window.confirm(`وضعیت حساب به «${accountStatusLabel[newStatus]}» تغییر کند؟`)) return
@@ -309,19 +337,21 @@ function AdminUserDetail() {
       const res = await api.post(`/accounts/admin/users/${id}/status/`, { status: newStatus })
       setUser(u => ({ ...u, status: res.data.status }))
     } catch (err) {
+      setValidationErrors(fieldErrors(err))
+
       alert(err.response?.data?.error || 'خطا در تغییر وضعیت حساب')
     }
     setStatusBusy(false)
   }
 
-  if (isLoading) return <div className="aud-loading">در حال بارگذاری...</div>
-  if (!user) return <div className="aud-loading">کاربر یافت نشد</div>
+  if (isLoading) return <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="aud-loading">در حال بارگذاری...</div>}</></FormValidation>
+  if (!user) return <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="aud-loading">کاربر یافت نشد</div>}</></FormValidation>
 
   const isSuperAdmin = currentUser?.user_type === 'superadmin'
   const canChangeStatus = isSuperAdmin && user.user_type !== 'superadmin'
 
   return (
-    <div className="aud-page">
+    <FormValidation errors={validationErrors}><><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="aud-page">
       <Link to="/admin/users" className="aud-back">← برگشت به لیست کاربران</Link>
 
       <div className="aud-header">
@@ -339,7 +369,7 @@ function AdminUserDetail() {
 
           <div className="aud-status-menu-wrap">
             <button
-              onClick={() => canChangeStatus && setStatusMenuOpen(!statusMenuOpen)}
+              aria-expanded={canChangeStatus ? statusMenuOpen : undefined} aria-controls="account-status-actions" onClick={() => canChangeStatus && setStatusMenuOpen(!statusMenuOpen)}
               className={`aud-status-badge aud-status-${user.status}${canChangeStatus ? ' clickable' : ''}`}
               disabled={statusBusy}
             >
@@ -350,7 +380,7 @@ function AdminUserDetail() {
             {statusMenuOpen && (
               <>
                 <div className="aud-menu-backdrop" onClick={() => setStatusMenuOpen(false)} />
-                <div className="aud-status-dropdown">
+                <div id="account-status-actions" className="aud-status-dropdown" onKeyDown={event => { if (event.key === 'Escape') { setStatusMenuOpen(false); event.currentTarget.parentElement.querySelector('button')?.focus() } }}>
                   <button onClick={() => handleSetStatus('active')} className="aud-status-item ok">فعال</button>
                   <button onClick={() => handleSetStatus('inactive')} className="aud-status-item warn">غیرفعال</button>
                   <button onClick={() => handleSetStatus('deleted')} className="aud-status-item danger">حذف کاربر</button>
@@ -362,11 +392,11 @@ function AdminUserDetail() {
       </div>
 
       <div className="aud-tabs">
-        <button onClick={() => setActiveTab('profile')} className={`aud-tab${activeTab === 'profile' ? ' active' : ''}`}>اطلاعات کاربر</button>
-        <button onClick={() => setActiveTab('documents')} className={`aud-tab${activeTab === 'documents' ? ' active' : ''}`}>تصاویر ارسالی</button>
-        <button onClick={() => setActiveTab('financial')} className={`aud-tab${activeTab === 'financial' ? ' active' : ''}`}>گزارش مالی کاربر</button>
+        <button aria-pressed={activeTab === 'profile'} onClick={() => setActiveTab('profile')} className={`aud-tab${activeTab === 'profile' ? ' active' : ''}`}>اطلاعات کاربر</button>
+        <button aria-pressed={activeTab === 'documents'} onClick={() => setActiveTab('documents')} className={`aud-tab${activeTab === 'documents' ? ' active' : ''}`}>تصاویر ارسالی</button>
+        {canViewFinancial && <button aria-pressed={activeTab === 'financial'} onClick={() => setActiveTab('financial')} className={`aud-tab${activeTab === 'financial' ? ' active' : ''}`}>گزارش مالی کاربر</button>}
         {isSuperAdmin && user.user_type === 'admin' && (
-          <button onClick={() => setActiveTab('permissions')} className={`aud-tab${activeTab === 'permissions' ? ' active' : ''}`}>دسترسی‌های ادمین</button>
+          <button aria-pressed={activeTab === 'permissions'} onClick={() => setActiveTab('permissions')} className={`aud-tab${activeTab === 'permissions' ? ' active' : ''}`}>دسترسی‌های ادمین</button>
         )}
       </div>
 
@@ -568,7 +598,7 @@ function AdminUserDetail() {
           .aud-edit-span-2 { grid-column: span 1; }
         }
       `}</style>
-    </div>
+    </div>}</></FormValidation>
   )
 }
 
