@@ -1,40 +1,58 @@
-from rest_framework import status, generics, permissions
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect
+from accounts.throttling import TrackingThrottle
+from rest_framework import status, generics, permissions, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Q
-from accounts.permissions import IsAdminOrSuperAdmin, HasAdminPermission
+from django.db.models import F, Q
+from django.db import transaction
+from django.conf import settings
+from django.shortcuts import get_object_or_404
+from accounts.permissions import HasAdminPermission
 from .models import Trip, Registration, TravelCompanion, AttendancePeriod, AttendanceRecord
 from .serializers import (
-    TripSerializer, RegistrationSerializer, CreateRegistrationSerializer,
-    TravelCompanionSerializer, AttendancePeriodSerializer, AttendanceRecordSerializer
+    TripAvailabilitySerializer, with_reserved_count, RegistrationSerializer, CreateRegistrationSerializer,
+    TravelCompanionSerializer, AttendancePeriodSerializer, AttendanceRecordSerializer,
+    GroupCodeSerializer, BulkGroupCodeSerializer
 )
 
 
 class TripListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = TripSerializer
+    serializer_class = TripAvailabilitySerializer
 
     def get_queryset(self):
         queryset = Trip.objects.filter(is_active=True)
+        if self.request.query_params.get('registration_open') == 'true':
+            queryset = queryset.filter(registration_open=True)
         trip_type = self.request.query_params.get('type', '')
         if trip_type:
             queryset = queryset.filter(trip_type=trip_type)
-        return queryset
+        return with_reserved_count(queryset)
 
 
 class TripDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = TripSerializer
+    serializer_class = TripAvailabilitySerializer
     queryset = Trip.objects.all()
 
 
 class CreateRegistrationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request):
         serializer = CreateRegistrationSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            registration = serializer.save()
+            trip = get_object_or_404(Trip.objects.select_for_update(), pk=serializer.validated_data['trip'].pk)
+            if not trip.is_active or not trip.registration_open:
+                return Response({'error': 'ثبت‌نام این سفر بسته است'}, status=400)
+            if trip.reserved_registrations().filter(user=request.user).exists():
+                return Response({'error': 'قبلاً برای این سفر ثبت‌نام کرده‌اید'}, status=409)
+            if not trip.has_free_place():
+                return Response({'code': 'trip_full', 'error': 'ظرفیت ثبت‌نام این سفر تکمیل شده است.'},
+                                status=status.HTTP_409_CONFLICT)
+            registration = serializer.save(trip=trip)
             return Response(
                 RegistrationSerializer(registration).data,
                 status=status.HTTP_201_CREATED
@@ -50,27 +68,24 @@ class MyRegistrationsView(generics.ListAPIView):
         return Registration.objects.filter(user=self.request.user)
 
 
+@method_decorator(csrf_protect, name='dispatch')
 class TrackRegistrationView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [TrackingThrottle]
 
-    def get(self, request):
-        tracking_code = request.query_params.get('tracking_code', '')
-        national_code = request.query_params.get('national_code', '')
-        if not tracking_code or not national_code:
-            return Response(
-                {'error': 'کد پیگیری و کد ملی الزامی است'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        registration = Registration.objects.filter(
-            tracking_code=tracking_code,
-            user__national_code=national_code
+    def post(self, request):
+        tracking_code = str(request.data.get('tracking_code', '')).strip()
+        national_code = str(request.data.get('national_code', '')).strip()
+        if not tracking_code or len(tracking_code) > 30 or not national_code.isascii() or not national_code.isdigit() or len(national_code) != 10:
+            return Response({'error': 'اطلاعات معتبر وارد کنید'}, status=400)
+        registration = Registration.objects.select_related('user', 'trip').filter(
+            tracking_code=tracking_code, user__national_code=national_code
         ).order_by('-registered_at').first()
         if not registration:
-            return Response(
-                {'error': 'ثبت‌نامی با این مشخصات یافت نشد'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        return Response(RegistrationSerializer(registration).data)
+            return Response({'error': 'ثبت‌نامی یافت نشد'}, status=404)
+        return Response({'user_name': registration.user.full_name, 'tracking_code': registration.tracking_code,
+                         'status': registration.status, 'payment_status': registration.payment_status,
+                         'trip_detail': {'title': registration.trip.title}})
 
 
 class RegistrationDetailView(generics.RetrieveAPIView):
@@ -84,9 +99,10 @@ class RegistrationDetailView(generics.RetrieveAPIView):
 class CancelRegistrationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request, pk):
         try:
-            registration = Registration.objects.get(pk=pk, user=request.user)
+            registration = Registration.objects.select_for_update().get(pk=pk, user=request.user)
             
         except Registration.DoesNotExist:
             return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
@@ -121,9 +137,10 @@ class RequestRefundView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request, pk):
         try:
-            registration = Registration.objects.get(pk=pk, user=request.user)
+            registration = Registration.objects.select_for_update().get(pk=pk, user=request.user)
         except Registration.DoesNotExist:
             return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -221,15 +238,26 @@ class RecordAttendanceView(APIView):
 class AdminTripListView(generics.ListCreateAPIView):
     """لیست همه‌ی سفرها (فعال و غیرفعال) + ایجاد سفر جدید."""
     permission_classes = [HasAdminPermission('perm_trips')]
-    serializer_class = TripSerializer
-    queryset = Trip.objects.all()
+    serializer_class = TripAvailabilitySerializer
+    queryset = with_reserved_count(Trip.objects.all())
 
 
 class AdminTripDetailView(generics.RetrieveUpdateDestroyAPIView):
     """ویرایش/حذف یک سفر."""
     permission_classes = [HasAdminPermission('perm_trips')]
-    serializer_class = TripSerializer
+    serializer_class = TripAvailabilitySerializer
     queryset = Trip.objects.all()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.method in ('PUT', 'PATCH'):
+            return queryset.select_for_update()
+        return queryset
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
 
 def filter_admin_registrations(request, queryset):
     status_param = request.query_params.get('status', '')
@@ -253,6 +281,10 @@ def filter_admin_registrations(request, queryset):
     elif status_param:
         queryset = queryset.filter(status=status_param)
     if trip_id:
+        try:
+            trip_id = serializers.IntegerField(min_value=1, max_value=2**63 - 1).run_validation(trip_id)
+        except serializers.ValidationError as error:
+            raise serializers.ValidationError({'trip_id': error.detail}) from error
         queryset = queryset.filter(trip_id=trip_id)
     if search:
         queryset = queryset.filter(
@@ -292,6 +324,15 @@ def filter_admin_registrations(request, queryset):
         queryset = queryset.filter(user__mobile__icontains=mobile)
 
     return queryset
+class AdminTripOptionsView(APIView):
+    permission_classes = [HasAdminPermission('perm_trips') |
+                          HasAdminPermission('perm_registrations') |
+                          HasAdminPermission('perm_financial')]
+
+    def get(self, request):
+        return Response(list(Trip.objects.order_by('-start_date', 'id').values('id', 'title')))
+
+
 class AdminRegistrationListView(generics.ListAPIView):
     """لیست همه‌ی ثبت‌نام‌ها (همه‌ی کاربران) با فیلتر و جستجو."""
     permission_classes = [HasAdminPermission('perm_registrations')]
@@ -306,12 +347,16 @@ class AdminRegistrationActionView(APIView):
     """تایید/رد/علامت‌گذاری «در دست بررسی» یک ثبت‌نام. body: {action: 'approve'|'reject'|'mark_pending', rejection_reason?, admin_note?}"""
     permission_classes = [HasAdminPermission('perm_registrations')]
 
+    @transaction.atomic
     def post(self, request, pk):
         try:
-            registration = Registration.objects.get(pk=pk)
+            trip_id = Registration.objects.values_list('trip_id', flat=True).get(pk=pk)
+            trip = get_object_or_404(Trip.objects.select_for_update(), pk=trip_id)
+            registration = Registration.objects.select_for_update().get(pk=pk)
         except Registration.DoesNotExist:
             return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
+        old_status = registration.status
         action = request.data.get('action')
         if action == 'approve':
             registration.status = 'approved'
@@ -334,6 +379,12 @@ class AdminRegistrationActionView(APIView):
             registration.status = 'absent'
         else:
             return Response({'error': 'عملیات نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if (old_status in Registration.RELEASED_STATUSES
+                and registration.status not in Registration.RELEASED_STATUSES):
+            if not trip.has_free_place():
+                return Response({'code': 'trip_full', 'error': 'ظرفیت ثبت‌نام این سفر تکمیل شده است.'},
+                                status=status.HTTP_409_CONFLICT)
 
         admin_note = request.data.get('admin_note')
         if admin_note is not None:
@@ -362,10 +413,12 @@ class AdminRefundActionView(APIView):
     """
     permission_classes = [HasAdminPermission('perm_financial')]
 
+    @transaction.atomic
     def post(self, request, pk):
         from financial.models import Wallet, WalletTransaction
+        from django.utils import timezone
         try:
-            registration = Registration.objects.get(pk=pk, refund_requested=True)
+            registration = Registration.objects.select_for_update().get(pk=pk, refund_requested=True)
         except Registration.DoesNotExist:
             return Response({'error': 'درخواست عودتی با این مشخصات یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -386,11 +439,14 @@ class AdminRefundActionView(APIView):
                 else:
                     amount = int(registration.trip.refund_amount or 0)
             except (TypeError, ValueError):
-                amount = 0
+                return Response({'amount': ['مبلغ عودت نامعتبر است.']}, status=status.HTTP_400_BAD_REQUEST)
+            if amount < 0 or isinstance(request.data.get('amount'), bool) or (
+                isinstance(request.data.get('amount'), float) and not request.data['amount'].is_integer()
+            ):
+                return Response({'amount': ['مبلغ عودت باید عدد صحیح و نامنفی باشد.']}, status=status.HTTP_400_BAD_REQUEST)
 
             wallet, _ = Wallet.objects.get_or_create(user=registration.user)
-            wallet.balance = wallet.balance + amount
-            wallet.save()
+            Wallet.objects.filter(pk=wallet.pk).update(balance=F('balance') + amount, updated_at=timezone.now())
 
             WalletTransaction.objects.create(
                 wallet=wallet,
@@ -422,10 +478,13 @@ class PayDirectRegistrationView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request, pk):
+        if not settings.DEBUG:
+            return Response({'error': 'پرداخت مستقیم آنلاین در حال حاضر در دسترس نیست.'}, status=503)
         from financial.models import DirectPaymentRecord
         try:
-            registration = Registration.objects.get(pk=pk, user=request.user)
+            registration = Registration.objects.select_for_update().get(pk=pk, user=request.user)
         except Registration.DoesNotExist:
             return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -435,7 +494,7 @@ class PayDirectRegistrationView(APIView):
         except (TypeError, ValueError):
             return Response({'error': 'مبلغ نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if amount <= 0 or amount > registration.remaining_amount:
+        if registration.status not in ('', 'pending', 'approved') or amount <= 0 or amount > registration.remaining_amount:
             return Response({'error': 'مبلغ نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
 
         registration.paid_directly += amount
@@ -458,8 +517,10 @@ class AdminSetGroupCodeView(APIView):
         except Registration.DoesNotExist:
             return Response({'error': 'ثبت‌نام یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
-        registration.group_code = request.data.get('group_code', '')
-        registration.save()
+        serializer = GroupCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        registration.group_code = serializer.validated_data['group_code']
+        registration.save(update_fields=['group_code'])
         return Response(RegistrationSerializer(registration).data)
 
 
@@ -495,17 +556,16 @@ class AdminBulkSetGroupCodeView(APIView):
     permission_classes = [HasAdminPermission('perm_registrations')]
 
     def post(self, request):
-        ids = request.data.get('registration_ids', [])
-        group_code = request.data.get('group_code', '')
-        if not isinstance(ids, list) or not ids:
-            return Response({'error': 'لیست ثبت‌نام‌ها الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
-
-        updated = Registration.objects.filter(pk__in=ids).update(group_code=group_code)
+        serializer = BulkGroupCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        updated = Registration.objects.filter(pk__in=serializer.validated_data['registration_ids']).update(
+            group_code=serializer.validated_data['group_code'],
+        )
         return Response({'updated_count': updated})
 
 class AdminRegistrationExportView(APIView):
     """خروجی اکسل از ثبت‌نام‌ها، دقیقاً با همون فیلترهایی که در لیست اعمال می‌شود."""
-    permission_classes = [IsAdminOrSuperAdmin]
+    permission_classes = [HasAdminPermission('perm_registrations')]
 
     def get(self, request):
         import openpyxl
@@ -566,6 +626,9 @@ class AdminRegistrationExportView(APIView):
                 participation_map.get(r.status, ''),
                 r.admin_note,
             ])
+            for cell in ws[ws.max_row]:
+                if cell.data_type == 'f':
+                    cell.data_type = 's'
 
         for i in range(1, len(headers) + 1):
             ws.column_dimensions[get_column_letter(i)].width = 18
