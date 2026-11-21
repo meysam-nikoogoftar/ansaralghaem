@@ -21,6 +21,27 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ('mobile', 'user_type', 'status', 'date_joined')
 
 
+class AdminUserProfileSerializer(UserProfileSerializer):
+    class Meta(UserProfileSerializer.Meta):
+        read_only_fields = (*UserProfileSerializer.Meta.read_only_fields,
+                            'admin_role', 'is_staff', 'is_superuser', 'is_active', 'last_login',
+                            *[field.name for field in User._meta.fields if field.name.startswith('perm_')])
+
+
+class UpdateOwnProfileSerializer(UserProfileSerializer):
+    class Meta(UserProfileSerializer.Meta):
+        exclude = None
+        fields = (
+            'first_name', 'last_name', 'father_name', 'national_code', 'birth_date', 'gender',
+            'marital_status', 'phone', 'address', 'emergency_name', 'emergency_phone',
+            'emergency_relation', 'university', 'education_level', 'student_status',
+            'passport_number', 'passport_expiry', 'has_disease', 'disease_description',
+            'has_asthma', 'has_allergy', 'allergy_description', 'military_status',
+            'profile_image', 'national_card_image', 'student_card_image', 'passport_image',
+        )
+        read_only_fields = ()
+
+
 class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
