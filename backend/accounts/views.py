@@ -3,36 +3,42 @@ from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login, logout
+from django.middleware.csrf import get_token, rotate_token
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect
+from .throttling import LoginThrottle, RegisterThrottle
 from django.db.models import Sum
 from .models import User
 from .permissions import IsAdminOrSuperAdmin, IsSuperAdmin
 from .serializers import (
-    RegisterSerializer, UserProfileSerializer,
+    RegisterSerializer, UserProfileSerializer, UpdateOwnProfileSerializer,
     UserListSerializer, ChangePasswordSerializer,
-    SearchUserSerializer, AdminUserPermissionsSerializer
+    SearchUserSerializer, AdminUserPermissionsSerializer, AdminUserProfileSerializer
 )
 
 
+@method_decorator(csrf_protect, name='dispatch')
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [RegisterThrottle]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            refresh = RefreshToken.for_user(user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': UserProfileSerializer(user).data
+                'user': UserProfileSerializer(user).data,
+                'csrfToken': get_token(request),
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@method_decorator(csrf_protect, name='dispatch')
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [LoginThrottle]
 
     def post(self, request):
         mobile = request.data.get('mobile')
@@ -46,27 +52,50 @@ class LoginView(APIView):
                     'deleted': 'این حساب حذف شده است',
                 }
                 return Response({'error': messages.get(user.status, 'امکان ورود وجود ندارد')}, status=status.HTTP_403_FORBIDDEN)
-            refresh = RefreshToken.for_user(user)
+            login(request, user)
             return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': UserProfileSerializer(user).data
+                'user': UserProfileSerializer(user).data,
+                'csrfToken': get_token(request),
             })
         return Response({'error': 'موبایل یا رمز عبور اشتباه است'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class SessionView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        user = request.user
+        if user.is_authenticated and user.status != 'active':
+            logout(request)
+            user = None
+        return Response({'user': UserProfileSerializer(user).data if user and user.is_authenticated else None, 'csrfToken': get_token(request)})
+
+
+@method_decorator(csrf_protect, name='dispatch')
+class LogoutView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        logout(request)
+        rotate_token(request)
+        return Response({'user': None, 'csrfToken': get_token(request)})
 
 
 class ProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        if request.user.status != 'active':
+            logout(request)
+            return Response({'detail': 'حساب در دسترس نیست.'}, status=401)
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data)
 
     def put(self, request):
-        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+        serializer = UpdateOwnProfileSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(UserProfileSerializer(serializer.instance).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -131,38 +160,43 @@ class AdminDashboardStatsView(APIView):
 
     def get(self, request):
         from trips.models import Registration, Trip
-        from trips.serializers import RegistrationSerializer
         from financial.models import Wallet
         from tickets.models import Ticket
         from content.models import Gallery, Article
 
-        total_users = User.objects.filter(user_type='user').count()
-        total_admins = User.objects.filter(user_type__in=['admin', 'superadmin']).count()
-        total_trips = Trip.objects.filter(is_active=True).count()
+        def allowed(field):
+            return request.user.user_type == 'superadmin' or getattr(request.user, field)
 
-        registrations_by_status = {
-            key: Registration.objects.filter(status=key).count()
-            for key, _ in Registration.STATUS_CHOICES
-        }
-
-        total_wallet_balance = Wallet.objects.aggregate(total=Sum('balance'))['total'] or 0
-        pending_tickets = Ticket.objects.filter(status='pending').count()
-        pending_gallery = Gallery.objects.filter(status='pending').count()
-        pending_articles = Article.objects.filter(status='pending').count()
-
-        recent_registrations = Registration.objects.select_related('user', 'trip').order_by('-registered_at')[:6]
+        registrations_by_status = {}
+        recent_registrations = []
+        if allowed('perm_registrations'):
+            registrations_by_status = {
+                key: Registration.objects.filter(status=key).count()
+                for key, _ in Registration.STATUS_CHOICES
+            }
+            recent = Registration.objects.select_related('user', 'trip').order_by('-registered_at')[:6]
+            recent_registrations = [
+                {
+                    'id': item.pk, 'user': item.user_id, 'user_name': item.user.full_name,
+                    'user_mobile': item.user.mobile, 'trip_detail': {'title': item.trip.title},
+                    'tracking_code': item.tracking_code, 'registered_at': item.registered_at,
+                    'status': item.status,
+                }
+                for item in recent
+            ]
 
         return Response({
-            'total_users': total_users,
-            'total_admins': total_admins,
-            'total_trips': total_trips,
+            'total_users': User.objects.filter(user_type='user').count() if allowed('perm_users') else 0,
+            'total_admins': User.objects.filter(user_type__in=['admin', 'superadmin']).count() if allowed('perm_users') else 0,
+            'total_trips': Trip.objects.filter(is_active=True).count() if allowed('perm_trips') else 0,
             'registrations_by_status': registrations_by_status,
-            'total_wallet_balance': total_wallet_balance,
-            'pending_tickets': pending_tickets,
-            'pending_gallery': pending_gallery,
-            'pending_articles': pending_articles,
-            'recent_registrations': RegistrationSerializer(recent_registrations, many=True).data,
+            'total_wallet_balance': (Wallet.objects.aggregate(total=Sum('balance'))['total'] or 0) if allowed('perm_financial') else 0,
+            'pending_tickets': Ticket.objects.filter(status='pending').count() if allowed('perm_tickets') else 0,
+            'pending_gallery': Gallery.objects.filter(status='pending').count() if allowed('perm_content') else 0,
+            'pending_articles': Article.objects.filter(status='pending').count() if allowed('perm_content') else 0,
+            'recent_registrations': recent_registrations,
         })
+
 
 
 class AdminUserListView(generics.ListAPIView):
@@ -230,7 +264,7 @@ class AdminUserDetailView(generics.RetrieveAPIView):
 class AdminUserDetailView(generics.RetrieveUpdateAPIView):
     """جزئیات کامل یک کاربر برای پنل ادمین (همه‌ی فیلدهای پروفایل، بدون پسورد)."""
     permission_classes = [HasAdminPermission('perm_users')]
-    serializer_class = UserProfileSerializer
+    serializer_class = AdminUserProfileSerializer
     queryset = User.objects.all()
 
 
