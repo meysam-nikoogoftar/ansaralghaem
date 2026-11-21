@@ -16,6 +16,7 @@ urlpatterns = [
     path('attendance/record/', views.RecordAttendanceView.as_view(), name='record_attendance'),
 
     # پنل ادمین
+    path('admin/trip-options/', views.AdminTripOptionsView.as_view(), name='admin_trip_options'),
     path('admin/trips/', views.AdminTripListView.as_view(), name='admin_trip_list'),
     path('admin/trips/<int:pk>/', views.AdminTripDetailView.as_view(), name='admin_trip_detail'),
     path('admin/registrations/', views.AdminRegistrationListView.as_view(), name='admin_registration_list'),
