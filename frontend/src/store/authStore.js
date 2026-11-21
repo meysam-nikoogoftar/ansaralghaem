@@ -7,6 +7,7 @@ const useAuthStore = create((set, get) => ({
   isLoading: false,
   error: null,
   authChecked: false, // true وقتی مشخص شد کاربر لاگین هست یا نه (جلوگیری از ریدایرکت زودهنگام)
+  authError: null,
 
   login: async (mobile, password) => {
     set({ isLoading: true, error: null })
@@ -46,15 +47,16 @@ const useAuthStore = create((set, get) => ({
     try {
       const res = await api.get('/accounts/profile/')
       set({ user: res.data, isAuthenticated: true })
-    } catch {
+    } catch (err) {
       set({ user: null, isAuthenticated: false })
+      if (!err.response || err.response.status >= 500) set({ authError: 'بررسی ورود انجام نشد. دوباره تلاش کنید.' })
     }
   },
 
   updateProfile: async (data) => {
-    set({ isLoading: true })
+    set({ isLoading: true, error: null })
     try {
-      const res = await api.put('/accounts/profile/', data)
+      const res = await api.put('/accounts/profile/', data, data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined)
       set({ user: res.data, isLoading: false })
       return true
     } catch (err) {
@@ -64,6 +66,7 @@ const useAuthStore = create((set, get) => ({
   },
 
   initAuth: () => {
+    set({ authChecked: false, authError: null })
     const token = localStorage.getItem('access_token')
     if (token) {
       get().getProfile().finally(() => set({ authChecked: true }))
