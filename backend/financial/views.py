@@ -2,6 +2,8 @@ from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Sum
+from django.db import transaction
+from django.conf import settings
 from accounts.permissions import IsAdminOrSuperAdmin, HasAdminPermission
 from .models import Wallet, WalletTransaction, HampaQafele, FinancialContribution, ContributionPayment, Expense, DirectPaymentRecord
 from .serializers import (
@@ -32,29 +34,28 @@ class WalletTransactionsView(generics.ListAPIView):
 class ChargeWalletView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request):
+        if not settings.DEBUG:
+            return Response({'error': 'شارژ آنلاین در حال حاضر در دسترس نیست.'}, status=503)
         serializer = ChargeWalletSerializer(data=request.data)
         if serializer.is_valid():
             amount = serializer.validated_data['amount']
             description = serializer.validated_data['description']
-            wallet, created = Wallet.objects.get_or_create(user=request.user)
-            transaction = WalletTransaction.objects.create(
+            wallet, created = Wallet.objects.select_for_update().get_or_create(user=request.user)
+            entry = WalletTransaction.objects.create(
                 wallet=wallet,
                 transaction_type='charge',
                 amount=amount,
-                status='pending',
+                status='success',
                 description=description
             )
-            # اینجا در آینده به زرین‌پال وصل می‌شه
-            # فعلاً برای تست مستقیم تایید می‌کنیم
-            transaction.status = 'success'
-            transaction.save()
             wallet.balance += amount
             wallet.save()
             return Response({
                 'message': 'کیف پول با موفقیت شارژ شد',
                 'balance': wallet.balance,
-                'transaction_id': transaction.id
+                'transaction_id': entry.id,
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -62,20 +63,23 @@ class ChargeWalletView(APIView):
 class PayFromWalletView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request):
         from trips.models import Registration
         registration_id = request.data.get('registration_id')
         amount = request.data.get('amount')
-        if not registration_id or not amount:
+        if type(registration_id) is not int or registration_id <= 0 or type(amount) is not int or amount <= 0:
             return Response({'error': 'اطلاعات ناقص است'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            registration = Registration.objects.get(pk=registration_id, user=request.user)
-            wallet, created = Wallet.objects.get_or_create(user=request.user)
-            amount = int(amount)
+            registration = Registration.objects.select_for_update().get(pk=registration_id, user=request.user)
+            if registration.status not in ('', 'pending', 'approved') or amount > registration.remaining_amount:
+                return Response({'error': 'مبلغ یا وضعیت ثبت‌نام مجاز نیست'}, status=400)
+            expected = request.data.get('expected_remaining')
+            if expected is not None and (type(expected) is not int or expected != registration.remaining_amount):
+                return Response({'error': 'مانده پرداخت تغییر کرده است. اطلاعات را به‌روز کنید.'}, status=409)
+            wallet, created = Wallet.objects.select_for_update().get_or_create(user=request.user)
             if wallet.balance < amount:
                 return Response({'error': 'موجودی کیف پول کافی نیست'}, status=status.HTTP_400_BAD_REQUEST)
-            if amount > registration.remaining_amount:
-                amount = registration.remaining_amount
             wallet.balance -= amount
             wallet.save()
             registration.paid_from_wallet += amount
@@ -193,36 +197,15 @@ class ExpenseCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# ========================================================================
-# این بلاک‌ها رو به انتهای فایل backend/financial/views.py اضافه کن
-# (اگه views.py از قبل import هایی مثل rest_framework دار، تکرارشون نکن)
-# ========================================================================
-
-from rest_framework import generics
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status, serializers as drf_serializers
-from accounts.permissions import IsAdminOrSuperAdmin
-from .models import Expense, FinancialContribution, ContributionPayment, Wallet, WalletTransaction
-
-
-class ExpenseSerializer(drf_serializers.ModelSerializer):
-    class Meta:
-        model = Expense
-        fields = '__all__'
-
-
-class FinancialContributionSerializer(drf_serializers.ModelSerializer):
-    class Meta:
-        model = FinancialContribution
-        fields = '__all__'
-
-
 class AdminExpenseListView(generics.ListCreateAPIView):
     """لیست/ایجاد ریزهزینه‌ها (فقط ادمین/سوپرادمین)."""
     permission_classes = [HasAdminPermission('perm_financial')]
     serializer_class = ExpenseSerializer
     queryset = Expense.objects.all().order_by('-id')
+
+
+    def perform_create(self, serializer):
+        serializer.save(recorder=self.request.user)
 
 
 class AdminExpenseDetailView(generics.RetrieveUpdateDestroyAPIView):
