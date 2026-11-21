@@ -152,3 +152,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+
+class AuthRateBucket(models.Model):
+    key = models.CharField(max_length=64, primary_key=True)
+    attempts = models.PositiveIntegerField(default=0)
+    expires_at = models.DateTimeField(db_index=True)
