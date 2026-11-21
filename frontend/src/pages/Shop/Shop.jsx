@@ -1,29 +1,34 @@
-import { useEffect, useState } from 'react'
+import useLoadFeedback from '../../hooks/useLoadFeedback'
+import LoadFeedback from '../../components/LoadFeedback'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../services/api'
 
 function Shop() {
+  const { observeLoad, loadState, retryLoad } = useLoadFeedback()
+
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = !loadState.started || loadState.pending > 0
+
+  const fetchProducts = useCallback((categoryId = '') => {
+    const url = categoryId ? `/shop/products/?category=${categoryId}` : '/shop/products/'
+    observeLoad(() => api.get(url)
+      .then(res => setProducts(res.data))
+      .catch(error => { throw error })
+      , "url")
+  }, [observeLoad])
 
   useEffect(() => {
-    api.get('/shop/categories/')
+    observeLoad(() => api.get('/shop/categories/')
       .then(res => setCategories(res.data))
-      .catch(() => {})
+      .catch(error => { throw error }), "'/shop/categories/'")
 
     fetchProducts()
-  }, [])
+  }, [fetchProducts, observeLoad])
 
-  const fetchProducts = (categoryId = '') => {
-    setIsLoading(true)
-    const url = categoryId ? `/shop/products/?category=${categoryId}` : '/shop/products/'
-    api.get(url)
-      .then(res => setProducts(res.data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false))
-  }
+
 
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId)
@@ -31,7 +36,7 @@ function Shop() {
   }
 
   return (
-    <div className="sp-page" dir="rtl">
+    <><LoadFeedback state={loadState} onRetry={retryLoad} />{<div className="sp-page" dir="rtl">
       <div className="container">
         <div className="sp-head">
           <div className="section-kicker">✦ فروشگاه صنایع‌دستی ✦</div>
@@ -39,14 +44,14 @@ function Shop() {
         </div>
 
         <div className="sp-categories">
-          <button
+          <button aria-pressed={selectedCategory === ''}
             onClick={() => handleCategoryChange('')}
             className={`sp-cat-btn${selectedCategory === '' ? ' active' : ''}`}
           >
             همه
           </button>
           {categories.map((cat) => (
-            <button
+            <button aria-pressed={selectedCategory === cat.id}
               key={cat.id}
               onClick={() => handleCategoryChange(cat.id)}
               className={`sp-cat-btn${selectedCategory === cat.id ? ' active' : ''}`}
@@ -58,7 +63,7 @@ function Shop() {
 
         {isLoading ? (
           <div className="sp-loading">در حال بارگذاری...</div>
-        ) : products.length === 0 ? (
+        ) : (products.length === 0 && (!loadState.started || loadState.pending > 0)) ? (<p className="field-hint" role="status">در حال دریافت اطلاعات…</p>) : (loadState.errors.length > 0 && products.length === 0) ? null : products.length === 0 ? (
           <div className="sp-empty">محصولی یافت نشد</div>
         ) : (
           <div className="sp-grid">
@@ -159,7 +164,7 @@ function Shop() {
         .sp-stock.in { background: var(--status-ok-bg); color: var(--status-ok); }
         .sp-stock.out { background: var(--status-danger-bg); color: var(--status-danger); }
       `}</style>
-    </div>
+    </div>}</>
   )
 }
 
